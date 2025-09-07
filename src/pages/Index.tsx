@@ -24,6 +24,7 @@ interface Match {
   player2Id: string;
   result: 'player1' | 'player2' | 'draw' | null;
   round: number;
+  tableNumber: number;
 }
 
 interface Tournament {
@@ -52,6 +53,7 @@ const Index = () => {
   const [swissRounds, setSwissRounds] = useState('3');
   const [playoffTop, setPlayoffTop] = useState('8');
   const [activeTab, setActiveTab] = useState('rounds');
+  const [selectedRound, setSelectedRound] = useState(1);
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -102,7 +104,8 @@ const Index = () => {
           player1Id: players[i].id,
           player2Id: players[j].id,
           result: null,
-          round: tournament.currentRound + 1
+          round: tournament.currentRound + 1,
+          tableNumber: matches.length + 1
         });
 
         paired.add(players[i].id);
@@ -119,7 +122,8 @@ const Index = () => {
           player1Id: unpaired.id,
           player2Id: 'bye',
           result: 'player1' as const,
-          round: tournament.currentRound + 1
+          round: tournament.currentRound + 1,
+          tableNumber: matches.length + 1
         };
         matches.push(byeMatch);
         
@@ -140,6 +144,9 @@ const Index = () => {
       matches: [...prev.matches, ...matches],
       currentRound: prev.currentRound + 1
     }));
+    
+    // Автоматически переключаемся на новый тур
+    setSelectedRound(tournament.currentRound + 1);
   };
 
   const startTournament = () => {
@@ -253,7 +260,8 @@ const Index = () => {
         player1Id: topPlayers[i].id,
         player2Id: topPlayers[i + 1]?.id || 'bye',
         result: topPlayers[i + 1] ? null : 'player1',
-        round: tournament.currentRound + 1
+        round: tournament.currentRound + 1,
+        tableNumber: Math.floor(i / 2) + 1
       });
     }
 
@@ -295,7 +303,8 @@ const Index = () => {
           player1Id: winners[i]!,
           player2Id: winners[i + 1] || 'bye',
           result: winners[i + 1] ? null : ('player1' as const),
-          round: tournament.currentRound + 1
+          round: tournament.currentRound + 1,
+          tableNumber: Math.floor(i / 2) + 1
         };
         nextMatches.push(match);
         
@@ -320,11 +329,44 @@ const Index = () => {
     }
   };
 
+  const calculateBuchholz = (player: Player) => {
+    let buchholzSum = 0;
+    player.opponents.forEach(opponentId => {
+      const opponent = tournament.players.find(p => p.id === opponentId);
+      if (opponent) {
+        buchholzSum += opponent.score;
+      }
+    });
+    return buchholzSum;
+  };
+
   const currentRoundMatches = tournament.matches.filter(m => m.round === tournament.currentRound);
+  const selectedRoundMatches = tournament.matches.filter(m => m.round === selectedRound);
+  
   const sortedPlayers = [...tournament.players].sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
+    const aBuchholz = calculateBuchholz(a);
+    const bBuchholz = calculateBuchholz(b);
+    if (bBuchholz !== aBuchholz) return bBuchholz - aBuchholz;
     return b.wins - a.wins;
   });
+  
+  const availableRounds = Array.from(
+    new Set(tournament.matches.map(m => m.round))
+  ).sort((a, b) => a - b);
+  
+  const getRoundName = (round: number) => {
+    if (tournament.status === 'swiss' || round <= tournament.swissRounds) {
+      return `Швейцарка ${round}`;
+    } else {
+      const playoffRound = round - tournament.swissRounds;
+      const totalPlayoffRounds = Math.log2(tournament.playoffTop);
+      if (playoffRound === totalPlayoffRounds) return 'Финал';
+      if (playoffRound === totalPlayoffRounds - 1) return 'Полуфинал';
+      if (playoffRound === totalPlayoffRounds - 2) return 'Четвертьфинал';
+      return `1/${Math.pow(2, totalPlayoffRounds - playoffRound)} финала`;
+    }
+  };
 
   const getPlayerName = (playerId: string) => {
     if (playerId === 'bye') return 'БАЙ';
@@ -490,11 +532,25 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Icon name="Swords" size={20} className="mr-2" />
-                  Текущий тур - паринги
+                  Туры
                 </CardTitle>
+                {availableRounds.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {availableRounds.map(round => (
+                      <Button
+                        key={round}
+                        variant={selectedRound === round ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedRound(round)}
+                      >
+                        {getRoundName(round)}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
-                {currentRoundMatches.length === 0 && tournament.status === 'swiss' && (
+                {selectedRoundMatches.length === 0 && selectedRound === tournament.currentRound && tournament.status === 'swiss' && (
                   <div className="text-center py-8">
                     <Button onClick={() => generateSwissPairings()}>
                       Создать паринги
@@ -502,10 +558,11 @@ const Index = () => {
                   </div>
                 )}
                 
-                {currentRoundMatches.map((match) => (
+                {selectedRoundMatches.map((match) => (
                   <div key={match.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
+                        <Badge variant="secondary">Стол {match.tableNumber}</Badge>
                         <span className="font-medium">{getPlayerName(match.player1Id)}</span>
                         <span className="text-muted-foreground">vs</span>
                         <span className="font-medium">{getPlayerName(match.player2Id)}</span>
@@ -518,7 +575,7 @@ const Index = () => {
                       )}
                     </div>
                     
-                    {match.player2Id !== 'bye' && (
+                    {match.player2Id !== 'bye' && selectedRound === tournament.currentRound && (
                       <div className="flex gap-2 flex-wrap">
                         <Button 
                           size="sm" 
@@ -554,7 +611,7 @@ const Index = () => {
                   </div>
                 ))}
                 
-                {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
+                {selectedRound === tournament.currentRound && currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
                   <div className="text-center pt-4">
                     {tournament.status === 'swiss' && tournament.currentRound < tournament.swissRounds ? (
                       <Button onClick={nextRound}>
@@ -597,8 +654,9 @@ const Index = () => {
                           </Badge>
                           <span className="font-medium">{player.name}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="font-bold text-foreground">{player.score} очков</span>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="font-bold text-foreground">{player.score} оч.</span>
+                          <span className="text-xs">Бх: {calculateBuchholz(player).toFixed(1)}</span>
                           <span>{player.wins}П</span>
                           <span>{player.losses}П</span>
                           <span>{player.draws}Н</span>
