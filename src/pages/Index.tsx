@@ -27,7 +27,8 @@ interface Match {
 
 interface Tournament {
   name: string;
-  maxRounds: number;
+  swissRounds: number;
+  playoffTop: number;
   currentRound: number;
   status: 'setup' | 'swiss' | 'playoffs' | 'finished';
   players: Player[];
@@ -37,7 +38,8 @@ interface Tournament {
 const Index = () => {
   const [tournament, setTournament] = useState<Tournament>({
     name: '',
-    maxRounds: 0,
+    swissRounds: 3,
+    playoffTop: 8,
     currentRound: 0,
     status: 'setup',
     players: [],
@@ -46,7 +48,8 @@ const Index = () => {
   
   const [newPlayerName, setNewPlayerName] = useState('');
   const [tournamentName, setTournamentName] = useState('');
-  const [customRounds, setCustomRounds] = useState('');
+  const [swissRounds, setSwissRounds] = useState('3');
+  const [playoffTop, setPlayoffTop] = useState('8');
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -129,19 +132,25 @@ const Index = () => {
   const startTournament = () => {
     if (tournament.players.length < 2 || !tournamentName.trim()) return;
     
-    const suggestedRounds = Math.ceil(Math.log2(tournament.players.length));
-    const maxRounds = customRounds ? parseInt(customRounds) : suggestedRounds;
+    const rounds = parseInt(swissRounds);
+    const topPlayers = parseInt(playoffTop);
     
-    if (maxRounds < 1 || maxRounds > 20) return;
+    if (rounds < 2 || rounds > 6) return;
+    if (topPlayers < 2 || topPlayers > 32 || !isPowerOfTwo(topPlayers)) return;
     
     setTournament(prev => ({
       ...prev,
       name: tournamentName,
-      maxRounds,
+      swissRounds: rounds,
+      playoffTop: topPlayers,
       status: 'swiss'
     }));
     
     generateSwissPairings();
+  };
+
+  const isPowerOfTwo = (n: number) => {
+    return n > 0 && (n & (n - 1)) === 0;
   };
 
   const submitResult = (matchId: string, result: 'player1' | 'player2' | 'draw') => {
@@ -222,7 +231,7 @@ const Index = () => {
     
     if (!allMatchesComplete) return;
     
-    if (tournament.currentRound < tournament.maxRounds) {
+    if (tournament.currentRound < tournament.swissRounds) {
       generateSwissPairings();
     } else {
       setTournament(prev => ({ ...prev, status: 'playoffs' }));
@@ -271,21 +280,40 @@ const Index = () => {
                     placeholder="Введите название турнира"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="rounds">Количество туров</Label>
-                  <Input
-                    id="rounds"
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={customRounds}
-                    onChange={(e) => setCustomRounds(e.target.value)}
-                    placeholder={`Рекомендуется: ${tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1}`}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="swiss-rounds">Швейцарская система</Label>
+                    <select 
+                      id="swiss-rounds"
+                      value={swissRounds}
+                      onChange={(e) => setSwissRounds(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="2">2 тура</option>
+                      <option value="3">3 тура</option>
+                      <option value="4">4 тура</option>
+                      <option value="5">5 туров</option>
+                      <option value="6">6 туров</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="playoff-top">Плей-офф топ</Label>
+                    <select 
+                      id="playoff-top"
+                      value={playoffTop}
+                      onChange={(e) => setPlayoffTop(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="2">Топ-2 (1 тур)</option>
+                      <option value="4">Топ-4 (2 тура)</option>
+                      <option value="8">Топ-8 (3 тура)</option>
+                      <option value="16">Топ-16 (4 тура)</option>
+                      <option value="32">Топ-32 (5 туров)</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  <p>Рекомендуемое количество туров: {tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1}</p>
-                  <p>Выбрано туров: {customRounds || (tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1)}</p>
+                  <p>Формат: {swissRounds} тур{parseInt(swissRounds) > 4 ? 'ов' : parseInt(swissRounds) > 1 ? 'а' : ''} швейцарки + плей-офф среди топ-{playoffTop}</p>
                 </div>
               </CardContent>
             </Card>
@@ -336,7 +364,8 @@ const Index = () => {
               disabled={
                 tournament.players.length < 2 || 
                 !tournamentName.trim() ||
-                (customRounds && (parseInt(customRounds) < 1 || parseInt(customRounds) > 20))
+                parseInt(swissRounds) < 2 || parseInt(swissRounds) > 6 ||
+                parseInt(playoffTop) < 2 || parseInt(playoffTop) > 32 || !isPowerOfTwo(parseInt(playoffTop))
               }
               size="lg"
               className="px-8"
@@ -356,7 +385,12 @@ const Index = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">{tournament.name}</h1>
           <div className="flex items-center justify-center gap-4 text-muted-foreground">
-            <Badge variant="outline">Тур {tournament.currentRound} из {tournament.maxRounds}</Badge>
+            <Badge variant="outline">
+              {tournament.status === 'swiss' 
+                ? `Швейцарка: тур ${tournament.currentRound} из ${tournament.swissRounds}`
+                : `Плей-офф: Топ-${tournament.playoffTop}`
+              }
+            </Badge>
             <Badge variant={tournament.status === 'swiss' ? 'default' : 'secondary'}>
               {tournament.status === 'swiss' ? 'Швейцарская система' : 'Плей-офф'}
             </Badge>
@@ -424,12 +458,19 @@ const Index = () => {
                 </div>
               ))}
               
-              {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && tournament.currentRound < tournament.maxRounds && (
+              {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
                 <div className="text-center pt-4">
-                  <Button onClick={nextRound}>
-                    <Icon name="ArrowRight" size={16} className="mr-2" />
-                    Следующий тур
-                  </Button>
+                  {tournament.currentRound < tournament.swissRounds ? (
+                    <Button onClick={nextRound}>
+                      <Icon name="ArrowRight" size={16} className="mr-2" />
+                      Следующий тур швейцарки
+                    </Button>
+                  ) : (
+                    <Button onClick={nextRound}>
+                      <Icon name="Trophy" size={16} className="mr-2" />
+                      Начать плей-офф топ-{tournament.playoffTop}
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
