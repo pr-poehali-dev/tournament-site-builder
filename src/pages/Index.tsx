@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 
 interface Player {
@@ -50,6 +51,7 @@ const Index = () => {
   const [tournamentName, setTournamentName] = useState('');
   const [swissRounds, setSwissRounds] = useState('3');
   const [playoffTop, setPlayoffTop] = useState('8');
+  const [activeTab, setActiveTab] = useState('rounds');
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -112,13 +114,24 @@ const Index = () => {
     if (players.length % 2 === 1) {
       const unpaired = players.find(p => !paired.has(p.id));
       if (unpaired) {
-        matches.push({
+        const byeMatch = {
           id: Date.now() + Math.random(),
           player1Id: unpaired.id,
           player2Id: 'bye',
-          result: 'player1',
+          result: 'player1' as const,
           round: tournament.currentRound + 1
-        });
+        };
+        matches.push(byeMatch);
+        
+        // Начисляем 3 очка за бай сразу
+        setTournament(prev => ({
+          ...prev,
+          players: prev.players.map(player => 
+            player.id === unpaired.id 
+              ? { ...player, score: player.score + 3, wins: player.wins + 1 }
+              : player
+          )
+        }));
       }
     }
 
@@ -277,13 +290,26 @@ const Index = () => {
 
       const nextMatches: Match[] = [];
       for (let i = 0; i < winners.length; i += 2) {
-        nextMatches.push({
+        const match = {
           id: Date.now() + Math.random() + i,
           player1Id: winners[i]!,
           player2Id: winners[i + 1] || 'bye',
-          result: winners[i + 1] ? null : 'player1',
+          result: winners[i + 1] ? null : ('player1' as const),
           round: tournament.currentRound + 1
-        });
+        };
+        nextMatches.push(match);
+        
+        // Если бай, начисляем 3 очка
+        if (!winners[i + 1]) {
+          setTournament(prev => ({
+            ...prev,
+            players: prev.players.map(player => 
+              player.id === winners[i]
+                ? { ...player, score: player.score + 3, wins: player.wins + 1 }
+                : player
+            )
+          }));
+        }
       }
 
       setTournament(prev => ({
@@ -453,119 +479,165 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Icon name="Swords" size={20} className="mr-2" />
-                Текущий тур - паринги
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {currentRoundMatches.length === 0 && tournament.status === 'swiss' && (
-                <div className="text-center py-8">
-                  <Button onClick={() => generateSwissPairings()}>
-                    Создать паринги
-                  </Button>
-                </div>
-              )}
-              
-              {currentRoundMatches.map((match) => (
-                <div key={match.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium">{getPlayerName(match.player1Id)}</span>
-                      <span className="text-muted-foreground">vs</span>
-                      <span className="font-medium">{getPlayerName(match.player2Id)}</span>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="rounds">Туры</TabsTrigger>
+            <TabsTrigger value="results">Результаты</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="rounds" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Icon name="Swords" size={20} className="mr-2" />
+                  Текущий тур - паринги
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {currentRoundMatches.length === 0 && tournament.status === 'swiss' && (
+                  <div className="text-center py-8">
+                    <Button onClick={() => generateSwissPairings()}>
+                      Создать паринги
+                    </Button>
+                  </div>
+                )}
+                
+                {currentRoundMatches.map((match) => (
+                  <div key={match.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="font-medium">{getPlayerName(match.player1Id)}</span>
+                        <span className="text-muted-foreground">vs</span>
+                        <span className="font-medium">{getPlayerName(match.player2Id)}</span>
+                      </div>
+                      {match.result && (
+                        <Badge variant="outline">
+                          {match.result === 'player1' ? getPlayerName(match.player1Id) : 
+                           match.result === 'player2' ? getPlayerName(match.player2Id) : 'Ничья'}
+                        </Badge>
+                      )}
                     </div>
-                    {match.result && (
-                      <Badge variant="outline">
-                        {match.result === 'player1' ? getPlayerName(match.player1Id) : 
-                         match.result === 'player2' ? getPlayerName(match.player2Id) : 'Ничья'}
-                      </Badge>
+                    
+                    {match.player2Id !== 'bye' && (
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          size="sm" 
+                          onClick={() => submitResult(match.id, 'player1')}
+                          variant={match.result === 'player1' ? 'default' : 'outline'}
+                        >
+                          Победил {getPlayerName(match.player1Id)}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => submitResult(match.id, 'draw')}
+                          variant={match.result === 'draw' ? 'default' : 'outline'}
+                        >
+                          Ничья
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => submitResult(match.id, 'player2')}
+                          variant={match.result === 'player2' ? 'default' : 'outline'}
+                        >
+                          Победил {getPlayerName(match.player2Id)}
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {match.player2Id === 'bye' && (
+                      <div className="text-center py-2">
+                        <Badge variant="secondary">
+                          Бай - автоматически 3 очка
+                        </Badge>
+                      </div>
                     )}
                   </div>
-                  
-                  {match.player2Id !== 'bye' && (
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        size="sm" 
-                        onClick={() => submitResult(match.id, 'player1')}
-                        variant={match.result === 'player1' ? 'default' : 'outline'}
-                      >
-                        Победил {getPlayerName(match.player1Id)}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => submitResult(match.id, 'draw')}
-                        variant={match.result === 'draw' ? 'default' : 'outline'}
-                      >
-                        Ничья
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => submitResult(match.id, 'player2')}
-                        variant={match.result === 'player2' ? 'default' : 'outline'}
-                      >
-                        Победил {getPlayerName(match.player2Id)}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-              
-              {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
-                <div className="text-center pt-4">
-                  {tournament.status === 'swiss' && tournament.currentRound < tournament.swissRounds ? (
-                    <Button onClick={nextRound}>
-                      <Icon name="ArrowRight" size={16} className="mr-2" />
-                      Следующий тур швейцарки
-                    </Button>
-                  ) : tournament.status === 'swiss' ? (
-                    <Button onClick={nextRound}>
-                      <Icon name="Trophy" size={16} className="mr-2" />
-                      Начать плей-офф топ-{tournament.playoffTop}
-                    </Button>
-                  ) : tournament.status === 'playoffs' ? (
-                    <Button onClick={nextRound}>
-                      <Icon name="ArrowRight" size={16} className="mr-2" />
-                      Следующий тур плей-офф
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Icon name="Crown" size={20} className="mr-2" />
-                Рейтинговая таблица
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {sortedPlayers.map((player, index) => (
-                  <div key={player.id} className="flex items-center justify-between p-3 rounded border">
-                    <div className="flex items-center gap-3">
-                      <Badge variant={index === 0 ? 'default' : 'secondary'}>
-                        {index + 1}
-                      </Badge>
-                      <span className="font-medium">{player.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="font-bold text-foreground">{player.score} очков</span>
-                      <span>{player.wins}П</span>
-                      <span>{player.losses}П</span>
-                      <span>{player.draws}Н</span>
-                    </div>
-                  </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                
+                {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
+                  <div className="text-center pt-4">
+                    {tournament.status === 'swiss' && tournament.currentRound < tournament.swissRounds ? (
+                      <Button onClick={nextRound}>
+                        <Icon name="ArrowRight" size={16} className="mr-2" />
+                        Следующий тур швейцарки
+                      </Button>
+                    ) : tournament.status === 'swiss' ? (
+                      <Button onClick={nextRound}>
+                        <Icon name="Trophy" size={16} className="mr-2" />
+                        Начать плей-офф топ-{tournament.playoffTop}
+                      </Button>
+                    ) : tournament.status === 'playoffs' ? (
+                      <Button onClick={nextRound}>
+                        <Icon name="ArrowRight" size={16} className="mr-2" />
+                        Следующий тур плей-офф
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="results" className="mt-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Icon name="Crown" size={20} className="mr-2" />
+                    Рейтинговая таблица
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {sortedPlayers.map((player, index) => (
+                      <div key={player.id} className="flex items-center justify-between p-3 rounded border">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={index === 0 ? 'default' : 'secondary'}>
+                            {index + 1}
+                          </Badge>
+                          <span className="font-medium">{player.name}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="font-bold text-foreground">{player.score} очков</span>
+                          <span>{player.wins}П</span>
+                          <span>{player.losses}П</span>
+                          <span>{player.draws}Н</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Icon name="History" size={20} className="mr-2" />
+                    История матчей
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {tournament.matches.filter(m => m.result !== null).map((match) => (
+                      <div key={match.id} className="border rounded p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <Badge variant="outline" size="sm">Тур {match.round}</Badge>
+                          <Badge variant={match.result === 'draw' ? 'secondary' : 'default'} size="sm">
+                            {match.result === 'player1' ? getPlayerName(match.player1Id) : 
+                             match.result === 'player2' ? getPlayerName(match.player2Id) : 'Ничья'}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {getPlayerName(match.player1Id)} vs {getPlayerName(match.player2Id)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
