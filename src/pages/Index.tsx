@@ -225,6 +225,33 @@ const Index = () => {
     });
   };
 
+  const generatePlayoffPairings = () => {
+    const topPlayers = [...tournament.players]
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.wins - a.wins;
+      })
+      .slice(0, tournament.playoffTop);
+
+    const matches: Match[] = [];
+    for (let i = 0; i < topPlayers.length; i += 2) {
+      matches.push({
+        id: Date.now() + Math.random() + i,
+        player1Id: topPlayers[i].id,
+        player2Id: topPlayers[i + 1]?.id || 'bye',
+        result: topPlayers[i + 1] ? null : 'player1',
+        round: tournament.currentRound + 1
+      });
+    }
+
+    setTournament(prev => ({
+      ...prev,
+      matches: [...prev.matches, ...matches],
+      currentRound: prev.currentRound + 1,
+      status: 'playoffs'
+    }));
+  };
+
   const nextRound = () => {
     const currentMatches = tournament.matches.filter(m => m.round === tournament.currentRound);
     const allMatchesComplete = currentMatches.every(m => m.result !== null);
@@ -233,8 +260,37 @@ const Index = () => {
     
     if (tournament.currentRound < tournament.swissRounds) {
       generateSwissPairings();
+    } else if (tournament.status === 'swiss') {
+      generatePlayoffPairings();
     } else {
-      setTournament(prev => ({ ...prev, status: 'playoffs' }));
+      // Следующий тур плей-офф
+      const winners = currentMatches.map(match => {
+        if (match.result === 'player1') return match.player1Id;
+        if (match.result === 'player2') return match.player2Id;
+        return null;
+      }).filter(id => id && id !== 'bye');
+
+      if (winners.length <= 1) {
+        setTournament(prev => ({ ...prev, status: 'finished' }));
+        return;
+      }
+
+      const nextMatches: Match[] = [];
+      for (let i = 0; i < winners.length; i += 2) {
+        nextMatches.push({
+          id: Date.now() + Math.random() + i,
+          player1Id: winners[i]!,
+          player2Id: winners[i + 1] || 'bye',
+          result: winners[i + 1] ? null : 'player1',
+          round: tournament.currentRound + 1
+        });
+      }
+
+      setTournament(prev => ({
+        ...prev,
+        matches: [...prev.matches, ...nextMatches],
+        currentRound: prev.currentRound + 1
+      }));
     }
   };
 
@@ -460,17 +516,22 @@ const Index = () => {
               
               {currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
                 <div className="text-center pt-4">
-                  {tournament.currentRound < tournament.swissRounds ? (
+                  {tournament.status === 'swiss' && tournament.currentRound < tournament.swissRounds ? (
                     <Button onClick={nextRound}>
                       <Icon name="ArrowRight" size={16} className="mr-2" />
                       Следующий тур швейцарки
                     </Button>
-                  ) : (
+                  ) : tournament.status === 'swiss' ? (
                     <Button onClick={nextRound}>
                       <Icon name="Trophy" size={16} className="mr-2" />
                       Начать плей-офф топ-{tournament.playoffTop}
                     </Button>
-                  )}
+                  ) : tournament.status === 'playoffs' ? (
+                    <Button onClick={nextRound}>
+                      <Icon name="ArrowRight" size={16} className="mr-2" />
+                      Следующий тур плей-офф
+                    </Button>
+                  ) : null}
                 </div>
               )}
             </CardContent>
