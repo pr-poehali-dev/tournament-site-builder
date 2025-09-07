@@ -146,38 +146,71 @@ const Index = () => {
 
   const submitResult = (matchId: string, result: 'player1' | 'player2' | 'draw') => {
     setTournament(prev => {
-      const updatedMatches = prev.matches.map(match => 
-        match.id === matchId ? { ...match, result } : match
-      );
-
       const match = prev.matches.find(m => m.id === matchId);
-      if (!match) return { ...prev, matches: updatedMatches };
+      if (!match) return prev;
 
-      const updatedPlayers = prev.players.map(player => {
+      const oldResult = match.result;
+      
+      // Откат старого результата
+      let updatedPlayers = prev.players;
+      if (oldResult) {
+        updatedPlayers = updatedPlayers.map(player => {
+          if (player.id === match.player1Id) {
+            const oldScore = oldResult === 'player1' ? 3 : oldResult === 'draw' ? 1 : 0;
+            return {
+              ...player,
+              score: player.score - oldScore,
+              wins: oldResult === 'player1' ? player.wins - 1 : player.wins,
+              losses: oldResult === 'player2' ? player.losses - 1 : player.losses,
+              draws: oldResult === 'draw' ? player.draws - 1 : player.draws,
+            };
+          }
+          if (player.id === match.player2Id && match.player2Id !== 'bye') {
+            const oldScore = oldResult === 'player2' ? 3 : oldResult === 'draw' ? 1 : 0;
+            return {
+              ...player,
+              score: player.score - oldScore,
+              wins: oldResult === 'player2' ? player.wins - 1 : player.wins,
+              losses: oldResult === 'player1' ? player.losses - 1 : player.losses,
+              draws: oldResult === 'draw' ? player.draws - 1 : player.draws,
+            };
+          }
+          return player;
+        });
+      }
+
+      // Применение нового результата
+      updatedPlayers = updatedPlayers.map(player => {
         if (player.id === match.player1Id) {
-          const newScore = result === 'player1' ? player.score + 1 : result === 'draw' ? player.score + 0.5 : player.score;
+          const newScore = result === 'player1' ? 3 : result === 'draw' ? 1 : 0;
+          const opponents = !oldResult && match.player2Id !== 'bye' ? [...player.opponents, match.player2Id] : player.opponents;
           return {
             ...player,
-            score: newScore,
+            score: player.score + newScore,
             wins: result === 'player1' ? player.wins + 1 : player.wins,
             losses: result === 'player2' ? player.losses + 1 : player.losses,
             draws: result === 'draw' ? player.draws + 1 : player.draws,
-            opponents: match.player2Id !== 'bye' ? [...player.opponents, match.player2Id] : player.opponents
+            opponents
           };
         }
         if (player.id === match.player2Id && match.player2Id !== 'bye') {
-          const newScore = result === 'player2' ? player.score + 1 : result === 'draw' ? player.score + 0.5 : player.score;
+          const newScore = result === 'player2' ? 3 : result === 'draw' ? 1 : 0;
+          const opponents = !oldResult ? [...player.opponents, match.player1Id] : player.opponents;
           return {
             ...player,
-            score: newScore,
+            score: player.score + newScore,
             wins: result === 'player2' ? player.wins + 1 : player.wins,
             losses: result === 'player1' ? player.losses + 1 : player.losses,
             draws: result === 'draw' ? player.draws + 1 : player.draws,
-            opponents: [...player.opponents, match.player1Id]
+            opponents
           };
         }
         return player;
       });
+
+      const updatedMatches = prev.matches.map(m => 
+        m.id === matchId ? { ...m, result } : m
+      );
 
       return { ...prev, matches: updatedMatches, players: updatedPlayers };
     });
@@ -363,26 +396,26 @@ const Index = () => {
                     )}
                   </div>
                   
-                  {match.player2Id !== 'bye' && !match.result && (
-                    <div className="flex gap-2">
+                  {match.player2Id !== 'bye' && (
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         size="sm" 
                         onClick={() => submitResult(match.id, 'player1')}
-                        variant="outline"
+                        variant={match.result === 'player1' ? 'default' : 'outline'}
                       >
                         Победил {getPlayerName(match.player1Id)}
                       </Button>
                       <Button 
                         size="sm" 
                         onClick={() => submitResult(match.id, 'draw')}
-                        variant="outline"
+                        variant={match.result === 'draw' ? 'default' : 'outline'}
                       >
                         Ничья
                       </Button>
                       <Button 
                         size="sm" 
                         onClick={() => submitResult(match.id, 'player2')}
-                        variant="outline"
+                        variant={match.result === 'player2' ? 'default' : 'outline'}
                       >
                         Победил {getPlayerName(match.player2Id)}
                       </Button>
