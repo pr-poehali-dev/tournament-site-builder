@@ -46,6 +46,7 @@ const Index = () => {
   
   const [newPlayerName, setNewPlayerName] = useState('');
   const [tournamentName, setTournamentName] = useState('');
+  const [customRounds, setCustomRounds] = useState('');
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -128,7 +129,10 @@ const Index = () => {
   const startTournament = () => {
     if (tournament.players.length < 2 || !tournamentName.trim()) return;
     
-    const maxRounds = Math.ceil(Math.log2(tournament.players.length));
+    const suggestedRounds = Math.ceil(Math.log2(tournament.players.length));
+    const maxRounds = customRounds ? parseInt(customRounds) : suggestedRounds;
+    
+    if (maxRounds < 1 || maxRounds > 20) return;
     
     setTournament(prev => ({
       ...prev,
@@ -234,8 +238,21 @@ const Index = () => {
                     placeholder="Введите название турнира"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="rounds">Количество туров</Label>
+                  <Input
+                    id="rounds"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={customRounds}
+                    onChange={(e) => setCustomRounds(e.target.value)}
+                    placeholder={`Рекомендуется: ${tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1}`}
+                  />
+                </div>
                 <div className="text-sm text-muted-foreground">
-                  <p>Система: {tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 0} туров швейцарской системы</p>
+                  <p>Рекомендуемое количество туров: {tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1}</p>
+                  <p>Выбрано туров: {customRounds || (tournament.players.length >= 2 ? Math.ceil(Math.log2(tournament.players.length)) : 1)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -283,7 +300,11 @@ const Index = () => {
           <div className="text-center mt-6">
             <Button 
               onClick={startTournament}
-              disabled={tournament.players.length < 2 || !tournamentName.trim()}
+              disabled={
+                tournament.players.length < 2 || 
+                !tournamentName.trim() ||
+                (customRounds && (parseInt(customRounds) < 1 || parseInt(customRounds) > 20))
+              }
               size="lg"
               className="px-8"
             >
