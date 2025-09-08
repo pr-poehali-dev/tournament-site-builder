@@ -58,8 +58,9 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       return;
     }
 
-    const tournament: Tournament = {
-      id: Date.now().toString(),
+    // Обновить форму с данными перед созданием
+    setTournamentForm(prev => ({
+      ...prev,
       name: name.trim(),
       date: date.trim(),
       city: city.trim(),
@@ -68,29 +69,13 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       isRated,
       swissRounds: Math.max(1, Math.min(8, swissRounds)),
       topRounds: Math.max(0, topRounds),
-      participants,
-      status: 'draft',
-      rounds: [],
-      currentRound: 0
-    };
+      participants
+    }));
 
-    addTournament(tournament);
-
-    // Сбросить форму
-    setTournamentForm({
-      name: '',
-      date: '',
-      city: '',
-      format: '',
-      description: '',
-      isRated: true,
-      swissRounds: 3,
-      topRounds: 0,
-      participants: []
-    });
-
-    alert(`Турнир "${tournament.name}" создан!`);
-    navigateTo('tournaments');
+    // Вызвать функцию создания из родительского компонента
+    setTimeout(() => {
+      addTournament();
+    }, 10);
   };
 
   const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {
