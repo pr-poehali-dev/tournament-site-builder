@@ -6,7 +6,18 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+interface User {
+  id: string;
+  username: string;
+  password: string;
+  role: 'admin' | 'judge' | 'player';
+  name: string;
+  isActive: boolean;
+}
 
 interface Player {
   id: string;
@@ -16,6 +27,7 @@ interface Player {
   losses: number;
   draws: number;
   opponents: string[];
+  userId?: string;
 }
 
 interface Match {
@@ -35,6 +47,8 @@ interface Tournament {
   status: 'setup' | 'swiss' | 'playoffs' | 'finished';
   players: Player[];
   matches: Match[];
+  users: User[];
+  currentUser: User | null;
 }
 
 const Index = () => {
@@ -45,7 +59,16 @@ const Index = () => {
     currentRound: 0,
     status: 'setup',
     players: [],
-    matches: []
+    matches: [],
+    users: [{
+      id: 'admin-1',
+      username: 'admin',
+      password: 'admin',
+      role: 'admin',
+      name: 'Администратор',
+      isActive: true
+    }],
+    currentUser: null
   });
   
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -54,6 +77,18 @@ const Index = () => {
   const [playoffTop, setPlayoffTop] = useState('8');
   const [activeTab, setActiveTab] = useState('rounds');
   const [selectedRound, setSelectedRound] = useState(1);
+  
+  // Auth states
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [showLogin, setShowLogin] = useState(true);
+  
+  // User management states
+  const [newUser, setNewUser] = useState({
+    username: '',
+    password: '',
+    role: 'player' as const,
+    name: ''
+  });
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -147,6 +182,79 @@ const Index = () => {
     
     // Автоматически переключаемся на новый тур
     setSelectedRound(tournament.currentRound + 1);
+  };
+
+  // Auth functions
+  const login = () => {
+    const user = tournament.users.find(u => 
+      u.username === loginForm.username && 
+      u.password === loginForm.password &&
+      u.isActive
+    );
+    
+    if (user) {
+      setTournament(prev => ({ ...prev, currentUser: user }));
+      setShowLogin(false);
+      setLoginForm({ username: '', password: '' });
+    }
+  };
+
+  const logout = () => {
+    setTournament(prev => ({ ...prev, currentUser: null }));
+    setShowLogin(true);
+  };
+
+  // User management functions
+  const createUser = () => {
+    if (!tournament.currentUser || tournament.currentUser.role !== 'admin') return;
+    if (!newUser.username.trim() || !newUser.password.trim() || !newUser.name.trim()) return;
+
+    const user: User = {
+      id: Date.now().toString(),
+      ...newUser,
+      isActive: true
+    };
+
+    setTournament(prev => ({
+      ...prev,
+      users: [...prev.users, user]
+    }));
+
+    setNewUser({
+      username: '',
+      password: '',
+      role: 'player',
+      name: ''
+    });
+  };
+
+  const toggleUserStatus = (userId: string) => {
+    if (!tournament.currentUser || tournament.currentUser.role !== 'admin') return;
+    
+    setTournament(prev => ({
+      ...prev,
+      users: prev.users.map(user =>
+        user.id === userId ? { ...user, isActive: !user.isActive } : user
+      )
+    }));
+  };
+
+  const deleteUser = (userId: string) => {
+    if (!tournament.currentUser || tournament.currentUser.role !== 'admin') return;
+    if (userId === tournament.currentUser.id) return; // Не можем удалить себя
+    
+    setTournament(prev => ({
+      ...prev,
+      users: prev.users.filter(user => user.id !== userId)
+    }));
+  };
+
+  const canManageTournament = () => {
+    return tournament.currentUser && ['admin', 'judge'].includes(tournament.currentUser.role);
+  };
+
+  const canViewTournament = () => {
+    return tournament.currentUser !== null;
   };
 
   const startTournament = () => {
@@ -373,16 +481,84 @@ const Index = () => {
     return tournament.players.find(p => p.id === playerId)?.name || 'Неизвестный игрок';
   };
 
+  // Login screen
+  if (showLogin || !tournament.currentUser) {
+    return (
+      <div className="min-h-screen bg-muted/30 p-6 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center flex items-center justify-center">
+              <Icon name="Shield" size={20} className="mr-2" />
+              Вход в систему
+            </CardTitle>
+            <CardDescription className="text-center">
+              Войдите для доступа к турнирной системе
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="username">Имя пользователя</Label>
+              <Input
+                id="username"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                placeholder="admin"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Пароль</Label>
+              <Input
+                id="password"
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                placeholder="admin"
+                onKeyPress={(e) => e.key === 'Enter' && login()}
+              />
+            </div>
+            <Button onClick={login} className="w-full">
+              <Icon name="LogIn" size={16} className="mr-2" />
+              Войти
+            </Button>
+            <div className="text-xs text-muted-foreground text-center">
+              Для тестирования: admin / admin
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canViewTournament()) {
+    return <div>Нет доступа</div>;
+  }
+
   if (tournament.status === 'setup') {
     return (
       <div className="min-h-screen bg-muted/30 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              <Icon name="Trophy" size={40} className="inline mr-3 text-primary" />
-              Система турниров
-            </h1>
-            <p className="text-muted-foreground text-lg">Создайте турнир со швейцарской системой</p>
+          {/* Header with logout */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-center flex-1">
+              <h1 className="text-4xl font-bold text-foreground mb-4">
+                <Icon name="Trophy" size={40} className="inline mr-3 text-primary" />
+                Система турниров
+              </h1>
+              <p className="text-muted-foreground text-lg">Создайте турнир со швейцарской системой</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <div className="font-medium">{tournament.currentUser.name}</div>
+                <div className="text-xs text-muted-foreground capitalize">
+                  {tournament.currentUser.role === 'admin' ? 'Администратор' : 
+                   tournament.currentUser.role === 'judge' ? 'Судья' : 'Игрок'}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={logout}>
+                <Icon name="LogOut" size={14} className="mr-1" />
+                Выход
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -442,62 +618,170 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Icon name="Users" size={20} className="mr-2" />
-                  Участники ({tournament.players.length})
-                </CardTitle>
-                <CardDescription>Добавьте участников турнира</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={newPlayerName}
-                    onChange={(e) => setNewPlayerName(e.target.value)}
-                    placeholder="Имя участника"
-                    onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
-                  />
-                  <Button onClick={addPlayer} size="sm">
-                    <Icon name="Plus" size={16} />
-                  </Button>
-                </div>
-                
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {tournament.players.map((player) => (
-                    <div key={player.id} className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                      <span className="font-medium">{player.name}</span>
-                      <Button 
-                        onClick={() => removePlayer(player.id)}
-                        variant="ghost" 
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Icon name="X" size={16} />
-                      </Button>
+            {canManageTournament() && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Icon name="Users" size={20} className="mr-2" />
+                    Участники ({tournament.players.length})
+                  </CardTitle>
+                  <CardDescription>Добавьте участников турнира</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newPlayerName}
+                      onChange={(e) => setNewPlayerName(e.target.value)}
+                      placeholder="Имя участника"
+                      onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
+                    />
+                    <Button onClick={addPlayer} size="sm">
+                      <Icon name="Plus" size={16} />
+                    </Button>
+                  </div>
+                  
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {tournament.players.map((player) => (
+                      <div key={player.id} className="flex items-center justify-between bg-muted/50 p-2 rounded">
+                        <span className="font-medium">{player.name}</span>
+                        <Button 
+                          onClick={() => removePlayer(player.id)}
+                          variant="ghost" 
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Icon name="X" size={16} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {tournament.currentUser?.role === 'admin' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Icon name="UserCog" size={20} className="mr-2" />
+                    Управление пользователями
+                  </CardTitle>
+                  <CardDescription>Создание и управление учетными записями</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3 p-3 border rounded-lg">
+                    <div className="font-medium">Создать пользователя</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Логин"
+                        value={newUser.username}
+                        onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                      />
+                      <Input
+                        placeholder="Пароль"
+                        type="password"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                      />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Имя"
+                        value={newUser.name}
+                        onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                      />
+                      <Select value={newUser.role} onValueChange={(value: 'admin' | 'judge' | 'player') => setNewUser({...newUser, role: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Администратор</SelectItem>
+                          <SelectItem value="judge">Судья</SelectItem>
+                          <SelectItem value="player">Игрок</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={createUser} size="sm" className="w-full">
+                      <Icon name="UserPlus" size={14} className="mr-2" />
+                      Создать
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="font-medium">Пользователи системы</div>
+                    {tournament.users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-2 rounded border">
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={user.role === 'admin' ? 'default' : user.role === 'judge' ? 'secondary' : 'outline'}
+                          >
+                            {user.role === 'admin' ? 'Адм' : user.role === 'judge' ? 'Судья' : 'Игрок'}
+                          </Badge>
+                          <span className={!user.isActive ? 'line-through text-muted-foreground' : ''}>
+                            {user.name} ({user.username})
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm" 
+                            variant={user.isActive ? "outline" : "default"}
+                            onClick={() => toggleUserStatus(user.id)}
+                            disabled={user.id === tournament.currentUser?.id}
+                          >
+                            <Icon name={user.isActive ? "Ban" : "Check"} size={14} />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                disabled={user.id === tournament.currentUser?.id}
+                              >
+                                <Icon name="Trash2" size={14} />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Удалить пользователя</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Вы уверены что хотите удалить пользователя {user.name}? Это действие нельзя отменить.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteUser(user.id)}>
+                                  Удалить
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          <div className="text-center mt-6">
-            <Button 
-              onClick={startTournament}
-              disabled={
-                tournament.players.length < 2 || 
-                !tournamentName.trim() ||
-                parseInt(swissRounds) < 2 || parseInt(swissRounds) > 6 ||
-                parseInt(playoffTop) < 2 || parseInt(playoffTop) > 32 || !isPowerOfTwo(parseInt(playoffTop))
-              }
-              size="lg"
-              className="px-8"
-            >
-              <Icon name="Play" size={20} className="mr-2" />
-              Начать турнир
-            </Button>
-          </div>
+          {canManageTournament() && (
+            <div className="text-center mt-6">
+              <Button 
+                onClick={startTournament}
+                disabled={
+                  tournament.players.length < 2 || 
+                  !tournamentName.trim() ||
+                  parseInt(swissRounds) < 2 || parseInt(swissRounds) > 6 ||
+                  parseInt(playoffTop) < 2 || parseInt(playoffTop) > 32 || !isPowerOfTwo(parseInt(playoffTop))
+                }
+                size="lg"
+                className="px-8"
+              >
+                <Icon name="Play" size={20} className="mr-2" />
+                Начать турнир
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -506,18 +790,34 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-muted/30 p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">{tournament.name}</h1>
-          <div className="flex items-center justify-center gap-4 text-muted-foreground">
-            <Badge variant="outline">
-              {tournament.status === 'swiss' 
-                ? `Швейцарка: тур ${tournament.currentRound} из ${tournament.swissRounds}`
-                : `Плей-офф: Топ-${tournament.playoffTop}`
-              }
-            </Badge>
-            <Badge variant={tournament.status === 'swiss' ? 'default' : 'secondary'}>
-              {tournament.status === 'swiss' ? 'Швейцарская система' : 'Плей-офф'}
-            </Badge>
+        {/* Header with logout */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold text-foreground mb-2">{tournament.name}</h1>
+            <div className="flex items-center justify-center gap-4 text-muted-foreground">
+              <Badge variant="outline">
+                {tournament.status === 'swiss' 
+                  ? `Швейцарка: тур ${tournament.currentRound} из ${tournament.swissRounds}`
+                  : `Плей-офф: Топ-${tournament.playoffTop}`
+                }
+              </Badge>
+              <Badge variant={tournament.status === 'swiss' ? 'default' : 'secondary'}>
+                {tournament.status === 'swiss' ? 'Швейцарская система' : 'Плей-офф'}
+              </Badge>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-right">
+              <div className="font-medium">{tournament.currentUser?.name}</div>
+              <div className="text-xs text-muted-foreground capitalize">
+                {tournament.currentUser?.role === 'admin' ? 'Администратор' : 
+                 tournament.currentUser?.role === 'judge' ? 'Судья' : 'Игрок'}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={logout}>
+              <Icon name="LogOut" size={14} className="mr-1" />
+              Выход
+            </Button>
           </div>
         </div>
 
@@ -550,7 +850,7 @@ const Index = () => {
                 )}
               </CardHeader>
               <CardContent className="space-y-3">
-                {selectedRoundMatches.length === 0 && selectedRound === tournament.currentRound && tournament.status === 'swiss' && (
+                {selectedRoundMatches.length === 0 && selectedRound === tournament.currentRound && tournament.status === 'swiss' && canManageTournament() && (
                   <div className="text-center py-8">
                     <Button onClick={() => generateSwissPairings()}>
                       Создать паринги
@@ -575,7 +875,7 @@ const Index = () => {
                       )}
                     </div>
                     
-                    {match.player2Id !== 'bye' && selectedRound === tournament.currentRound && (
+                    {match.player2Id !== 'bye' && selectedRound === tournament.currentRound && canManageTournament() && (
                       <div className="flex gap-2 flex-wrap">
                         <Button 
                           size="sm" 
@@ -611,7 +911,7 @@ const Index = () => {
                   </div>
                 ))}
                 
-                {selectedRound === tournament.currentRound && currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && (
+                {selectedRound === tournament.currentRound && currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.result !== null) && canManageTournament() && (
                   <div className="text-center pt-4">
                     {tournament.status === 'swiss' && tournament.currentRound < tournament.swissRounds ? (
                       <Button onClick={nextRound}>
