@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -180,6 +180,16 @@ const Index = () => {
   const formatNameInputRef = useRef<HTMLInputElement>(null);
   const formatCoefficientInputRef = useRef<HTMLInputElement>(null);
 
+  // Инициализация города по умолчанию при смене пользователя
+  useEffect(() => {
+    if (appState.currentUser) {
+      setNewUser(prev => ({
+        ...prev,
+        city: appState.currentUser?.city || ''
+      }));
+    }
+  }, [appState.currentUser]);
+
   // Input handlers with useCallback to prevent focus loss
   const handleLoginUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setLoginForm(prev => ({ ...prev, username: e.target.value }));
@@ -275,6 +285,11 @@ const Index = () => {
         newPassword: '',
         confirmPassword: ''
       });
+      // Устанавливаем город по умолчанию для создания новых пользователей
+      setNewUser(prev => ({
+        ...prev,
+        city: user.city || ''
+      }));
     } else {
       console.log('Login failed - user not found or inactive');
     }
@@ -349,14 +364,14 @@ const Index = () => {
     if (userPasswordInputRef.current) userPasswordInputRef.current.value = '';
     if (userNameInputRef.current) userNameInputRef.current.value = '';
     
-    // Сбрасываем Select поля через состояние
-    setNewUser({
+    // Сбрасываем Select поля через состояние, но сохраняем город
+    setNewUser(prev => ({
       username: '',
       password: '',
       role: 'player',
       name: '',
-      city: ''
-    });
+      city: prev.city // Сохраняем текущий выбранный город
+    }));
 
     const message = (user.role === 'judge' || user.role === 'player')
       ? `Пользователь ${user.name} создан! ${user.role === 'judge' ? 'Судья' : 'Игрок'} также автоматически добавлен в список игроков.`
