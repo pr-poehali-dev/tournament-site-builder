@@ -2435,7 +2435,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
+  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentNameChange, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
 
   // Check if showing login screen
   if (appState.showLogin) {
