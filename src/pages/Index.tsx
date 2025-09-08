@@ -1701,58 +1701,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Управление турниром */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-2 justify-center">
-              {tournament.rounds.length > 0 && (
-                <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
-                  <Icon name="Trash2" size={16} className="mr-2" />
-                  Удалить последний тур
-                </Button>
-              )}
-              {(() => {
-                // Можем создать новый тур если:
-                // 1. Не достигли максимального количества туров
-                // 2. Все результаты предыдущего тура введены
-                const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
-                
-                if (!canGenerateRound) {
-                  // Проверяем можем ли завершить турнир
-                  if (tournament.rounds.length > 0) {
-                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                    if (allMatchesHaveResults && tournament.status !== 'completed') {
-                      return (
-                        <Button onClick={() => finishTournament(tournament.id)} className="bg-green-600 hover:bg-green-700">
-                          <Icon name="Trophy" size={16} className="mr-2" />
-                          Завершить турнир
-                        </Button>
-                      );
-                    }
-                  }
-                  return null;
-                }
-                
-                // Проверяем что все результаты предыдущего тура введены
-                if (tournament.rounds.length > 0) {
-                  const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                  const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                  if (!allMatchesHaveResults) return null;
-                }
-                
-                return (
-                  <Button onClick={() => generatePairings(tournament.id)}>
-                    <Icon name="Users" size={16} className="mr-2" />
-                    Создать {tournament.currentRound + 1} тур
-                  </Button>
-                );
-              })()}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Турнирная таблица */
+        {/* Турнирная таблица */}
         <Card>
           <CardHeader>
             <CardTitle>Турнирная таблица</CardTitle>
@@ -1860,7 +1809,57 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
-
+        
+        {/* Управление турниром */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex gap-2 justify-center">
+              {tournament.rounds.length > 0 && (
+                <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
+                  <Icon name="Trash2" size={16} className="mr-2" />
+                  Удалить последний тур
+                </Button>
+              )}
+              {(() => {
+                // Можем создать новый тур если:
+                // 1. Не достигли максимального количества туров
+                // 2. Все результаты предыдущего тура введены
+                const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
+                
+                if (!canGenerateRound) {
+                  // Проверяем можем ли завершить турнир
+                  if (tournament.rounds.length > 0) {
+                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                    if (allMatchesHaveResults && tournament.status !== 'completed') {
+                      return (
+                        <Button onClick={() => finishTournament(tournament.id)} className="bg-green-600 hover:bg-green-700">
+                          <Icon name="Trophy" size={16} className="mr-2" />
+                          Завершить турнир
+                        </Button>
+                      );
+                    }
+                  }
+                  return null;
+                }
+                
+                // Проверяем что все результаты предыдущего тура введены
+                if (tournament.rounds.length > 0) {
+                  const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                  const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                  if (!allMatchesHaveResults) return null;
+                }
+                
+                return (
+                  <Button onClick={() => generatePairings(tournament.id)}>
+                    <Icon name="Users" size={16} className="mr-2" />
+                    Создать {tournament.currentRound + 1} тур
+                  </Button>
+                );
+              })()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -1999,7 +1998,7 @@ const Index = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">Прогресс</div>
-                          <div className="font-medium">{`${completedRounds}/${totalRounds}`} туров</div>
+                          <div className="font-medium">{completedRounds}/{totalRounds} туров</div>
                           <div className="text-xs text-muted-foreground">{progress}%</div>
                         </div>
                       </div>
