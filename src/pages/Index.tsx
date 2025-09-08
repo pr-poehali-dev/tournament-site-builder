@@ -1026,7 +1026,7 @@ const Index = () => {
     </div>
   );
 
-  const CitiesPage = () => {
+  const CitiesPage = useCallback(() => {
     return (
       <div className="space-y-6">
         <Card>
@@ -1144,7 +1144,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  };
+  }, [appState.cities, appState.players, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, addCity, startEditCity, deleteCity, handleEditCityNameChange, handleEditCityKeyPress, saveEditCity, cancelEditCity]);
 
   // Check if showing login screen
   if (appState.showLogin) {
