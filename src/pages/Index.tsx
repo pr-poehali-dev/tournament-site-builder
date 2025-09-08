@@ -600,28 +600,113 @@ const Index = () => {
     const participants = [...tournament.participants];
     const matches: Match[] = [];
     
-    // Простой алгоритм парингов - случайное разбиение
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    // Рассчитываем очки каждого игрока
+    const playerStats = participants.map(playerId => {
+      const totalPoints = tournament.rounds.reduce((total, round) => {
+        const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+        return total + playerMatches.reduce((matchTotal, match) => {
+          if (match.player1Id === playerId) return matchTotal + match.points1;
+          if (match.player2Id === playerId) return matchTotal + match.points2;
+          return matchTotal;
+        }, 0);
+      }, 0);
+
+      // Создаем список оппонентов из предыдущих туров
+      // Для топ-туров (олимпийская система) учитываем только топ-туры, не швейцарку
+      const isTopRound = tournament.currentRound >= tournament.swissRounds;
+      const previousOpponents = new Set<string>();
+      
+      tournament.rounds.forEach((round, index) => {
+        // Если это топ-тур, учитываем только предыдущие топ-туры
+        const shouldConsiderRound = isTopRound 
+          ? index >= tournament.swissRounds 
+          : true; // Для швейцарки учитываем все предыдущие туры
+          
+        if (shouldConsiderRound) {
+          round.matches.forEach(match => {
+            if (match.player1Id === playerId && match.player2Id) {
+              previousOpponents.add(match.player2Id);
+            } else if (match.player2Id === playerId) {
+              previousOpponents.add(match.player1Id);
+            }
+          });
+        }
+      });
+
+      return {
+        playerId,
+        points: totalPoints,
+        previousOpponents: Array.from(previousOpponents)
+      };
+    });
+
+    // Сортируем по очкам (больше очков = выше позиция для парингов)
+    playerStats.sort((a, b) => b.points - a.points);
     
-    for (let i = 0; i < shuffled.length; i += 2) {
-      if (i + 1 < shuffled.length) {
-        // Матч между двумя игроками
+    // Определяем, кто получает бай (игрок с наименьшими очками среди непарных)
+    const availablePlayers = [...playerStats];
+    
+    // Если нечетное количество игроков, заранее выделяем игрока с наименьшими очками на бай
+    let byePlayer = null;
+    if (availablePlayers.length % 2 !== 0) {
+      // Сортируем по возрастанию очков, чтобы найти игрока с наименьшими очками
+      const sortedForBye = [...availablePlayers].sort((a, b) => a.points - b.points);
+      byePlayer = sortedForBye[0];
+      
+      // Удаляем игрока на бай из доступных
+      const byeIndex = availablePlayers.findIndex(p => p.playerId === byePlayer!.playerId);
+      if (byeIndex !== -1) {
+        availablePlayers.splice(byeIndex, 1);
+      }
+    }
+    
+    // Швейцарский алгоритм парингов
+    while (availablePlayers.length > 1) {
+      let player1 = availablePlayers.shift()!;
+      let player2Index = -1;
+      
+      // Находим подходящего оппонента (с кем не играл)
+      for (let i = 0; i < availablePlayers.length; i++) {
+        const potentialOpponent = availablePlayers[i];
+        if (!player1.previousOpponents.includes(potentialOpponent.playerId)) {
+          player2Index = i;
+          break;
+        }
+      }
+      
+      // Если не нашли подходящего оппонента, берем первого доступного
+      if (player2Index === -1 && availablePlayers.length > 0) {
+        player2Index = 0;
+      }
+      
+      if (player2Index !== -1) {
+        const player2 = availablePlayers.splice(player2Index, 1)[0];
         matches.push({
-          id: `${tournamentId}-r${tournament.currentRound + 1}-m${i/2 + 1}`,
-          player1Id: shuffled[i],
-          player2Id: shuffled[i + 1],
+          id: `${tournamentId}-r${tournament.currentRound + 1}-m${matches.length + 1}`,
+          player1Id: player1.playerId,
+          player2Id: player2.playerId,
           points1: 0,
           points2: 0
         });
       } else {
-        // Бай для последнего игрока
+        // Остался один игрок - получает бай
         matches.push({
           id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
-          player1Id: shuffled[i],
+          player1Id: player1.playerId,
           points1: 3, // 3 очка за бай
           points2: 0
         });
       }
+    }
+    
+    // Добавляем бай для игрока с наименьшими очками (если был выделен)
+    if (byePlayer) {
+      matches.push({
+        id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
+        player1Id: byePlayer.playerId,
+        points1: 3, // 3 очка за бай
+        points2: 0
+      });
     }
 
     const newRound: Round = {
@@ -1193,7 +1278,10 @@ const Index = () => {
   );
 
   const TournamentEditPage = () => {
-    if (!editingTournament) {
+    // Получаем актуальные данные турнира из appState
+    const tournament = editingTournament ? appState.tournaments.find(t => t.id === editingTournament.id) : null;
+    
+    if (!tournament) {
       return (
         <div className="space-y-6">
           <Card>
@@ -1222,9 +1310,9 @@ const Index = () => {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Icon name="Trophy" size={20} />
-                <span>Управление турниром: {editingTournament.name}</span>
-                <Badge variant={editingTournament.status === 'draft' ? 'outline' : editingTournament.status === 'active' ? 'default' : 'secondary'}>
-                  {editingTournament.status === 'draft' ? 'Черновик' : editingTournament.status === 'active' ? 'Активен' : 'Завершён'}
+                <span>Управление турниром: {tournament.name}</span>
+                <Badge variant={tournament.status === 'draft' ? 'outline' : tournament.status === 'active' ? 'default' : 'secondary'}>
+                  {tournament.status === 'draft' ? 'Черновик' : tournament.status === 'active' ? 'Активен' : 'Завершён'}
                 </Badge>
               </div>
               <Button variant="outline" onClick={() => navigateTo('tournaments')}>
@@ -1233,7 +1321,7 @@ const Index = () => {
               </Button>
             </CardTitle>
             <CardDescription>
-              {editingTournament.date} • {editingTournament.city} • {editingTournament.format} • {editingTournament.participants.length} участников
+              {tournament.date} • {tournament.city} • {tournament.format} • {tournament.participants.length} участников
             </CardDescription>
           </CardHeader>
         </Card>
@@ -1243,16 +1331,19 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Туры турнира</span>
-              {editingTournament.currentRound < editingTournament.swissRounds && (
-                <Button onClick={() => generatePairings(editingTournament.id)}>
+              {tournament.currentRound < (tournament.swissRounds + tournament.topRounds) && (
+                <Button onClick={() => generatePairings(tournament.id)}>
                   <Icon name="Users" size={16} className="mr-2" />
-                  Сгенерировать тур {editingTournament.currentRound + 1}
+                  {tournament.currentRound < tournament.swissRounds 
+                    ? `Сгенерировать швейцарский тур ${tournament.currentRound + 1}`
+                    : `Сгенерировать топ ${tournament.currentRound - tournament.swissRounds + 1}`
+                  }
                 </Button>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {editingTournament.rounds.length === 0 ? (
+            {tournament.rounds.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Icon name="Calendar" size={48} className="mx-auto mb-4 opacity-50" />
                 <p>Туры не созданы</p>
@@ -1260,7 +1351,7 @@ const Index = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {editingTournament.rounds.map(round => (
+                {tournament.rounds.map(round => (
                   <div key={round.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-medium flex items-center gap-2">
@@ -1295,21 +1386,21 @@ const Index = () => {
                                 <Button
                                   size="sm"
                                   variant={match.result === 'win1' ? 'default' : 'outline'}
-                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'win1')}
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win1')}
                                 >
                                   1-0
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant={match.result === 'draw' ? 'default' : 'outline'}
-                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'draw')}
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'draw')}
                                 >
                                   0.5-0.5
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant={match.result === 'win2' ? 'default' : 'outline'}
-                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'win2')}
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win2')}
                                 >
                                   0-1
                                 </Button>
@@ -1335,10 +1426,10 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {editingTournament.participants
+              {tournament.participants
                 .map(playerId => {
                   const player = appState.players.find(p => p.id === playerId);
-                  const totalPoints = editingTournament.rounds.reduce((total, round) => {
+                  const totalPoints = tournament.rounds.reduce((total, round) => {
                     const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
                     return total + playerMatches.reduce((matchTotal, match) => {
                       if (match.player1Id === playerId) return matchTotal + match.points1;
