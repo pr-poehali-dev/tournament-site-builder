@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -1060,7 +1060,7 @@ const Index = () => {
     </div>
   );
 
-  const CitiesPage = () => (
+  const CitiesPage = useMemo(() => (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -1163,7 +1163,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  );
+  ), [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
 
   // Main render with navigation
   return (
