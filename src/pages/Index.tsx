@@ -199,17 +199,7 @@ const Index = () => {
     setLoginForm(prev => ({ ...prev, password: e.target.value }));
   }, []);
 
-  const handleNewUserNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewUser(prev => ({ ...prev, name: e.target.value }));
-  }, []);
 
-  const handleNewUserUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewUser(prev => ({ ...prev, username: e.target.value }));
-  }, []);
-
-  const handleNewUserPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewUser(prev => ({ ...prev, password: e.target.value }));
-  }, []);
 
   const handleNewUserCityChange = useCallback((value: string) => {
     setNewUser(prev => ({ ...prev, city: value }));
@@ -310,10 +300,10 @@ const Index = () => {
       return;
     }
 
-    // Получаем значения из состояния
-    const username = newUser.username?.trim() || '';
-    const password = newUser.password?.trim() || '';
-    const name = newUser.name?.trim() || '';
+    // Получаем значения из refs для текстовых полей и из состояния для селектов
+    const username = userUsernameInputRef.current?.value?.trim() || '';
+    const password = userPasswordInputRef.current?.value?.trim() || '';
+    const name = userNameInputRef.current?.value?.trim() || '';
     const city = newUser.city?.trim() || undefined;
     const role = newUser.role;
 
@@ -359,13 +349,15 @@ const Index = () => {
       players: newPlayer ? [...prev.players, newPlayer] : prev.players
     }));
 
-    // Сбрасываем поля через состояние, но сохраняем город
+    // Очищаем текстовые поля через refs
+    if (userUsernameInputRef.current) userUsernameInputRef.current.value = '';
+    if (userPasswordInputRef.current) userPasswordInputRef.current.value = '';
+    if (userNameInputRef.current) userNameInputRef.current.value = '';
+    
+    // Сбрасываем селекты через состояние, но сохраняем город
     setNewUser(prev => ({
-      username: '',
-      password: '',
-      role: 'player',
-      name: '',
-      city: prev.city // Сохраняем текущий выбранный город
+      ...prev,
+      role: 'player' // Сбрасываем только роль, город сохраняем
     }));
 
     const message = (user.role === 'judge' || user.role === 'player')
@@ -1128,24 +1120,21 @@ const Index = () => {
             <div className="font-medium">Создать пользователя</div>
             <div className="grid grid-cols-2 gap-2">
               <Input
+                ref={userUsernameInputRef}
                 type="text"
                 placeholder="Логин"
-                value={newUser.username}
-                onChange={handleNewUserUsernameChange}
               />
               <Input
+                ref={userPasswordInputRef}
                 type="password"
                 placeholder="Пароль"
-                value={newUser.password}
-                onChange={handleNewUserPasswordChange}
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <Input
+                ref={userNameInputRef}
                 type="text"
                 placeholder="Имя"
-                value={newUser.name}
-                onChange={handleNewUserNameChange}
               />
               <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
                 <SelectTrigger>
@@ -1234,7 +1223,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserUsernameChange, handleNewUserPasswordChange, handleNewUserNameChange, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
+  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
 
   const ProfilePage = () => (
     <div className="max-w-2xl mx-auto space-y-6">
