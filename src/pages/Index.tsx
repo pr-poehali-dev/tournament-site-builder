@@ -180,6 +180,7 @@ const Index = () => {
 
   // Navigation functions
   const navigateTo = (page: Page) => {
+    console.log('Navigation to:', page);
     setAppState(prev => ({ ...prev, currentPage: page }));
   };
 
@@ -1025,7 +1026,12 @@ const Index = () => {
     </div>
   );
 
-  const CitiesPage = useMemo(() => (
+  const CitiesPage = useMemo(() => {
+    console.log('CitiesPage rendering');
+    console.log('Cities data:', appState.cities);
+    console.log('Current user:', appState.currentUser);
+    
+    return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -1128,7 +1134,8 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  ), [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
+    );
+  }, [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
 
   // Check if showing login screen
   if (appState.showLogin) {
@@ -1182,6 +1189,10 @@ const Index = () => {
   console.log('Main render - currentPage:', appState.currentPage);
   console.log('Main render - currentUser:', appState.currentUser);
   console.log('Main render - showLogin:', appState.showLogin);
+  
+  if (appState.currentPage === 'cities') {
+    console.log('Should render CitiesPage, cities data:', appState.cities);
+  }
   
   return (
     <div className="min-h-screen bg-muted/30 p-6">
