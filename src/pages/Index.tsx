@@ -266,12 +266,6 @@ const Index = () => {
   
   // Tournament creation states
   const [newTournament, setNewTournament] = useState({
-    date: '',
-    city: '',
-    format: '',
-    isRated: true,
-    swissRounds: 3,
-    topRounds: 0,
     participants: [] as string[]
   });
 
@@ -289,6 +283,12 @@ const Index = () => {
   const formatNameInputRef = useRef<HTMLInputElement>(null);
   const formatCoefficientInputRef = useRef<HTMLInputElement>(null);
   const tournamentNameInputRef = useRef<HTMLInputElement>(null);
+  const tournamentDateInputRef = useRef<HTMLInputElement>(null);
+  const tournamentCitySelectRef = useRef<HTMLSelectElement>(null);
+  const tournamentFormatSelectRef = useRef<HTMLSelectElement>(null);
+  const tournamentIsRatedInputRef = useRef<HTMLInputElement>(null);
+  const tournamentSwissRoundsInputRef = useRef<HTMLInputElement>(null);
+  const tournamentTopRoundsInputRef = useRef<HTMLInputElement>(null);
 
 
 
@@ -2175,31 +2175,7 @@ const Index = () => {
     );
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
-  // Мемоизированные обработчики для создания турнира
-
-  const handleTournamentDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, date: e.target.value }));
-  };
-
-  const handleTournamentCityChange = (value: string) => {
-    setNewTournament(prev => ({ ...prev, city: value }));
-  };
-
-  const handleTournamentFormatChange = (value: string) => {
-    setNewTournament(prev => ({ ...prev, format: value }));
-  };
-
-  const handleTournamentIsRatedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, isRated: e.target.checked }));
-  };
-
-  const handleSwissRoundsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, swissRounds: Math.max(1, Math.min(8, parseInt(e.target.value) || 1)) }));
-  };
-
-  const handleTopRoundsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, topRounds: Math.max(0, parseInt(e.target.value) || 0) }));
-  };
+  // Tournament form handlers - все поля теперь используют refs
 
   const toggleParticipant = (playerId: string) => {
     setNewTournament(prev => ({
@@ -2213,20 +2189,26 @@ const Index = () => {
   const CreateTournamentPage = React.memo(() => {
     const handleTournamentSubmit = () => {
       const tournamentName = tournamentNameInputRef.current?.value?.trim() || '';
+      const tournamentDate = tournamentDateInputRef.current?.value?.trim() || '';
+      const tournamentCity = tournamentCitySelectRef.current?.value?.trim() || '';
+      const tournamentFormat = tournamentFormatSelectRef.current?.value?.trim() || '';
+      const tournamentIsRated = tournamentIsRatedInputRef.current?.checked ?? true;
+      const tournamentSwissRounds = Math.max(1, Math.min(8, parseInt(tournamentSwissRoundsInputRef.current?.value || '3') || 3));
+      const tournamentTopRounds = Math.max(0, parseInt(tournamentTopRoundsInputRef.current?.value || '0') || 0);
       
       if (!tournamentName) {
         alert('Введите название турнира');
         return;
       }
-      if (!newTournament.date) {
+      if (!tournamentDate) {
         alert('Выберите дату турнира');
         return;
       }
-      if (!newTournament.city) {
+      if (!tournamentCity) {
         alert('Выберите город');
         return;
       }
-      if (!newTournament.format) {
+      if (!tournamentFormat) {
         alert('Выберите формат');
         return;
       }
@@ -2238,13 +2220,13 @@ const Index = () => {
       const tournament: Tournament = {
         id: Date.now().toString(),
         name: tournamentName,
-        date: newTournament.date,
-        city: newTournament.city,
-        format: newTournament.format,
-        description: `Турнир по формату ${newTournament.format} в городе ${newTournament.city}`,
-        isRated: newTournament.isRated,
-        swissRounds: newTournament.swissRounds,
-        topRounds: newTournament.topRounds,
+        date: tournamentDate,
+        city: tournamentCity,
+        format: tournamentFormat,
+        description: `Турнир по формату ${tournamentFormat} в городе ${tournamentCity}`,
+        isRated: tournamentIsRated,
+        swissRounds: tournamentSwissRounds,
+        topRounds: tournamentTopRounds,
         participants: [...newTournament.participants],
         status: 'draft',
         rounds: [],
@@ -2257,16 +2239,15 @@ const Index = () => {
       }));
 
       // Сбросить форму
-      if (tournamentNameInputRef.current) {
-        tournamentNameInputRef.current.value = '';
-      }
+      if (tournamentNameInputRef.current) tournamentNameInputRef.current.value = '';
+      if (tournamentDateInputRef.current) tournamentDateInputRef.current.value = '';
+      if (tournamentCitySelectRef.current) tournamentCitySelectRef.current.value = '';
+      if (tournamentFormatSelectRef.current) tournamentFormatSelectRef.current.value = '';
+      if (tournamentIsRatedInputRef.current) tournamentIsRatedInputRef.current.checked = true;
+      if (tournamentSwissRoundsInputRef.current) tournamentSwissRoundsInputRef.current.value = '3';
+      if (tournamentTopRoundsInputRef.current) tournamentTopRoundsInputRef.current.value = '0';
+      
       setNewTournament({
-        date: '',
-        city: '',
-        format: '',
-        isRated: true,
-        swissRounds: 3,
-        topRounds: 0,
         participants: []
       });
 
@@ -2304,43 +2285,48 @@ const Index = () => {
               <div className="space-y-2">
                 <Label htmlFor="tournament-date">Дата турнира</Label>
                 <Input
+                  key="tournament-date-input"
+                  ref={tournamentDateInputRef}
                   id="tournament-date"
                   type="date"
-                  value={newTournament.date}
-                  onChange={handleTournamentDateChange}
+                  autoComplete="off"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="tournament-city">Город</Label>
-                <Select value={newTournament.city} onValueChange={handleTournamentCityChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите город" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {appState.cities.map(city => (
-                      <SelectItem key={city.id} value={city.name}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  key="tournament-city-select"
+                  ref={tournamentCitySelectRef}
+                  id="tournament-city"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="">Выберите город</option>
+                  {appState.cities.map(city => (
+                    <option key={city.id} value={city.name}>
+                      {city.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="tournament-format">Формат</Label>
-                <Select value={newTournament.format} onValueChange={handleTournamentFormatChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите формат" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {appState.tournamentFormats.map(format => (
-                      <SelectItem key={format.id} value={format.name}>
-                        {format.name} (коэф. {format.coefficient})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  key="tournament-format-select"
+                  ref={tournamentFormatSelectRef}
+                  id="tournament-format"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="">Выберите формат</option>
+                  {appState.tournamentFormats.map(format => (
+                    <option key={format.id} value={format.name}>
+                      {format.name} (коэф. {format.coefficient})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -2348,10 +2334,11 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
                 <input
+                  key="tournament-rated-checkbox"
+                  ref={tournamentIsRatedInputRef}
                   type="checkbox"
                   id="is-rated"
-                  checked={newTournament.isRated}
-                  onChange={handleTournamentIsRatedChange}
+                  defaultChecked={true}
                   className="w-4 h-4"
                 />
                 <Label htmlFor="is-rated">Рейтинговый турнир</Label>
@@ -2360,23 +2347,27 @@ const Index = () => {
               <div className="space-y-2">
                 <Label htmlFor="swiss-rounds">Туры швейцарки (1-8)</Label>
                 <Input
+                  key="tournament-swiss-rounds-input"
+                  ref={tournamentSwissRoundsInputRef}
                   id="swiss-rounds"
                   type="number"
                   min="1"
                   max="8"
-                  value={newTournament.swissRounds}
-                  onChange={handleSwissRoundsChange}
+                  defaultValue="3"
+                  autoComplete="off"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="top-rounds">Туры топа</Label>
                 <Input
+                  key="tournament-top-rounds-input"
+                  ref={tournamentTopRoundsInputRef}
                   id="top-rounds"
                   type="number"
                   min="0"
-                  value={newTournament.topRounds}
-                  onChange={handleTopRoundsChange}
+                  defaultValue="0"
+                  autoComplete="off"
                 />
               </div>
             </div>
