@@ -1999,7 +1999,7 @@ const Index = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">Прогресс</div>
-                          <div className="font-medium">{completedRounds}/{totalRounds} туров</div>
+                          <div className="font-medium">{`${completedRounds}/${totalRounds}`} туров</div>
                           <div className="text-xs text-muted-foreground">{progress}%</div>
                         </div>
                       </div>
@@ -2089,7 +2089,7 @@ const Index = () => {
                     <div className="font-medium">{player.name}</div>
                     <div className="text-sm text-muted-foreground">
                       {player.city && `${player.city} • `}
-                      {player.tournaments} турниров • {player.wins}П/{player.losses}Пр/{player.draws}Н
+                      {player.tournaments} турниров • {`${player.wins}П/${player.losses}Пр/${player.draws}Н`}
                     </div>
                   </div>
                 </div>
