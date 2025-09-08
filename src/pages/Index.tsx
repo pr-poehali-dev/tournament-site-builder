@@ -1999,7 +1999,7 @@ const Index = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">Прогресс</div>
-                          <div className="font-medium">{completedRounds}/{totalRounds} туров</div>
+                          <div className="font-medium">{`${completedRounds}/${totalRounds}`} туров</div>
                           <div className="text-xs text-muted-foreground">{progress}%</div>
                         </div>
                       </div>
