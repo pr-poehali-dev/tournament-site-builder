@@ -91,6 +91,15 @@ const Index = () => {
   const [appState, setAppState] = useState<AppState>({
     users: [
       {
+        id: 'admin',
+        username: 'admin',
+        password: 'admin',
+        role: 'admin',
+        name: 'Администратор',
+        isActive: true,
+        city: 'Рязань'
+      },
+      {
         id: 'user1',
         username: 'user1',
         password: '1234',
