@@ -20,12 +20,25 @@ interface User {
   city?: string;
 }
 
-type Page = 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile';
+type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile';
+
+interface Player {
+  id: string;
+  name: string;
+  city?: string;
+  rating: number;
+  tournaments: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
 
 interface AppState {
   users: User[];
   currentUser: User | null;
   currentPage: Page;
+  players: Player[];
+  showLogin: boolean;
 }
 
 const Index = () => {
@@ -40,12 +53,19 @@ const Index = () => {
       city: 'Москва'
     }],
     currentUser: null,
-    currentPage: 'tournaments'
+    currentPage: 'rating',
+    players: [
+      { id: '1', name: 'Алексей Петров', city: 'Москва', rating: 2150, tournaments: 15, wins: 12, losses: 2, draws: 1 },
+      { id: '2', name: 'Мария Сидорова', city: 'СПб', rating: 2080, tournaments: 12, wins: 9, losses: 2, draws: 1 },
+      { id: '3', name: 'Игорь Иванов', city: 'Казань', rating: 1950, tournaments: 8, wins: 5, losses: 2, draws: 1 },
+      { id: '4', name: 'Екатерина Козлова', city: 'Москва', rating: 1890, tournaments: 10, wins: 6, losses: 3, draws: 1 },
+      { id: '5', name: 'Дмитрий Новиков', city: 'Уфа', rating: 1820, tournaments: 6, wins: 3, losses: 2, draws: 1 }
+    ],
+    showLogin: false
   });
   
   // Auth states
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [showLogin, setShowLogin] = useState(true);
   
   // User management states
   const [newUser, setNewUser] = useState({
@@ -78,8 +98,7 @@ const Index = () => {
     );
     
     if (user) {
-      setAppState(prev => ({ ...prev, currentUser: user }));
-      setShowLogin(false);
+      setAppState(prev => ({ ...prev, currentUser: user, showLogin: false }));
       setLoginForm({ username: '', password: '' });
       setProfileEdit({
         city: user.city || '',
@@ -91,8 +110,11 @@ const Index = () => {
   };
 
   const logout = () => {
-    setAppState(prev => ({ ...prev, currentUser: null }));
-    setShowLogin(true);
+    setAppState(prev => ({ ...prev, currentUser: null, showLogin: false, currentPage: 'rating' }));
+  };
+
+  const showLoginForm = () => {
+    setAppState(prev => ({ ...prev, showLogin: true }));
   };
 
   // User management functions
@@ -178,8 +200,41 @@ const Index = () => {
     }));
   };
 
-  const canViewTournament = () => {
-    return appState.currentUser !== null;
+  // Player management functions
+  const addPlayer = () => {
+    if (!appState.currentUser || !['admin', 'judge'].includes(appState.currentUser.role)) return;
+    if (!newUser.name.trim()) return;
+
+    const player: Player = {
+      id: Date.now().toString(),
+      name: newUser.name,
+      city: newUser.city || undefined,
+      rating: 1200,
+      tournaments: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0
+    };
+
+    setAppState(prev => ({
+      ...prev,
+      players: [...prev.players, player]
+    }));
+
+    setNewUser(prev => ({
+      ...prev,
+      name: '',
+      city: ''
+    }));
+  };
+
+  const deletePlayer = (playerId: string) => {
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
+    
+    setAppState(prev => ({
+      ...prev,
+      players: prev.players.filter(player => player.id !== playerId)
+    }));
   };
 
   // Header Navigation Component
@@ -190,58 +245,69 @@ const Index = () => {
         <h1 className="text-2xl font-bold text-foreground">Турнирная система</h1>
       </div>
       <div className="flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <Icon name="User" size={16} />
-              <span>{appState.currentUser?.name}</span>
-              <Badge variant="outline" className="text-xs">
-                {appState.currentUser?.role === 'admin' ? 'Админ' : 
-                 appState.currentUser?.role === 'judge' ? 'Судья' : 'Игрок'}
-              </Badge>
-              <Icon name="ChevronDown" size={14} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {appState.currentUser?.role === 'admin' && (
-              <DropdownMenuItem onClick={() => navigateTo('admin')}>
-                <Icon name="Settings" size={16} className="mr-2" />
-                Админка
+        {appState.currentUser ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <Icon name="User" size={16} />
+                <span>{appState.currentUser.name}</span>
+                <Badge variant="outline" className="text-xs">
+                  {appState.currentUser.role === 'admin' ? 'Админ' : 
+                   appState.currentUser.role === 'judge' ? 'Судья' : 'Игрок'}
+                </Badge>
+                <Icon name="ChevronDown" size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => navigateTo('rating')}>
+                <Icon name="Award" size={16} className="mr-2" />
+                Рейтинг
               </DropdownMenuItem>
-            )}
-            {(appState.currentUser?.role === 'admin' || appState.currentUser?.role === 'judge') && (
-              <DropdownMenuItem onClick={() => navigateTo('tournaments')}>
-                <Icon name="Trophy" size={16} className="mr-2" />
-                Турниры
+              {appState.currentUser.role === 'admin' && (
+                <DropdownMenuItem onClick={() => navigateTo('admin')}>
+                  <Icon name="Settings" size={16} className="mr-2" />
+                  Админка
+                </DropdownMenuItem>
+              )}
+              {(appState.currentUser.role === 'admin' || appState.currentUser.role === 'judge') && (
+                <DropdownMenuItem onClick={() => navigateTo('tournaments')}>
+                  <Icon name="Trophy" size={16} className="mr-2" />
+                  Турниры
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => navigateTo('my-tournaments')}>
+                <Icon name="User" size={16} className="mr-2" />
+                Мои турниры
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => navigateTo('my-tournaments')}>
-              <Icon name="User" size={16} className="mr-2" />
-              Мои турниры
-            </DropdownMenuItem>
-            {(appState.currentUser?.role === 'admin' || appState.currentUser?.role === 'judge') && (
-              <DropdownMenuItem onClick={() => navigateTo('players')}>
-                <Icon name="Users" size={16} className="mr-2" />
-                Игроки
+              {(appState.currentUser.role === 'admin' || appState.currentUser.role === 'judge') && (
+                <DropdownMenuItem onClick={() => navigateTo('players')}>
+                  <Icon name="Users" size={16} className="mr-2" />
+                  Игроки
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => navigateTo('profile')}>
+                <Icon name="UserCog" size={16} className="mr-2" />
+                Профиль
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={() => navigateTo('profile')}>
-              <Icon name="UserCog" size={16} className="mr-2" />
-              Профиль
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-red-600">
-              <Icon name="LogOut" size={16} className="mr-2" />
-              Выход
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} className="text-red-600">
+                <Icon name="LogOut" size={16} className="mr-2" />
+                Выход
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button onClick={showLoginForm} variant="default">
+            <Icon name="LogIn" size={16} className="mr-2" />
+            Вход
+          </Button>
+        )}
       </div>
     </div>
   );
 
   // Login screen
-  if (showLogin || !appState.currentUser) {
+  if (appState.showLogin) {
     return (
       <div className="min-h-screen bg-muted/30 p-6 flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -288,9 +354,54 @@ const Index = () => {
     );
   }
 
-  if (!canViewTournament()) {
-    return <div>Нет доступа</div>;
-  }
+  // Rating Page Component  
+  const RatingPage = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Icon name="Award" size={20} className="mr-2" />
+            Рейтинг игроков
+          </CardTitle>
+          <CardDescription>Общий рейтинг всех зарегистрированных игроков</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {appState.players
+              .sort((a, b) => b.rating - a.rating)
+              .map((player, index) => (
+                <div key={player.id} className="flex items-center justify-between p-4 rounded border bg-card">
+                  <div className="flex items-center gap-4">
+                    <Badge variant={index === 0 ? 'default' : index < 3 ? 'secondary' : 'outline'} className="w-8 h-8 flex items-center justify-center rounded-full">
+                      {index + 1}
+                    </Badge>
+                    <div>
+                      <div className="font-medium text-lg">{player.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {player.city && `${player.city} • `}
+                        {player.tournaments} турниров • 
+                        {player.wins}П/{player.losses}Пр/{player.draws}Н
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">{player.rating}</div>
+                    <div className="text-xs text-muted-foreground">Рейтинг</div>
+                  </div>
+                </div>
+              ))}
+            {appState.players.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Icon name="Award" size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Пока нет игроков в рейтинге</p>
+                <p className="text-sm mt-2">Игроки появятся после участия в турнирах</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   // Page Components
   const AdminPage = () => (
@@ -559,20 +670,83 @@ const Index = () => {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <Icon name="Users" size={20} className="mr-2" />
-              Управление игроками
+              Управление игроками ({appState.players.length})
             </div>
-            <Button>
+            <Button onClick={addPlayer}>
               <Icon name="UserPlus" size={16} className="mr-2" />
               Добавить игрока
             </Button>
           </CardTitle>
           <CardDescription>Создание и управление игроками</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <Icon name="Users" size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Пока нет игроков</p>
-            <p className="text-sm mt-2">Добавьте игроков для участия в турнирах</p>
+        <CardContent className="space-y-4">
+          <div className="space-y-3 p-3 border rounded-lg">
+            <div className="font-medium">Добавить нового игрока</div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Имя игрока"
+                value={newUser.name}
+                onChange={(e) => setNewUser(prev => ({...prev, name: e.target.value}))}
+              />
+              <Input
+                placeholder="Город"
+                value={newUser.city}
+                onChange={(e) => setNewUser(prev => ({...prev, city: e.target.value}))}
+              />
+              <Button onClick={addPlayer}>
+                <Icon name="Plus" size={16} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {appState.players.map((player) => (
+              <div key={player.id} className="flex items-center justify-between p-3 rounded border">
+                <div className="flex items-center gap-3">
+                  <div className="text-center min-w-[60px]">
+                    <div className="text-lg font-bold text-primary">{player.rating}</div>
+                    <div className="text-xs text-muted-foreground">рейтинг</div>
+                  </div>
+                  <div>
+                    <div className="font-medium">{player.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {player.city && `${player.city} • `}
+                      {player.tournaments} турниров • {player.wins}П/{player.losses}Пр/{player.draws}Н
+                    </div>
+                  </div>
+                </div>
+                {appState.currentUser?.role === 'admin' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive">
+                        <Icon name="Trash2" size={14} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить игрока</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Вы уверены что хотите удалить игрока {player.name}? Это действие нельзя отменить.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deletePlayer(player.id)}>
+                          Удалить
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            ))}
+            {appState.players.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Icon name="Users" size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Пока нет игроков</p>
+                <p className="text-sm mt-2">Добавьте игроков для участия в турнирах</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -585,6 +759,7 @@ const Index = () => {
       <div className="max-w-6xl mx-auto">
         <NavigationHeader />
         
+        {appState.currentPage === 'rating' && <RatingPage />}
         {appState.currentPage === 'admin' && <AdminPage />}
         {appState.currentPage === 'profile' && <ProfilePage />}
         {appState.currentPage === 'tournaments' && <TournamentsPage />}
