@@ -651,6 +651,7 @@ const Index = () => {
         </Card>
       </div>
     );
+  };
 
   // Page Components
   const AdminPage = () => (
