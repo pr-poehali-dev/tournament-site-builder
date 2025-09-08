@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -101,6 +101,61 @@ const Index = () => {
   // Cities management states
   const [newCityName, setNewCityName] = useState('');
   const [editingCity, setEditingCity] = useState<{ id: string; name: string } | null>(null);
+
+  // Input handlers with useCallback to prevent focus loss
+  const handleLoginUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginForm(prev => ({ ...prev, username: e.target.value }));
+  }, []);
+
+  const handleLoginPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginForm(prev => ({ ...prev, password: e.target.value }));
+  }, []);
+
+  const handleNewUserNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUser(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
+  const handleNewUserUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUser(prev => ({ ...prev, username: e.target.value }));
+  }, []);
+
+  const handleNewUserPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUser(prev => ({ ...prev, password: e.target.value }));
+  }, []);
+
+  const handleNewUserCityChange = useCallback((value: string) => {
+    setNewUser(prev => ({ ...prev, city: value }));
+  }, []);
+
+  const handleNewUserRoleChange = useCallback((value: 'admin' | 'judge' | 'player') => {
+    setNewUser(prev => ({ ...prev, role: value }));
+  }, []);
+
+  const handleProfileCityChange = useCallback((value: string) => {
+    setProfileEdit(prev => ({ ...prev, city: value }));
+  }, []);
+
+  const handleProfileCurrentPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileEdit(prev => ({ ...prev, currentPassword: e.target.value }));
+  }, []);
+
+  const handleProfileNewPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileEdit(prev => ({ ...prev, newPassword: e.target.value }));
+  }, []);
+
+  const handleProfileConfirmPasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileEdit(prev => ({ ...prev, confirmPassword: e.target.value }));
+  }, []);
+
+  const handleNewCityNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCityName(e.target.value);
+  }, []);
+
+  const handleEditCityNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (editingCity) {
+      setEditingCity({ ...editingCity, name: e.target.value });
+    }
+  }, [editingCity]);
 
   // Navigation functions
   const navigateTo = (page: Page) => {
@@ -510,7 +565,7 @@ const Index = () => {
               <Input
                 id="username"
                 value={loginForm.username}
-                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                onChange={handleLoginUsernameChange}
                 placeholder="admin"
               />
             </div>
@@ -520,7 +575,7 @@ const Index = () => {
                 id="password"
                 type="password"
                 value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                onChange={handleLoginPasswordChange}
                 placeholder="admin"
                 onKeyPress={(e) => e.key === 'Enter' && login()}
               />
@@ -605,22 +660,22 @@ const Index = () => {
               <Input
                 placeholder="Логин"
                 value={newUser.username}
-                onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                onChange={handleNewUserUsernameChange}
               />
               <Input
                 placeholder="Пароль"
                 type="password"
                 value={newUser.password}
-                onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                onChange={handleNewUserPasswordChange}
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <Input
                 placeholder="Имя"
                 value={newUser.name}
-                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                onChange={handleNewUserNameChange}
               />
-              <Select value={newUser.city} onValueChange={(value) => setNewUser({...newUser, city: value})}>
+              <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Город" />
                 </SelectTrigger>
@@ -632,7 +687,7 @@ const Index = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={newUser.role} onValueChange={(value: 'admin' | 'judge' | 'player') => setNewUser({...newUser, role: value})}>
+              <Select value={newUser.role} onValueChange={handleNewUserRoleChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -753,7 +808,7 @@ const Index = () => {
             <div className="grid gap-4">
               <div>
                 <Label htmlFor="city">Город</Label>
-                <Select value={profileEdit.city} onValueChange={(value) => setProfileEdit({...profileEdit, city: value})}>
+                <Select value={profileEdit.city} onValueChange={handleProfileCityChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите город" />
                   </SelectTrigger>
@@ -775,7 +830,7 @@ const Index = () => {
                     id="current-password"
                     type="password"
                     value={profileEdit.currentPassword}
-                    onChange={(e) => setProfileEdit({...profileEdit, currentPassword: e.target.value})}
+                    onChange={handleProfileCurrentPasswordChange}
                     placeholder="Введите текущий пароль"
                   />
                 </div>
@@ -785,7 +840,7 @@ const Index = () => {
                     id="new-password"
                     type="password"
                     value={profileEdit.newPassword}
-                    onChange={(e) => setProfileEdit({...profileEdit, newPassword: e.target.value})}
+                    onChange={handleProfileNewPasswordChange}
                     placeholder="Введите новый пароль"
                   />
                 </div>
@@ -795,7 +850,7 @@ const Index = () => {
                     id="confirm-password"
                     type="password"
                     value={profileEdit.confirmPassword}
-                    onChange={(e) => setProfileEdit({...profileEdit, confirmPassword: e.target.value})}
+                    onChange={handleProfileConfirmPasswordChange}
                     placeholder="Повторите новый пароль"
                   />
                 </div>
@@ -883,10 +938,10 @@ const Index = () => {
               <Input
                 placeholder="Имя игрока"
                 value={newUser.name}
-                onChange={(e) => setNewUser(prev => ({...prev, name: e.target.value}))}
+                onChange={handleNewUserNameChange}
                 onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
               />
-              <Select value={newUser.city} onValueChange={(value) => setNewUser(prev => ({...prev, city: value}))}>
+              <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите город" />
                 </SelectTrigger>
@@ -978,7 +1033,7 @@ const Index = () => {
               <Input
                 placeholder="Название города"
                 value={newCityName}
-                onChange={(e) => setNewCityName(e.target.value)}
+                onChange={handleNewCityNameChange}
                 onKeyPress={(e) => e.key === 'Enter' && addCity()}
               />
               <Button onClick={addCity}>
@@ -996,7 +1051,7 @@ const Index = () => {
                     <div className="flex gap-2">
                       <Input
                         value={editingCity.name}
-                        onChange={(e) => setEditingCity({...editingCity, name: e.target.value})}
+                        onChange={handleEditCityNameChange}
                         onKeyPress={(e) => e.key === 'Enter' && saveEditCity()}
                       />
                       <Button size="sm" onClick={saveEditCity}>
