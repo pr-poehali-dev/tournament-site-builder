@@ -766,7 +766,8 @@ const Index = () => {
             player1Id: player1.playerId,
             player2Id: player2.playerId,
             points1: 0,
-            points2: 0
+            points2: 0,
+            tableNumber: matches.length + 1 // Номер стола начинается с 1
           });
         }
       }
@@ -777,7 +778,8 @@ const Index = () => {
           id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
           player1Id: byePlayer.playerId,
           points1: 3, // 3 очка за бай
-          points2: 0
+          points2: 0,
+          tableNumber: matches.length + 1 // Номер стола для БАЯ
         });
       }
     }
@@ -842,6 +844,21 @@ const Index = () => {
                     }
                   : round
               )
+            }
+          : tournament
+      )
+    }));
+  }, []);
+
+  const deleteLastRound = useCallback((tournamentId: string) => {
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(tournament =>
+        tournament.id === tournamentId && tournament.rounds.length > 0
+          ? {
+              ...tournament,
+              rounds: tournament.rounds.slice(0, -1), // Удаляем последний тур
+              currentRound: tournament.currentRound - 1 // Уменьшаем счетчик туров
             }
           : tournament
       )
@@ -1485,28 +1502,36 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Туры турнира</span>
-              {(() => {
-                // Можем создать новый тур если:
-                // 1. Не достигли максимального количества туров
-                // 2. Все результаты предыдущего тура введены
-                const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
-                
-                if (!canGenerateRound) return false;
-                
-                // Проверяем что все результаты предыдущего тура введены
-                if (tournament.rounds.length > 0) {
-                  const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                  const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                  return allMatchesHaveResults;
-                }
-                
-                return true; // Первый тур можно всегда создать
-              })() && (
-                <Button onClick={() => generatePairings(tournament.id)}>
-                  <Icon name="Users" size={16} className="mr-2" />
-                  Создать {tournament.currentRound + 1} тур
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {tournament.rounds.length > 0 && (
+                  <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
+                    <Icon name="Trash2" size={16} className="mr-2" />
+                    Удалить последний тур
+                  </Button>
+                )}
+                {(() => {
+                  // Можем создать новый тур если:
+                  // 1. Не достигли максимального количества туров
+                  // 2. Все результаты предыдущего тура введены
+                  const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
+                  
+                  if (!canGenerateRound) return false;
+                  
+                  // Проверяем что все результаты предыдущего тура введены
+                  if (tournament.rounds.length > 0) {
+                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                    return allMatchesHaveResults;
+                  }
+                  
+                  return true; // Первый тур можно всегда создать
+                })() && (
+                  <Button onClick={() => generatePairings(tournament.id)}>
+                    <Icon name="Users" size={16} className="mr-2" />
+                    Создать {tournament.currentRound + 1} тур
+                  </Button>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1548,6 +1573,9 @@ const Index = () => {
                       {round.matches.map(match => (
                         <div key={match.id} className="flex items-center justify-between p-3 bg-background rounded border">
                           <div className="flex items-center gap-4">
+                            <div className="text-sm font-bold bg-primary text-primary-foreground rounded px-2 py-1">
+                              Стол {match.tableNumber || '?'}
+                            </div>
                             <div className="font-medium">
                               {getPlayerName(match.player1Id)}
                             </div>
@@ -1606,7 +1634,17 @@ const Index = () => {
             <CardTitle>Турнирная таблица</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            {/* Заголовки таблицы */}
+            <div className="grid grid-cols-6 gap-4 p-3 bg-muted rounded font-medium text-sm">
+              <div>Игрок</div>
+              <div className="text-center">Очков</div>
+              <div className="text-center">Коэф. Бух.</div>
+              <div className="text-center">Победы</div>
+              <div className="text-center">Поражения</div>
+              <div className="text-center">Ничьи</div>
+            </div>
+            
+            <div className="space-y-2 mt-4">
               {tournament.participants
                 .map(playerId => {
                   const player = appState.players.find(p => p.id === playerId);
@@ -1641,10 +1679,36 @@ const Index = () => {
                     }, 0);
                   }, 0);
                   
+                  // Вычисляем статистику побед/поражений/ничьих
+                  let wins = 0, losses = 0, draws = 0;
+                  tournament.rounds.forEach(round => {
+                    const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+                    playerMatches.forEach(match => {
+                      if (match.result) {
+                        if (match.player1Id === playerId) {
+                          if (match.result === 'win1') wins++;
+                          else if (match.result === 'win2') losses++;
+                          else if (match.result === 'draw') draws++;
+                        } else if (match.player2Id === playerId) {
+                          if (match.result === 'win2') wins++;
+                          else if (match.result === 'win1') losses++;
+                          else if (match.result === 'draw') draws++;
+                        }
+                      }
+                      // БАЙ засчитывается как победа
+                      if (!match.player2Id && match.player1Id === playerId) {
+                        wins++;
+                      }
+                    });
+                  });
+                  
                   return {
                     name: player?.name || 'Неизвестный игрок',
                     points: totalPoints,
                     buchholz: buchholzScore,
+                    wins,
+                    losses,
+                    draws,
                     playerId
                   };
                 })
@@ -1655,17 +1719,18 @@ const Index = () => {
                   return b.buchholz - a.buchholz;
                 })
                 .map((player, index) => (
-                  <div key={player.playerId} className="flex items-center justify-between p-3 bg-background rounded border">
+                  <div key={player.playerId} className="grid grid-cols-6 gap-4 p-3 bg-background rounded border items-center">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
                         {index + 1}
                       </div>
                       <div className="font-medium">{player.name}</div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <div className="font-bold">{player.points} очков</div>
-                      <div className="text-sm text-muted-foreground">Бухгольц: {player.buchholz}</div>
-                    </div>
+                    <div className="text-center font-bold">{player.points}</div>
+                    <div className="text-center text-muted-foreground">{player.buchholz}</div>
+                    <div className="text-center text-green-600 font-medium">{player.wins}</div>
+                    <div className="text-center text-red-600 font-medium">{player.losses}</div>
+                    <div className="text-center text-yellow-600 font-medium">{player.draws}</div>
                   </div>
                 ))}
             </div>
