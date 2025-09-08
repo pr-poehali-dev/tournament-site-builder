@@ -20,7 +20,7 @@ interface User {
   city?: string;
 }
 
-type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats' | 'create-tournament';
+type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats' | 'create-tournament' | 'tournamentEdit';
 
 interface City {
   id: string;
@@ -31,6 +31,22 @@ interface TournamentFormat {
   id: string;
   name: string;
   coefficient: number;
+}
+
+interface Match {
+  id: string;
+  player1Id: string;
+  player2Id?: string; // undefined для бая
+  result?: 'win1' | 'win2' | 'draw'; // результат матча
+  points1: number; // очки игрока 1
+  points2: number; // очки игрока 2 (0 для бая)
+}
+
+interface Round {
+  id: string;
+  number: number;
+  matches: Match[];
+  isCompleted: boolean;
 }
 
 interface Tournament {
@@ -44,6 +60,8 @@ interface Tournament {
   topRounds: number;
   participants: string[];
   status: 'draft' | 'active' | 'completed';
+  rounds: Round[];
+  currentRound: number;
 }
 
 interface Player {
@@ -149,6 +167,9 @@ const Index = () => {
   // Cities management states
   const [newCityName, setNewCityName] = useState('');
   const [editingCity, setEditingCity] = useState<{ id: string; name: string } | null>(null);
+
+  // Tournament management states
+  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
 
   // Refs for input focus management
   const playerNameInputRef = useRef<HTMLInputElement>(null);
@@ -565,6 +586,109 @@ const Index = () => {
   const cancelEditCity = () => {
     setEditingCity(null);
   };
+
+  // Tournament management functions
+  const startEditTournament = useCallback((tournament: Tournament) => {
+    setEditingTournament(tournament);
+    navigateTo('tournamentEdit');
+  }, []);
+
+  const generatePairings = useCallback((tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return;
+
+    const participants = [...tournament.participants];
+    const matches: Match[] = [];
+    
+    // Простой алгоритм парингов - случайное разбиение
+    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < shuffled.length; i += 2) {
+      if (i + 1 < shuffled.length) {
+        // Матч между двумя игроками
+        matches.push({
+          id: `${tournamentId}-r${tournament.currentRound + 1}-m${i/2 + 1}`,
+          player1Id: shuffled[i],
+          player2Id: shuffled[i + 1],
+          points1: 0,
+          points2: 0
+        });
+      } else {
+        // Бай для последнего игрока
+        matches.push({
+          id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
+          player1Id: shuffled[i],
+          points1: 3, // 3 очка за бай
+          points2: 0
+        });
+      }
+    }
+
+    const newRound: Round = {
+      id: `${tournamentId}-r${tournament.currentRound + 1}`,
+      number: tournament.currentRound + 1,
+      matches,
+      isCompleted: false
+    };
+
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId
+          ? {
+              ...t,
+              rounds: [...t.rounds, newRound],
+              currentRound: t.currentRound + 1,
+              status: 'active'
+            }
+          : t
+      )
+    }));
+
+    alert(`Сгенерирован тур ${tournament.currentRound + 1}`);
+  }, [appState.tournaments]);
+
+  const updateMatchResult = useCallback((tournamentId: string, roundId: string, matchId: string, result: 'win1' | 'win2' | 'draw') => {
+    let points1 = 0, points2 = 0;
+    
+    switch (result) {
+      case 'win1':
+        points1 = 3;
+        points2 = 0;
+        break;
+      case 'win2':
+        points1 = 0;
+        points2 = 3;
+        break;
+      case 'draw':
+        points1 = 1;
+        points2 = 1;
+        break;
+    }
+
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(tournament =>
+        tournament.id === tournamentId
+          ? {
+              ...tournament,
+              rounds: tournament.rounds.map(round =>
+                round.id === roundId
+                  ? {
+                      ...round,
+                      matches: round.matches.map(match =>
+                        match.id === matchId
+                          ? { ...match, result, points1, points2 }
+                          : match
+                      )
+                    }
+                  : round
+              )
+            }
+          : tournament
+      )
+    }));
+  }, []);
 
   // Key press handlers (defined after main functions to avoid initialization errors)
   const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1068,6 +1192,186 @@ const Index = () => {
     </div>
   );
 
+  const TournamentEditPage = () => {
+    if (!editingTournament) {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="text-center py-12 text-muted-foreground">
+              <Icon name="AlertTriangle" size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Турнир не найден</p>
+              <Button onClick={() => navigateTo('tournaments')} className="mt-4">
+                Вернуться к турнирам
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    const getPlayerName = (playerId: string) => {
+      const player = appState.players.find(p => p.id === playerId);
+      return player?.name || 'Неизвестный игрок';
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Заголовок турнира */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="Trophy" size={20} />
+                <span>Управление турниром: {editingTournament.name}</span>
+                <Badge variant={editingTournament.status === 'draft' ? 'outline' : editingTournament.status === 'active' ? 'default' : 'secondary'}>
+                  {editingTournament.status === 'draft' ? 'Черновик' : editingTournament.status === 'active' ? 'Активен' : 'Завершён'}
+                </Badge>
+              </div>
+              <Button variant="outline" onClick={() => navigateTo('tournaments')}>
+                <Icon name="ArrowLeft" size={16} className="mr-2" />
+                Назад
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              {editingTournament.date} • {editingTournament.city} • {editingTournament.format} • {editingTournament.participants.length} участников
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Управление турами */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Туры турнира</span>
+              {editingTournament.currentRound < editingTournament.swissRounds && (
+                <Button onClick={() => generatePairings(editingTournament.id)}>
+                  <Icon name="Users" size={16} className="mr-2" />
+                  Сгенерировать тур {editingTournament.currentRound + 1}
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {editingTournament.rounds.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Icon name="Calendar" size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Туры не созданы</p>
+                <p className="text-sm mt-2">Нажмите кнопку выше для создания первого тура</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {editingTournament.rounds.map(round => (
+                  <div key={round.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Icon name="Calendar" size={16} />
+                        Тур {round.number}
+                      </h3>
+                      <Badge variant={round.isCompleted ? 'default' : 'outline'}>
+                        {round.isCompleted ? 'Завершён' : 'В процессе'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {round.matches.map(match => (
+                        <div key={match.id} className="flex items-center justify-between p-3 bg-background rounded border">
+                          <div className="flex items-center gap-4">
+                            <div className="font-medium">
+                              {getPlayerName(match.player1Id)}
+                            </div>
+                            <div className="text-muted-foreground">vs</div>
+                            <div className="font-medium">
+                              {match.player2Id ? getPlayerName(match.player2Id) : 'БАЙ'}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm text-muted-foreground">
+                              {match.points1} - {match.points2}
+                            </div>
+                            
+                            {match.player2Id ? (
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant={match.result === 'win1' ? 'default' : 'outline'}
+                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'win1')}
+                                >
+                                  1-0
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={match.result === 'draw' ? 'default' : 'outline'}
+                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'draw')}
+                                >
+                                  0.5-0.5
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={match.result === 'win2' ? 'default' : 'outline'}
+                                  onClick={() => updateMatchResult(editingTournament.id, round.id, match.id, 'win2')}
+                                >
+                                  0-1
+                                </Button>
+                              </div>
+                            ) : (
+                              <Badge variant="secondary">БАЙ</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Турнирная таблица */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Турнирная таблица</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {editingTournament.participants
+                .map(playerId => {
+                  const player = appState.players.find(p => p.id === playerId);
+                  const totalPoints = editingTournament.rounds.reduce((total, round) => {
+                    const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+                    return total + playerMatches.reduce((matchTotal, match) => {
+                      if (match.player1Id === playerId) return matchTotal + match.points1;
+                      if (match.player2Id === playerId) return matchTotal + match.points2;
+                      return matchTotal;
+                    }, 0);
+                  }, 0);
+                  
+                  return {
+                    name: player?.name || 'Неизвестный игрок',
+                    points: totalPoints,
+                    playerId
+                  };
+                })
+                .sort((a, b) => b.points - a.points)
+                .map((player, index) => (
+                  <div key={player.playerId} className="flex items-center justify-between p-3 bg-background rounded border">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div className="font-medium">{player.name}</div>
+                    </div>
+                    <div className="font-bold">{player.points} очков</div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const TournamentsPage = () => (
     <div className="space-y-6">
       <Card>
@@ -1121,7 +1425,7 @@ const Index = () => {
                       <Icon name="Eye" size={14} className="mr-1" />
                       Просмотр
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => startEditTournament(tournament)}>
                       <Icon name="Settings" size={14} className="mr-1" />
                       Управление
                     </Button>
@@ -1586,7 +1890,9 @@ const Index = () => {
         swissRounds: newTournament.swissRounds,
         topRounds: newTournament.topRounds,
         participants: [...newTournament.participants],
-        status: 'draft'
+        status: 'draft',
+        rounds: [],
+        currentRound: 0
       };
 
       setAppState(prev => ({
@@ -1629,7 +1935,6 @@ const Index = () => {
                 <Label htmlFor="tournament-name">Название турнира</Label>
                 <Input
                   id="tournament-name"
-                  defaultValue={newTournament.name}
                   placeholder="Введите название турнира"
                 />
               </div>
@@ -1842,6 +2147,7 @@ const Index = () => {
         {appState.currentPage === 'cities' && <CitiesPage />}
         {appState.currentPage === 'formats' && <FormatsPage />}
         {appState.currentPage === 'create-tournament' && <CreateTournamentPage />}
+        {appState.currentPage === 'tournamentEdit' && <TournamentEditPage />}
       </div>
     </div>
   );
