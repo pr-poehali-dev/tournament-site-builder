@@ -119,12 +119,28 @@ const Index = () => {
 
   // User management functions
   const createUser = () => {
-    if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
-    if (!newUser.username.trim() || !newUser.password.trim() || !newUser.name.trim()) return;
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') {
+      alert('У вас нет прав для создания пользователей');
+      return;
+    }
+    if (!newUser.username.trim() || !newUser.password.trim() || !newUser.name.trim()) {
+      alert('Заполните все обязательные поля');
+      return;
+    }
+
+    // Проверка на уникальность логина
+    if (appState.users.some(u => u.username === newUser.username.trim())) {
+      alert('Пользователь с таким логином уже существует');
+      return;
+    }
 
     const user: User = {
       id: Date.now().toString(),
-      ...newUser,
+      username: newUser.username.trim(),
+      password: newUser.password.trim(),
+      name: newUser.name.trim(),
+      city: newUser.city?.trim() || undefined,
+      role: newUser.role,
       isActive: true
     };
 
@@ -140,6 +156,8 @@ const Index = () => {
       name: '',
       city: ''
     });
+
+    alert(`Пользователь ${user.name} успешно создан!`);
   };
 
   const toggleUserStatus = (userId: string) => {
@@ -202,13 +220,19 @@ const Index = () => {
 
   // Player management functions
   const addPlayer = () => {
-    if (!appState.currentUser || !['admin', 'judge'].includes(appState.currentUser.role)) return;
-    if (!newUser.name.trim()) return;
+    if (!appState.currentUser || !['admin', 'judge'].includes(appState.currentUser.role)) {
+      alert('У вас нет прав для добавления игроков');
+      return;
+    }
+    if (!newUser.name.trim()) {
+      alert('Введите имя игрока');
+      return;
+    }
 
     const player: Player = {
       id: Date.now().toString(),
-      name: newUser.name,
-      city: newUser.city || undefined,
+      name: newUser.name.trim(),
+      city: newUser.city?.trim() || undefined,
       rating: 1200,
       tournaments: 0,
       wins: 0,
@@ -226,6 +250,8 @@ const Index = () => {
       name: '',
       city: ''
     }));
+
+    alert(`Игрок ${player.name} успешно добавлен!`);
   };
 
   const deletePlayer = (playerId: string) => {
@@ -235,6 +261,22 @@ const Index = () => {
       ...prev,
       players: prev.players.filter(player => player.id !== playerId)
     }));
+  };
+
+  // Tournament management functions
+  const createTournament = () => {
+    if (!appState.currentUser || !['admin', 'judge'].includes(appState.currentUser.role)) {
+      alert('У вас нет прав для создания турниров');
+      return;
+    }
+    
+    const tournamentName = prompt('Введите название турнира:');
+    if (!tournamentName?.trim()) {
+      return;
+    }
+
+    // Здесь можно добавить логику создания турнира
+    alert(`Турнир "${tournamentName}" будет создан в следующей версии!`);
   };
 
   // Header Navigation Component
@@ -624,7 +666,7 @@ const Index = () => {
               <Icon name="Trophy" size={20} className="mr-2" />
               Управление турнирами
             </div>
-            <Button>
+            <Button onClick={createTournament}>
               <Icon name="Plus" size={16} className="mr-2" />
               Создать турнир
             </Button>
@@ -687,11 +729,13 @@ const Index = () => {
                 placeholder="Имя игрока"
                 value={newUser.name}
                 onChange={(e) => setNewUser(prev => ({...prev, name: e.target.value}))}
+                onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
               />
               <Input
                 placeholder="Город"
                 value={newUser.city}
                 onChange={(e) => setNewUser(prev => ({...prev, city: e.target.value}))}
+                onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
               />
               <Button onClick={addPlayer}>
                 <Icon name="Plus" size={16} />
