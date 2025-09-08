@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -2210,7 +2210,7 @@ const Index = () => {
     }));
   };
 
-  const CreateTournamentPage = () => {
+  const CreateTournamentPage = React.memo(() => {
     const handleTournamentSubmit = () => {
       const tournamentName = tournamentNameInputRef.current?.value?.trim() || '';
       
@@ -2436,7 +2436,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  };
+  });
 
   // Check if showing login screen
   if (appState.showLogin) {
