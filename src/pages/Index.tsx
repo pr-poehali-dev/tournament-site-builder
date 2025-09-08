@@ -2204,7 +2204,19 @@ const Index = () => {
         alert('Выберите формат');
         return;
       }
-      // Участники будут считываться напрямую из checkbox'ов при создании турнира
+      // Считываем отмеченных участников из checkbox'ов
+      const selectedParticipants: string[] = [];
+      appState.players.forEach(player => {
+        const checkbox = document.getElementById(`player-${player.id}`) as HTMLInputElement;
+        if (checkbox && checkbox.checked) {
+          selectedParticipants.push(player.id);
+        }
+      });
+
+      if (selectedParticipants.length === 0) {
+        alert('Добавьте хотя бы одного участника');
+        return;
+      }
 
       const tournament: Tournament = {
         id: Date.now().toString(),
@@ -2216,7 +2228,7 @@ const Index = () => {
         isRated: tournamentIsRated,
         swissRounds: tournamentSwissRounds,
         topRounds: tournamentTopRounds,
-        participants: [], // Будет заполнено из checkbox'ов
+        participants: selectedParticipants,
         status: 'draft',
         rounds: [],
         currentRound: 0
