@@ -1660,10 +1660,7 @@ const Index = () => {
       tournament.participants.includes(currentUserId)
     );
 
-    // Отладочная информация
-    console.log('Current user ID:', currentUserId);
-    console.log('All tournaments:', appState.tournaments);
-    console.log('My tournaments:', myTournaments);
+
 
     return (
       <div className="space-y-6">
@@ -1731,7 +1728,7 @@ const Index = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setCurrentView('tournaments')}
+                          onClick={() => navigateTo('tournaments')}
                         >
                           Открыть турнир
                         </Button>
