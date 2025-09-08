@@ -2176,6 +2176,10 @@ const Index = () => {
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
   // Мемоизированные обработчики для создания турнира
+  const handleTournamentNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTournament(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
   const handleTournamentDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, date: e.target.value }));
   }, []);
@@ -2211,9 +2215,7 @@ const Index = () => {
 
   const CreateTournamentPage = useCallback(() => {
     const handleTournamentSubmit = () => {
-      // Читаем название турнира прямо из DOM
-      const nameInput = document.getElementById('tournament-name') as HTMLInputElement;
-      const tournamentName = nameInput?.value?.trim() || '';
+      const tournamentName = newTournament.name.trim();
       
       if (!tournamentName) {
         alert('Введите название турнира');
@@ -2242,6 +2244,7 @@ const Index = () => {
         date: newTournament.date,
         city: newTournament.city,
         format: newTournament.format,
+        description: `Турнир по формату ${newTournament.format} в городе ${newTournament.city}`,
         isRated: newTournament.isRated,
         swissRounds: newTournament.swissRounds,
         topRounds: newTournament.topRounds,
@@ -2291,6 +2294,8 @@ const Index = () => {
                 <Label htmlFor="tournament-name">Название турнира</Label>
                 <Input
                   id="tournament-name"
+                  value={newTournament.name}
+                  onChange={handleTournamentNameChange}
                   placeholder="Введите название турнира"
                 />
               </div>
