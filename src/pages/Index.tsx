@@ -640,73 +640,123 @@ const Index = () => {
       };
     });
 
-    // Сортируем по очкам (больше очков = выше позиция для парингов)
+    // Сортируем по очкам (больше очков = выше позиция)
     playerStats.sort((a, b) => b.points - a.points);
     
-    // Определяем, кто получает бай (игрок с наименьшими очками среди непарных)
-    const availablePlayers = [...playerStats];
+    const isTopRound = tournament.currentRound >= tournament.swissRounds;
     
-    // Если нечетное количество игроков, заранее выделяем игрока с наименьшими очками на бай
-    let byePlayer = null;
-    if (availablePlayers.length % 2 !== 0) {
-      // Сортируем по возрастанию очков, чтобы найти игрока с наименьшими очками
-      const sortedForBye = [...availablePlayers].sort((a, b) => a.points - b.points);
-      byePlayer = sortedForBye[0];
+    if (isTopRound) {
+      // ОЛИМПИЙСКАЯ СИСТЕМА - формируем пары для топ-турнира
+      const topRoundNumber = tournament.currentRound - tournament.swissRounds + 1;
       
-      // Удаляем игрока на бай из доступных
-      const byeIndex = availablePlayers.findIndex(p => p.playerId === byePlayer!.playerId);
-      if (byeIndex !== -1) {
-        availablePlayers.splice(byeIndex, 1);
+      if (topRoundNumber === 1) {
+        // Первый топ-тур: определяем количество участников олимпийки
+        const playersToAdvance = Math.pow(2, tournament.topRounds); // 2^topRounds игроков
+        const qualifiedPlayers = playerStats.slice(0, Math.min(playersToAdvance, playerStats.length));
+        
+        // Формируем пары: 1 vs последний, 2 vs предпоследний и т.д.
+        for (let i = 0; i < qualifiedPlayers.length / 2; i++) {
+          const player1 = qualifiedPlayers[i];
+          const player2 = qualifiedPlayers[qualifiedPlayers.length - 1 - i];
+          
+          matches.push({
+            id: `${tournamentId}-r${tournament.currentRound + 1}-m${i + 1}`,
+            player1Id: player1.playerId,
+            player2Id: player2.playerId,
+            points1: 0,
+            points2: 0
+          });
+        }
+      } else {
+        // Последующие топ-туры: берем победителей предыдущего тура
+        const previousTopRound = tournament.rounds[tournament.rounds.length - 1];
+        const winners: string[] = [];
+        
+        // Находим победителей предыдущего тура
+        previousTopRound.matches.forEach(match => {
+          if (match.result === 'win1') {
+            winners.push(match.player1Id);
+          } else if (match.result === 'win2') {
+            winners.push(match.player2Id!);
+          }
+          // Если нет результата - игроки не могут пройти дальше
+        });
+        
+        // Сортируем победителей по общим очкам турнира
+        const winnersWithStats = winners.map(playerId => 
+          playerStats.find(p => p.playerId === playerId)
+        ).filter(Boolean).sort((a, b) => b!.points - a!.points);
+        
+        // Формируем пары из победителей: лучший vs худший
+        for (let i = 0; i < winnersWithStats.length / 2; i++) {
+          const player1 = winnersWithStats[i]!;
+          const player2 = winnersWithStats[winnersWithStats.length - 1 - i]!;
+          
+          matches.push({
+            id: `${tournamentId}-r${tournament.currentRound + 1}-m${i + 1}`,
+            player1Id: player1.playerId,
+            player2Id: player2.playerId,
+            points1: 0,
+            points2: 0
+          });
+        }
       }
-    }
-    
-    // Швейцарский алгоритм парингов
-    while (availablePlayers.length > 1) {
-      let player1 = availablePlayers.shift()!;
-      let player2Index = -1;
+    } else {
+      // ШВЕЙЦАРСКАЯ СИСТЕМА
+      const availablePlayers = [...playerStats];
       
-      // Находим подходящего оппонента (с кем не играл)
-      for (let i = 0; i < availablePlayers.length; i++) {
-        const potentialOpponent = availablePlayers[i];
-        if (!player1.previousOpponents.includes(potentialOpponent.playerId)) {
-          player2Index = i;
-          break;
+      // Если нечетное количество игроков, заранее выделяем игрока с наименьшими очками на бай
+      let byePlayer = null;
+      if (availablePlayers.length % 2 !== 0) {
+        const sortedForBye = [...availablePlayers].sort((a, b) => a.points - b.points);
+        byePlayer = sortedForBye[0];
+        
+        const byeIndex = availablePlayers.findIndex(p => p.playerId === byePlayer!.playerId);
+        if (byeIndex !== -1) {
+          availablePlayers.splice(byeIndex, 1);
         }
       }
       
-      // Если не нашли подходящего оппонента, берем первого доступного
-      if (player2Index === -1 && availablePlayers.length > 0) {
-        player2Index = 0;
+      // Швейцарский алгоритм парингов
+      while (availablePlayers.length > 1) {
+        let player1 = availablePlayers.shift()!;
+        let player2Index = -1;
+        
+        // Находим подходящего оппонента (с кем не играл)
+        for (let i = 0; i < availablePlayers.length; i++) {
+          const potentialOpponent = availablePlayers[i];
+          if (!player1.previousOpponents.includes(potentialOpponent.playerId)) {
+            player2Index = i;
+            break;
+          }
+        }
+        
+        // Если не нашли подходящего оппонента, берем первого доступного
+        if (player2Index === -1 && availablePlayers.length > 0) {
+          player2Index = 0;
+        }
+        
+        if (player2Index !== -1) {
+          const player2 = availablePlayers.splice(player2Index, 1)[0];
+          matches.push({
+            id: `${tournamentId}-r${tournament.currentRound + 1}-m${matches.length + 1}`,
+            player1Id: player1.playerId,
+            player2Id: player2.playerId,
+            points1: 0,
+            points2: 0
+          });
+        }
       }
       
-      if (player2Index !== -1) {
-        const player2 = availablePlayers.splice(player2Index, 1)[0];
-        matches.push({
-          id: `${tournamentId}-r${tournament.currentRound + 1}-m${matches.length + 1}`,
-          player1Id: player1.playerId,
-          player2Id: player2.playerId,
-          points1: 0,
-          points2: 0
-        });
-      } else {
-        // Остался один игрок - получает бай
+      // Добавляем бай для игрока с наименьшими очками (если был выделен)
+      if (byePlayer) {
         matches.push({
           id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
-          player1Id: player1.playerId,
+          player1Id: byePlayer.playerId,
           points1: 3, // 3 очка за бай
           points2: 0
         });
       }
-    }
-    
-    // Добавляем бай для игрока с наименьшими очками (если был выделен)
-    if (byePlayer) {
-      matches.push({
-        id: `${tournamentId}-r${tournament.currentRound + 1}-bye`,
-        player1Id: byePlayer.playerId,
-        points1: 3, // 3 очка за бай
-        points2: 0
-      });
     }
 
     const newRound: Round = {
@@ -1331,12 +1381,39 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Туры турнира</span>
-              {tournament.currentRound < (tournament.swissRounds + tournament.topRounds) && (
+              {(() => {
+                // Можем генерировать новый тур если:
+                // 1. Не достигли максимального количества туров
+                // 2. Предыдущий тур завершен (для топа) или это швейцарка
+                const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
+                
+                if (!canGenerateRound) return false;
+                
+                const isNextRoundTop = tournament.currentRound >= tournament.swissRounds;
+                if (isNextRoundTop && tournament.rounds.length > 0) {
+                  // Для топ-туров проверяем, что предыдущий тур завершен
+                  const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                  const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                  return allMatchesHaveResults;
+                }
+                
+                return true; // Для швейцарки можно всегда генерировать
+              })() && (
                 <Button onClick={() => generatePairings(tournament.id)}>
                   <Icon name="Users" size={16} className="mr-2" />
                   {tournament.currentRound < tournament.swissRounds 
                     ? `Сгенерировать швейцарский тур ${tournament.currentRound + 1}`
-                    : `Сгенерировать топ ${tournament.currentRound - tournament.swissRounds + 1}`
+                    : (() => {
+                        const topRound = tournament.currentRound - tournament.swissRounds + 1;
+                        const remainingTopRounds = tournament.topRounds - topRound + 1;
+                        
+                        if (remainingTopRounds === 1) return 'Сгенерировать финал';
+                        if (remainingTopRounds === 2) return 'Сгенерировать полуфинал';
+                        if (remainingTopRounds === 3) return 'Сгенерировать четвертьфинал';
+                        
+                        const participants = Math.pow(2, remainingTopRounds);
+                        return `Сгенерировать топ-${participants}`;
+                      })()
                   }
                 </Button>
               )}
@@ -1356,7 +1433,21 @@ const Index = () => {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-medium flex items-center gap-2">
                         <Icon name="Calendar" size={16} />
-                        Тур {round.number}
+                        {(() => {
+                          if (round.number <= tournament.swissRounds) {
+                            return `Швейцарский тур ${round.number}`;
+                          } else {
+                            const topRound = round.number - tournament.swissRounds;
+                            const remainingTopRounds = tournament.topRounds - topRound + 1;
+                            
+                            if (remainingTopRounds === 1) return 'Финал';
+                            if (remainingTopRounds === 2) return 'Полуфинал';
+                            if (remainingTopRounds === 3) return 'Четвертьфинал';
+                            
+                            const participants = Math.pow(2, remainingTopRounds);
+                            return `Топ-${participants}`;
+                          }
+                        })()}
                       </h3>
                       <Badge variant={round.isCompleted ? 'default' : 'outline'}>
                         {round.isCompleted ? 'Завершён' : 'В процессе'}
