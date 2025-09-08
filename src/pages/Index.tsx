@@ -174,9 +174,7 @@ const Index = () => {
   // Refs for input focus management
   const playerNameInputRef = useRef<HTMLInputElement>(null);
   const cityNameInputRef = useRef<HTMLInputElement>(null);
-  const userUsernameInputRef = useRef<HTMLInputElement>(null);
-  const userPasswordInputRef = useRef<HTMLInputElement>(null);
-  const userNameInputRef = useRef<HTMLInputElement>(null);
+
   const formatNameInputRef = useRef<HTMLInputElement>(null);
   const formatCoefficientInputRef = useRef<HTMLInputElement>(null);
 
@@ -294,77 +292,6 @@ const Index = () => {
   };
 
   // User management functions
-  const createUser = () => {
-    if (!appState.currentUser || appState.currentUser.role !== 'admin') {
-      alert('У вас нет прав для создания пользователей');
-      return;
-    }
-
-    // Получаем значения из refs для текстовых полей и из состояния для селектов
-    const username = userUsernameInputRef.current?.value?.trim() || '';
-    const password = userPasswordInputRef.current?.value?.trim() || '';
-    const name = userNameInputRef.current?.value?.trim() || '';
-    const city = newUser.city?.trim() || undefined;
-    const role = newUser.role;
-
-    if (!username || !password || !name) {
-      alert('Заполните все обязательные поля');
-      return;
-    }
-
-    // Проверка на уникальность логина
-    if (appState.users.some(u => u.username === username)) {
-      alert('Пользователь с таким логином уже существует');
-      return;
-    }
-
-    const user: User = {
-      id: Date.now().toString(),
-      username: username,
-      password: password,
-      name: name,
-      city: city,
-      role: role,
-      isActive: true
-    };
-
-    // Создаем игрока для судей и игроков автоматически
-    let newPlayer: Player | null = null;
-    if (user.role === 'judge' || user.role === 'player') {
-      newPlayer = {
-        id: `player-${user.id}`,
-        name: user.name,
-        city: user.city,
-        rating: 1200,
-        tournaments: 0,
-        wins: 0,
-        losses: 0,
-        draws: 0
-      };
-    }
-
-    setAppState(prev => ({
-      ...prev,
-      users: [...prev.users, user],
-      players: newPlayer ? [...prev.players, newPlayer] : prev.players
-    }));
-
-    // Очищаем текстовые поля через refs
-    if (userUsernameInputRef.current) userUsernameInputRef.current.value = '';
-    if (userPasswordInputRef.current) userPasswordInputRef.current.value = '';
-    if (userNameInputRef.current) userNameInputRef.current.value = '';
-    
-    // Сбрасываем селекты через состояние, но сохраняем город
-    setNewUser(prev => ({
-      ...prev,
-      role: 'player' // Сбрасываем только роль, город сохраняем
-    }));
-
-    const message = (user.role === 'judge' || user.role === 'player')
-      ? `Пользователь ${user.name} создан! ${user.role === 'judge' ? 'Судья' : 'Игрок'} также автоматически добавлен в список игроков.`
-      : `Пользователь ${user.name} успешно создан!`;
-    alert(message);
-  };
 
   const toggleUserStatus = (userId: string) => {
     if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
@@ -1104,6 +1031,136 @@ const Index = () => {
     );
   };
 
+  // Отдельный компонент формы создания пользователя для изоляции от ререндеров
+  const UserCreationForm = () => {
+    const localUsernameRef = useRef<HTMLInputElement>(null);
+    const localPasswordRef = useRef<HTMLInputElement>(null);
+    const localNameRef = useRef<HTMLInputElement>(null);
+
+    const handleCreateUser = () => {
+      if (!appState.currentUser || appState.currentUser.role !== 'admin') {
+        alert('У вас нет прав для создания пользователей');
+        return;
+      }
+
+      // Получаем значения из локальных refs
+      const username = localUsernameRef.current?.value?.trim() || '';
+      const password = localPasswordRef.current?.value?.trim() || '';
+      const name = localNameRef.current?.value?.trim() || '';
+      const city = newUser.city?.trim() || undefined;
+      const role = newUser.role;
+
+      if (!username || !password || !name) {
+        alert('Заполните все обязательные поля');
+        return;
+      }
+
+      // Проверка на уникальность логина
+      if (appState.users.some(u => u.username === username)) {
+        alert('Пользователь с таким логином уже существует');
+        return;
+      }
+
+      const user: User = {
+        id: Date.now().toString(),
+        username: username,
+        password: password,
+        name: name,
+        city: city,
+        role: role,
+        isActive: true
+      };
+
+      // Создаем игрока для судей и игроков автоматически
+      let newPlayer: Player | null = null;
+      if (user.role === 'judge' || user.role === 'player') {
+        newPlayer = {
+          id: `player-${user.id}`,
+          name: user.name,
+          city: user.city,
+          rating: 1200,
+          tournaments: 0,
+          wins: 0,
+          losses: 0,
+          draws: 0
+        };
+      }
+
+      setAppState(prev => ({
+        ...prev,
+        users: [...prev.users, user],
+        players: newPlayer ? [...prev.players, newPlayer] : prev.players
+      }));
+
+      // Очищаем локальные поля
+      if (localUsernameRef.current) localUsernameRef.current.value = '';
+      if (localPasswordRef.current) localPasswordRef.current.value = '';
+      if (localNameRef.current) localNameRef.current.value = '';
+      
+      // Сбрасываем только роль, город сохраняем
+      setNewUser(prev => ({
+        ...prev,
+        role: 'player'
+      }));
+
+      const message = (user.role === 'judge' || user.role === 'player')
+        ? `Пользователь ${user.name} создан! ${user.role === 'judge' ? 'Судья' : 'Игрок'} также автоматически добавлен в список игроков.`
+        : `Пользователь ${user.name} успешно создан!`;
+      alert(message);
+    };
+
+    return (
+      <div className="space-y-3 p-3 border rounded-lg">
+        <div className="font-medium">Создать пользователя</div>
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            ref={localUsernameRef}
+            type="text"
+            placeholder="Логин"
+          />
+          <Input
+            ref={localPasswordRef}
+            type="password"
+            placeholder="Пароль"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Input
+            ref={localNameRef}
+            type="text"
+            placeholder="Имя"
+          />
+          <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Город" />
+            </SelectTrigger>
+            <SelectContent>
+              {appState.cities.map(city => (
+                <SelectItem key={city.id} value={city.name}>
+                  {city.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={newUser.role} onValueChange={handleNewUserRoleChange}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Администратор</SelectItem>
+              <SelectItem value="judge">Судья</SelectItem>
+              <SelectItem value="player">Игрок</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={handleCreateUser} size="sm" className="w-full">
+          <Icon name="UserPlus" size={14} className="mr-2" />
+          Создать
+        </Button>
+      </div>
+    );
+  };
+
   // Page Components
   const AdminPage = () => (
     <div className="space-y-6">
@@ -1116,57 +1173,7 @@ const Index = () => {
           <CardDescription>Создание и управление учетными записями</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3 p-3 border rounded-lg">
-            <div className="font-medium">Создать пользователя</div>
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                key="user-username-input"
-                ref={userUsernameInputRef}
-                type="text"
-                placeholder="Логин"
-              />
-              <Input
-                key="user-password-input"
-                ref={userPasswordInputRef}
-                type="password"
-                placeholder="Пароль"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Input
-                key="user-name-input"
-                ref={userNameInputRef}
-                type="text"
-                placeholder="Имя"
-              />
-              <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Город" />
-                </SelectTrigger>
-                <SelectContent>
-                  {appState.cities.map(city => (
-                    <SelectItem key={city.id} value={city.name}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={newUser.role} onValueChange={handleNewUserRoleChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Администратор</SelectItem>
-                  <SelectItem value="judge">Судья</SelectItem>
-                  <SelectItem value="player">Игрок</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={createUser} size="sm" className="w-full">
-              <Icon name="UserPlus" size={14} className="mr-2" />
-              Создать
-            </Button>
-          </div>
+          <UserCreationForm />
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             <div className="font-medium">Пользователи системы ({appState.users.length})</div>
