@@ -1026,116 +1026,125 @@ const Index = () => {
     </div>
   );
 
-  const CitiesPage = useMemo(() => {
-    console.log('CitiesPage rendering');
-    console.log('Cities data:', appState.cities);
-    console.log('Current user:', appState.currentUser);
-    
+  const CitiesPage = () => {
     return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Icon name="MapPin" size={20} className="mr-2" />
-              Управление городами ({appState.cities.length})
-            </div>
-          </CardTitle>
-          <CardDescription>Добавление, редактирование и удаление городов</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Форма добавления города */}
-          <div className="space-y-3 p-3 border rounded-lg">
-            <div className="font-medium">Добавить новый город</div>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon name="MapPin" size={20} />
+              Управление городами
+            </CardTitle>
+            <CardDescription>
+              Добавляйте и редактируйте города для турнирной системы
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Форма добавления города */}
             <div className="flex gap-2">
               <Input
-                ref={cityNameInputRef}
-                placeholder="Название города"
+                placeholder="Название нового города"
                 value={newCityName}
                 onChange={handleNewCityNameChange}
                 onKeyPress={handleCityNameKeyPress}
+                className="flex-1"
               />
               <Button onClick={addCity}>
-                <Icon name="Plus" size={16} />
+                <Icon name="Plus" size={16} className="mr-2" />
+                Добавить
               </Button>
             </div>
-          </div>
 
-          {/* Список городов */}
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {appState.cities.map((city) => (
-              <div key={city.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div className="flex-1">
-                  {editingCity?.id === city.id ? (
+            {/* Список городов */}
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-muted-foreground">
+                Всего городов: {appState.cities.length}
+              </div>
+              
+              {appState.cities.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="MapPin" size={48} className="mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-2">Нет городов</p>
+                  <p className="text-sm">Добавьте первый город выше</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {appState.cities.map((city) => (
+                    <div key={city.id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Icon name="MapPin" size={16} className="text-muted-foreground" />
+                        <div>
+                          <div className="font-medium">{city.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {appState.players.filter(p => p.city === city.name).length} игроков
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => startEditCity(city)}>
+                          <Icon name="Edit" size={14} />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive">
+                              <Icon name="Trash2" size={14} />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить город</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Удалить город "{city.name}"? Это действие необратимо.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteCity(city.id)} className="bg-destructive hover:bg-destructive/90">
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Модальное окно редактирования */}
+            {editingCity && (
+              <Card className="border-primary/50 bg-primary/5">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium">Редактирование города</div>
                     <div className="flex gap-2">
                       <Input
                         value={editingCity.name}
                         onChange={handleEditCityNameChange}
                         onKeyPress={handleEditCityKeyPress}
+                        placeholder="Название города"
+                        className="flex-1"
                       />
-                      <Button size="sm" onClick={saveEditCity}>
-                        <Icon name="Check" size={14} />
+                      <Button onClick={saveEditCity}>
+                        <Icon name="Check" size={16} className="mr-2" />
+                        Сохранить
                       </Button>
-                      <Button size="sm" variant="outline" onClick={cancelEditCity}>
-                        <Icon name="X" size={14} />
+                      <Button variant="outline" onClick={cancelEditCity}>
+                        <Icon name="X" size={16} className="mr-2" />
+                        Отмена
                       </Button>
                     </div>
-                  ) : (
-                    <div>
-                      <div className="font-medium">{city.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Игроков: {appState.players.filter(p => p.city === city.name).length}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {editingCity?.id !== city.id && (
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => startEditCity(city)}
-                    >
-                      <Icon name="Edit" size={14} />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive">
-                          <Icon name="Trash2" size={14} />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Удалить город</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Вы уверены что хотите удалить город {city.name}? Это действие нельзя отменить.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Отмена</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteCity(city.id)}>
-                            Удалить
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                   </div>
-                )}
-              </div>
-            ))}
-            {appState.cities.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Icon name="MapPin" size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Пока нет городов</p>
-                <p className="text-sm mt-2">Добавьте города для организации турниров</p>
-              </div>
+                </CardContent>
+              </Card>
             )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
     );
-  }, [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
+  };
 
   // Check if showing login screen
   if (appState.showLogin) {
