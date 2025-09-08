@@ -302,6 +302,10 @@ const Index = () => {
     navigateTo('tournamentEdit');
   }, [navigateTo]);
 
+  const goToCreateTournament = useCallback(() => {
+    navigateTo('create-tournament');
+  }, [navigateTo]);
+
   // Tournament Edit Page Component (kept inline due to complexity)
   const TournamentEditPage = () => {
     if (!editingTournament) return null;
@@ -619,7 +623,7 @@ const Index = () => {
         {appState.currentPage === 'tournaments' && (
           <TournamentsPage
             appState={appState}
-            createTournament={createTournament}
+            createTournament={goToCreateTournament}
             startEditTournament={startEditTournament}
             confirmTournament={confirmTournamentWithPlayerUpdates}
           />
