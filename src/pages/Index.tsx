@@ -1515,43 +1515,7 @@ const Index = () => {
     );
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
-  // Мемоизированные обработчики для создания турнира
-  const handleTournamentNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, name: e.target.value }));
-  }, []);
 
-  const handleTournamentDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, date: e.target.value }));
-  }, []);
-
-  const handleTournamentCityChange = useCallback((value: string) => {
-    setNewTournament(prev => ({ ...prev, city: value }));
-  }, []);
-
-  const handleTournamentFormatChange = useCallback((value: string) => {
-    setNewTournament(prev => ({ ...prev, format: value }));
-  }, []);
-
-  const handleTournamentIsRatedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, isRated: e.target.checked }));
-  }, []);
-
-  const handleSwissRoundsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, swissRounds: Math.max(1, Math.min(8, parseInt(e.target.value) || 1)) }));
-  }, []);
-
-  const handleTopRoundsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, topRounds: Math.max(0, parseInt(e.target.value) || 0) }));
-  }, []);
-
-  const toggleParticipant = useCallback((playerId: string) => {
-    setNewTournament(prev => ({
-      ...prev,
-      participants: prev.participants.includes(playerId)
-        ? prev.participants.filter(id => id !== playerId)
-        : [...prev.participants, playerId]
-    }));
-  }, []);
 
   const CreateTournamentPage = useCallback(() => {
     const handleTournamentSubmit = () => {
@@ -1630,7 +1594,6 @@ const Index = () => {
                 <Input
                   id="tournament-name"
                   value={newTournament.name}
-                  onChange={handleTournamentNameChange}
                   placeholder="Введите название турнира"
                 />
               </div>
@@ -1641,13 +1604,12 @@ const Index = () => {
                   id="tournament-date"
                   type="date"
                   value={newTournament.date}
-                  onChange={handleTournamentDateChange}
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="tournament-city">Город</Label>
-                <Select value={newTournament.city} onValueChange={handleTournamentCityChange}>
+                <Select value={newTournament.city}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите город" />
                   </SelectTrigger>
@@ -1663,7 +1625,7 @@ const Index = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="tournament-format">Формат</Label>
-                <Select value={newTournament.format} onValueChange={handleTournamentFormatChange}>
+                <Select value={newTournament.format}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите формат" />
                   </SelectTrigger>
@@ -1685,7 +1647,7 @@ const Index = () => {
                   type="checkbox"
                   id="is-rated"
                   checked={newTournament.isRated}
-                  onChange={handleTournamentIsRatedChange}
+
                   className="w-4 h-4"
                 />
                 <Label htmlFor="is-rated">Рейтинговый турнир</Label>
@@ -1699,7 +1661,7 @@ const Index = () => {
                   min="1"
                   max="8"
                   value={newTournament.swissRounds}
-                  onChange={handleSwissRoundsChange}
+
                 />
               </div>
               
@@ -1710,7 +1672,7 @@ const Index = () => {
                   type="number"
                   min="0"
                   value={newTournament.topRounds}
-                  onChange={handleTopRoundsChange}
+
                 />
               </div>
             </div>
@@ -1739,7 +1701,7 @@ const Index = () => {
                           type="checkbox"
                           id={`player-${player.id}`}
                           checked={newTournament.participants.includes(player.id)}
-                          onChange={() => toggleParticipant(player.id)}
+
                           className="w-4 h-4"
                         />
                         <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
