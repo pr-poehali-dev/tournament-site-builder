@@ -2176,9 +2176,9 @@ const Index = () => {
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
   // Мемоизированные обработчики для создания турнира
-  const handleTournamentNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTournamentNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, name: e.target.value }));
-  }, []);
+  };
 
   const handleTournamentDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, date: e.target.value }));
@@ -2435,7 +2435,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentNameChange, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
+  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
 
   // Check if showing login screen
   if (appState.showLogin) {
