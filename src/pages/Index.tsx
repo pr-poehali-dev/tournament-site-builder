@@ -211,10 +211,6 @@ const Index = () => {
     setNewUser(prev => ({ ...prev, password: e.target.value }));
   }, []);
 
-  const handleNewUserNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewUser(prev => ({ ...prev, name: e.target.value }));
-  }, []);
-
   const handleNewUserCityChange = useCallback((value: string) => {
     setNewUser(prev => ({ ...prev, city: value }));
   }, []);
