@@ -1486,39 +1486,25 @@ const Index = () => {
             <CardTitle className="flex items-center justify-between">
               <span>Туры турнира</span>
               {(() => {
-                // Можем генерировать новый тур если:
+                // Можем создать новый тур если:
                 // 1. Не достигли максимального количества туров
-                // 2. Предыдущий тур завершен (для топа) или это швейцарка
+                // 2. Все результаты предыдущего тура введены
                 const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
                 
                 if (!canGenerateRound) return false;
                 
-                const isNextRoundTop = tournament.currentRound >= tournament.swissRounds;
-                if (isNextRoundTop && tournament.rounds.length > 0) {
-                  // Для топ-туров проверяем, что предыдущий тур завершен
+                // Проверяем что все результаты предыдущего тура введены
+                if (tournament.rounds.length > 0) {
                   const lastRound = tournament.rounds[tournament.rounds.length - 1];
                   const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
                   return allMatchesHaveResults;
                 }
                 
-                return true; // Для швейцарки можно всегда генерировать
+                return true; // Первый тур можно всегда создать
               })() && (
                 <Button onClick={() => generatePairings(tournament.id)}>
                   <Icon name="Users" size={16} className="mr-2" />
-                  {tournament.currentRound < tournament.swissRounds 
-                    ? `Сгенерировать швейцарский тур ${tournament.currentRound + 1}`
-                    : (() => {
-                        const topRound = tournament.currentRound - tournament.swissRounds + 1;
-                        const remainingTopRounds = tournament.topRounds - topRound + 1;
-                        
-                        if (remainingTopRounds === 1) return 'Сгенерировать финал';
-                        if (remainingTopRounds === 2) return 'Сгенерировать полуфинал';
-                        if (remainingTopRounds === 3) return 'Сгенерировать четвертьфинал';
-                        
-                        const participants = Math.pow(2, remainingTopRounds);
-                        return `Сгенерировать топ-${participants}`;
-                      })()
-                  }
+                  Создать {tournament.currentRound + 1} тур
                 </Button>
               )}
             </CardTitle>
@@ -1633,13 +1619,41 @@ const Index = () => {
                     }, 0);
                   }, 0);
                   
+                  // Вычисляем коэффициент Бухгольца (сумма очков оппонентов)
+                  const buchholzScore = tournament.rounds.reduce((totalBuchholz, round) => {
+                    const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+                    
+                    return totalBuchholz + playerMatches.reduce((matchBuchholz, match) => {
+                      const opponentId = match.player1Id === playerId ? match.player2Id : match.player1Id;
+                      if (!opponentId) return matchBuchholz; // БАЙ не учитывается
+                      
+                      // Вычисляем очки оппонента
+                      const opponentPoints = tournament.rounds.reduce((opTotal, opRound) => {
+                        const opponentMatches = opRound.matches.filter(m => m.player1Id === opponentId || m.player2Id === opponentId);
+                        return opTotal + opponentMatches.reduce((opMatchTotal, opMatch) => {
+                          if (opMatch.player1Id === opponentId) return opMatchTotal + opMatch.points1;
+                          if (opMatch.player2Id === opponentId) return opMatchTotal + opMatch.points2;
+                          return opMatchTotal;
+                        }, 0);
+                      }, 0);
+                      
+                      return matchBuchholz + opponentPoints;
+                    }, 0);
+                  }, 0);
+                  
                   return {
                     name: player?.name || 'Неизвестный игрок',
                     points: totalPoints,
+                    buchholz: buchholzScore,
                     playerId
                   };
                 })
-                .sort((a, b) => b.points - a.points)
+                .sort((a, b) => {
+                  // Сначала по очкам (больше очков = выше)
+                  if (b.points !== a.points) return b.points - a.points;
+                  // При равных очках по коэффициенту Бухгольца (больше = выше)
+                  return b.buchholz - a.buchholz;
+                })
                 .map((player, index) => (
                   <div key={player.playerId} className="flex items-center justify-between p-3 bg-background rounded border">
                     <div className="flex items-center gap-3">
@@ -1648,7 +1662,10 @@ const Index = () => {
                       </div>
                       <div className="font-medium">{player.name}</div>
                     </div>
-                    <div className="font-bold">{player.points} очков</div>
+                    <div className="flex flex-col items-end">
+                      <div className="font-bold">{player.points} очков</div>
+                      <div className="text-sm text-muted-foreground">Бухгольц: {player.buchholz}</div>
+                    </div>
                   </div>
                 ))}
             </div>
