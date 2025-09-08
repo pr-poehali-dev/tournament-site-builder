@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -98,9 +98,19 @@ const Index = () => {
     confirmPassword: ''
   });
 
+  // Player management states
+  const [newPlayer, setNewPlayer] = useState({
+    name: '',
+    city: ''
+  });
+
   // Cities management states
   const [newCityName, setNewCityName] = useState('');
   const [editingCity, setEditingCity] = useState<{ id: string; name: string } | null>(null);
+
+  // Refs for input focus management
+  const playerNameInputRef = useRef<HTMLInputElement>(null);
+  const cityNameInputRef = useRef<HTMLInputElement>(null);
 
   // Input handlers with useCallback to prevent focus loss
   const handleLoginUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +139,14 @@ const Index = () => {
 
   const handleNewUserRoleChange = useCallback((value: 'admin' | 'judge' | 'player') => {
     setNewUser(prev => ({ ...prev, role: value }));
+  }, []);
+
+  const handleNewPlayerNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewPlayer(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
+  const handleNewPlayerCityChange = useCallback((value: string) => {
+    setNewPlayer(prev => ({ ...prev, city: value }));
   }, []);
 
   const handleProfileCityChange = useCallback((value: string) => {
@@ -316,15 +334,15 @@ const Index = () => {
       alert('У вас нет прав для добавления игроков');
       return;
     }
-    if (!newUser.name.trim()) {
+    if (!newPlayer.name.trim()) {
       alert('Введите имя игрока');
       return;
     }
 
     const player: Player = {
       id: Date.now().toString(),
-      name: newUser.name.trim(),
-      city: newUser.city?.trim() || undefined,
+      name: newPlayer.name.trim(),
+      city: newPlayer.city?.trim() || undefined,
       rating: 1200,
       tournaments: 0,
       wins: 0,
@@ -337,13 +355,15 @@ const Index = () => {
       players: [...prev.players, player]
     }));
 
-    setNewUser(prev => ({
-      ...prev,
+    setNewPlayer({
       name: '',
       city: ''
-    }));
+    });
 
-    alert(`Игрок ${player.name} успешно добавлен!`);
+    // Восстанавливаем фокус на поле имени игрока
+    setTimeout(() => {
+      playerNameInputRef.current?.focus();
+    }, 0);
   };
 
   const deletePlayer = (playerId: string) => {
@@ -399,7 +419,11 @@ const Index = () => {
     }));
 
     setNewCityName('');
-    alert(`Город ${city.name} успешно добавлен!`);
+
+    // Восстанавливаем фокус на поле названия города
+    setTimeout(() => {
+      cityNameInputRef.current?.focus();
+    }, 0);
   };
 
   const deleteCity = (cityId: string) => {
@@ -936,12 +960,13 @@ const Index = () => {
             <div className="font-medium">Добавить нового игрока</div>
             <div className="flex gap-2">
               <Input
+                ref={playerNameInputRef}
                 placeholder="Имя игрока"
-                value={newUser.name}
-                onChange={handleNewUserNameChange}
+                value={newPlayer.name}
+                onChange={handleNewPlayerNameChange}
                 onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
               />
-              <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
+              <Select value={newPlayer.city} onValueChange={handleNewPlayerCityChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите город" />
                 </SelectTrigger>
@@ -1031,6 +1056,7 @@ const Index = () => {
             <div className="font-medium">Добавить новый город</div>
             <div className="flex gap-2">
               <Input
+                ref={cityNameInputRef}
                 placeholder="Название города"
                 value={newCityName}
                 onChange={handleNewCityNameChange}
