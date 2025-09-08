@@ -20,7 +20,7 @@ interface User {
   city?: string;
 }
 
-type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats';
+type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats' | 'create-tournament';
 
 interface City {
   id: string;
@@ -31,6 +31,19 @@ interface TournamentFormat {
   id: string;
   name: string;
   coefficient: number;
+}
+
+interface Tournament {
+  id: string;
+  name: string;
+  date: string;
+  city: string;
+  format: string;
+  isRated: boolean;
+  swissRounds: number;
+  topRounds: number;
+  participants: string[];
+  status: 'draft' | 'active' | 'completed';
 }
 
 interface Player {
@@ -51,6 +64,7 @@ interface AppState {
   players: Player[];
   cities: City[];
   tournamentFormats: TournamentFormat[];
+  tournaments: Tournament[];
   showLogin: boolean;
 }
 
@@ -87,6 +101,7 @@ const Index = () => {
       { id: 'draft', name: 'Драфт', coefficient: 1 },
       { id: 'constructed', name: 'Констрактед', coefficient: 1 }
     ],
+    tournaments: [],
     showLogin: false
   });
   
@@ -118,6 +133,18 @@ const Index = () => {
 
   // Tournament formats management states
   const [editingFormat, setEditingFormat] = useState<{ id: string; name: string; coefficient: number } | null>(null);
+  
+  // Tournament creation states
+  const [newTournament, setNewTournament] = useState({
+    name: '',
+    date: '',
+    city: '',
+    format: '',
+    isRated: true,
+    swissRounds: 3,
+    topRounds: 0,
+    participants: [] as string[]
+  });
 
   // Cities management states
   const [newCityName, setNewCityName] = useState('');
@@ -428,13 +455,7 @@ const Index = () => {
       return;
     }
     
-    const tournamentName = prompt('Введите название турнира:');
-    if (!tournamentName?.trim()) {
-      return;
-    }
-
-    // Здесь можно добавить логику создания турнира
-    alert(`Турнир "${tournamentName}" будет создан в следующей версии!`);
+    navigateTo('create-tournament');
   };
 
   // Cities management functions
@@ -1454,6 +1475,234 @@ const Index = () => {
     );
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
+  const CreateTournamentPage = useCallback(() => {
+    const handleTournamentSubmit = () => {
+      if (!newTournament.name.trim()) {
+        alert('Введите название турнира');
+        return;
+      }
+      if (!newTournament.date) {
+        alert('Выберите дату турнира');
+        return;
+      }
+      if (!newTournament.city) {
+        alert('Выберите город');
+        return;
+      }
+      if (!newTournament.format) {
+        alert('Выберите формат');
+        return;
+      }
+      if (newTournament.participants.length === 0) {
+        alert('Добавьте хотя бы одного участника');
+        return;
+      }
+
+      const tournament: Tournament = {
+        id: Date.now().toString(),
+        name: newTournament.name.trim(),
+        date: newTournament.date,
+        city: newTournament.city,
+        format: newTournament.format,
+        isRated: newTournament.isRated,
+        swissRounds: newTournament.swissRounds,
+        topRounds: newTournament.topRounds,
+        participants: [...newTournament.participants],
+        status: 'draft'
+      };
+
+      setAppState(prev => ({
+        ...prev,
+        tournaments: [...prev.tournaments, tournament]
+      }));
+
+      // Сбросить форму
+      setNewTournament({
+        name: '',
+        date: '',
+        city: '',
+        format: '',
+        isRated: true,
+        swissRounds: 3,
+        topRounds: 0,
+        participants: []
+      });
+
+      alert(`Турнир "${tournament.name}" создан!`);
+      navigateTo('tournaments');
+    };
+
+    const toggleParticipant = (playerId: string) => {
+      setNewTournament(prev => ({
+        ...prev,
+        participants: prev.participants.includes(playerId)
+          ? prev.participants.filter(id => id !== playerId)
+          : [...prev.participants, playerId]
+      }));
+    };
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon name="Plus" size={20} />
+              Создание турнира
+            </CardTitle>
+            <CardDescription>
+              Заполните данные для создания нового турнира
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Основные данные турнира */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tournament-name">Название турнира</Label>
+                <Input
+                  id="tournament-name"
+                  value={newTournament.name}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Введите название турнира"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="tournament-date">Дата турнира</Label>
+                <Input
+                  id="tournament-date"
+                  type="date"
+                  value={newTournament.date}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="tournament-city">Город</Label>
+                <Select value={newTournament.city} onValueChange={(value) => setNewTournament(prev => ({ ...prev, city: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите город" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appState.cities.map(city => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="tournament-format">Формат</Label>
+                <Select value={newTournament.format} onValueChange={(value) => setNewTournament(prev => ({ ...prev, format: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите формат" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appState.tournamentFormats.map(format => (
+                      <SelectItem key={format.id} value={format.name}>
+                        {format.name} (коэф. {format.coefficient})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Настройки турнира */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is-rated"
+                  checked={newTournament.isRated}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, isRated: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="is-rated">Рейтинговый турнир</Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="swiss-rounds">Туры швейцарки (1-8)</Label>
+                <Input
+                  id="swiss-rounds"
+                  type="number"
+                  min="1"
+                  max="8"
+                  value={newTournament.swissRounds}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, swissRounds: Math.max(1, Math.min(8, parseInt(e.target.value) || 1)) }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="top-rounds">Туры топа</Label>
+                <Input
+                  id="top-rounds"
+                  type="number"
+                  min="0"
+                  value={newTournament.topRounds}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, topRounds: Math.max(0, parseInt(e.target.value) || 0) }))}
+                />
+              </div>
+            </div>
+
+            {/* Участники */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Участники турнира</Label>
+                <div className="text-sm text-muted-foreground">
+                  Выбрано: {newTournament.participants.length} из {appState.players.length}
+                </div>
+              </div>
+              
+              <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
+                {appState.players.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Icon name="Users" size={48} className="mx-auto mb-4 opacity-50" />
+                    <p>Нет игроков</p>
+                    <p className="text-sm mt-2">Добавьте игроков в системе</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {appState.players.map(player => (
+                      <div key={player.id} className="flex items-center space-x-2 p-2 rounded border hover:bg-accent/50 transition-colors">
+                        <input
+                          type="checkbox"
+                          id={`player-${player.id}`}
+                          checked={newTournament.participants.includes(player.id)}
+                          onChange={() => toggleParticipant(player.id)}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
+                          <div className="font-medium">{player.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {player.city} • Рейтинг: {player.rating}
+                          </div>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Кнопки */}
+            <div className="flex gap-4">
+              <Button onClick={handleTournamentSubmit} className="flex-1">
+                <Icon name="Plus" size={16} className="mr-2" />
+                Создать турнир
+              </Button>
+              <Button variant="outline" onClick={() => navigateTo('tournaments')}>
+                <Icon name="ArrowLeft" size={16} className="mr-2" />
+                Отмена
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo]);
+
   // Check if showing login screen
   if (appState.showLogin) {
     return (
@@ -1524,6 +1773,7 @@ const Index = () => {
         {appState.currentPage === 'players' && <PlayersPage />}
         {appState.currentPage === 'cities' && <CitiesPage />}
         {appState.currentPage === 'formats' && <FormatsPage />}
+        {appState.currentPage === 'create-tournament' && <CreateTournamentPage />}
       </div>
     </div>
   );
