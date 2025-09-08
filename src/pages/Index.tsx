@@ -211,6 +211,10 @@ const Index = () => {
     setNewUser(prev => ({ ...prev, password: e.target.value }));
   }, []);
 
+  const handleNewUserNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUser(prev => ({ ...prev, name: e.target.value }));
+  }, []);
+
   const handleNewUserCityChange = useCallback((value: string) => {
     setNewUser(prev => ({ ...prev, city: value }));
   }, []);
@@ -310,12 +314,12 @@ const Index = () => {
       return;
     }
 
-    // Получаем значения из DOM через refs
-    const username = userUsernameInputRef.current?.value?.trim() || '';
-    const password = userPasswordInputRef.current?.value?.trim() || '';
-    const name = userNameInputRef.current?.value?.trim() || '';
-    const city = newUser.city?.trim() || undefined; // Остается из состояния, так как Select
-    const role = newUser.role; // Остается из состояния, так как Select
+    // Получаем значения из состояния
+    const username = newUser.username?.trim() || '';
+    const password = newUser.password?.trim() || '';
+    const name = newUser.name?.trim() || '';
+    const city = newUser.city?.trim() || undefined;
+    const role = newUser.role;
 
     if (!username || !password || !name) {
       alert('Заполните все обязательные поля');
@@ -359,12 +363,7 @@ const Index = () => {
       players: newPlayer ? [...prev.players, newPlayer] : prev.players
     }));
 
-    // Очищаем поля через DOM refs
-    if (userUsernameInputRef.current) userUsernameInputRef.current.value = '';
-    if (userPasswordInputRef.current) userPasswordInputRef.current.value = '';
-    if (userNameInputRef.current) userNameInputRef.current.value = '';
-    
-    // Сбрасываем Select поля через состояние, но сохраняем город
+    // Сбрасываем поля через состояние, но сохраняем город
     setNewUser(prev => ({
       username: '',
       password: '',
@@ -1132,25 +1131,25 @@ const Index = () => {
           <div className="space-y-3 p-3 border rounded-lg">
             <div className="font-medium">Создать пользователя</div>
             <div className="grid grid-cols-2 gap-2">
-              <input
-                ref={userUsernameInputRef}
+              <Input
                 type="text"
                 placeholder="Логин"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={newUser.username}
+                onChange={handleNewUserUsernameChange}
               />
-              <input
-                ref={userPasswordInputRef}
+              <Input
                 type="password"
                 placeholder="Пароль"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={newUser.password}
+                onChange={handleNewUserPasswordChange}
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <input
-                ref={userNameInputRef}
+              <Input
                 type="text"
                 placeholder="Имя"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={newUser.name}
+                onChange={handleNewUserNameChange}
               />
               <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
                 <SelectTrigger>
@@ -1239,7 +1238,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
+  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserUsernameChange, handleNewUserPasswordChange, handleNewUserNameChange, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
 
   const ProfilePage = () => (
     <div className="max-w-2xl mx-auto space-y-6">
