@@ -6,81 +6,69 @@ import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament, Page } from '@/types';
 
+interface TournamentForm {
+  name: string;
+  date: string;
+  city: string;
+  format: string;
+  description: string;
+  isRated: boolean;
+  swissRounds: number;
+  topRounds: number;
+  participants: string[];
+}
+
 interface CreateTournamentPageProps {
   appState: AppState;
   navigateTo: (page: Page) => void;
   addTournament: (tournament: Tournament) => void;
-  tournamentNameInputRef: React.RefObject<HTMLInputElement>;
-  tournamentDateInputRef: React.RefObject<HTMLInputElement>;
-  tournamentCitySelectRef: React.RefObject<HTMLSelectElement>;
-  tournamentFormatSelectRef: React.RefObject<HTMLSelectElement>;
-  tournamentIsRatedInputRef: React.RefObject<HTMLInputElement>;
-  tournamentSwissRoundsInputRef: React.RefObject<HTMLInputElement>;
-  tournamentTopRoundsInputRef: React.RefObject<HTMLInputElement>;
+  tournamentForm: TournamentForm;
+  setTournamentForm: React.Dispatch<React.SetStateAction<TournamentForm>>;
 }
 
 export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.memo(({
   appState,
   navigateTo,
   addTournament,
-  tournamentNameInputRef,
-  tournamentDateInputRef,
-  tournamentCitySelectRef,
-  tournamentFormatSelectRef,
-  tournamentIsRatedInputRef,
-  tournamentSwissRoundsInputRef,
-  tournamentTopRoundsInputRef
+  tournamentForm,
+  setTournamentForm
 }) => {
   const handleTournamentSubmit = () => {
-    const tournamentName = tournamentNameInputRef.current?.value?.trim() || '';
-    const tournamentDate = tournamentDateInputRef.current?.value?.trim() || '';
-    const tournamentCity = tournamentCitySelectRef.current?.value?.trim() || '';
-    const tournamentFormat = tournamentFormatSelectRef.current?.value?.trim() || '';
-    const tournamentIsRated = tournamentIsRatedInputRef.current?.checked ?? true;
-    const tournamentSwissRounds = Math.max(1, Math.min(8, parseInt(tournamentSwissRoundsInputRef.current?.value || '3') || 3));
-    const tournamentTopRounds = Math.max(0, parseInt(tournamentTopRoundsInputRef.current?.value || '0') || 0);
+    const { name, date, city, format, isRated, swissRounds, topRounds, participants } = tournamentForm;
     
-    if (!tournamentName) {
+    if (!name.trim()) {
       alert('Введите название турнира');
       return;
     }
-    if (!tournamentDate) {
+    if (!date.trim()) {
       alert('Выберите дату турнира');
       return;
     }
-    if (!tournamentCity) {
+    if (!city.trim()) {
       alert('Выберите город');
       return;
     }
-    if (!tournamentFormat) {
+    if (!format.trim()) {
       alert('Выберите формат');
       return;
     }
-    // Считываем отмеченных участников из checkbox'ов
-    const selectedParticipants: string[] = [];
-    appState.players.forEach(player => {
-      const checkbox = document.getElementById(`player-${player.id}`) as HTMLInputElement;
-      if (checkbox && checkbox.checked) {
-        selectedParticipants.push(player.id);
-      }
-    });
 
-    if (selectedParticipants.length === 0) {
+    if (participants.length === 0) {
       alert('Добавьте хотя бы одного участника');
       return;
     }
 
     const tournament: Tournament = {
       id: Date.now().toString(),
-      name: tournamentName,
-      date: tournamentDate,
-      city: tournamentCity,
-      format: tournamentFormat,
-      description: `Турнир по формату ${tournamentFormat} в городе ${tournamentCity}`,
-      isRated: tournamentIsRated,
-      swissRounds: tournamentSwissRounds,
-      topRounds: tournamentTopRounds,
-      participants: selectedParticipants,
+      name: name.trim(),
+      date: date.trim(),
+      city: city.trim(),
+      format: format.trim(),
+      description: `Турнир по формату ${format.trim()} в городе ${city.trim()}`,
+      isRated,
+      swissRounds: Math.max(1, Math.min(8, swissRounds)),
+      topRounds: Math.max(0, topRounds),
+      participants,
       status: 'draft',
       rounds: [],
       currentRound: 0
@@ -89,18 +77,36 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     addTournament(tournament);
 
     // Сбросить форму
-    if (tournamentNameInputRef.current) tournamentNameInputRef.current.value = '';
-    if (tournamentDateInputRef.current) tournamentDateInputRef.current.value = '';
-    if (tournamentCitySelectRef.current) tournamentCitySelectRef.current.value = '';
-    if (tournamentFormatSelectRef.current) tournamentFormatSelectRef.current.value = '';
-    if (tournamentIsRatedInputRef.current) tournamentIsRatedInputRef.current.checked = true;
-    if (tournamentSwissRoundsInputRef.current) tournamentSwissRoundsInputRef.current.value = '3';
-    if (tournamentTopRoundsInputRef.current) tournamentTopRoundsInputRef.current.value = '0';
-    
-    // Checkbox'ы участников очистятся автоматически через key при ререндере
+    setTournamentForm({
+      name: '',
+      date: '',
+      city: '',
+      format: '',
+      description: '',
+      isRated: true,
+      swissRounds: 3,
+      topRounds: 0,
+      participants: []
+    });
 
     alert(`Турнир "${tournament.name}" создан!`);
     navigateTo('tournaments');
+  };
+
+  const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {
+    setTournamentForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleParticipantToggle = (playerId: string, checked: boolean) => {
+    setTournamentForm(prev => ({
+      ...prev,
+      participants: checked
+        ? [...prev.participants, playerId]
+        : prev.participants.filter(id => id !== playerId)
+    }));
   };
 
   return (
@@ -121,11 +127,11 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="tournament-name">Название турнира</Label>
               <Input
-                key="tournament-name-input"
-                ref={tournamentNameInputRef}
                 id="tournament-name"
                 type="text"
                 placeholder="Введите название турнира"
+                value={tournamentForm.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 autoComplete="off"
               />
             </div>
@@ -133,10 +139,10 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="tournament-date">Дата турнира</Label>
               <Input
-                key="tournament-date-input"
-                ref={tournamentDateInputRef}
                 id="tournament-date"
                 type="date"
+                value={tournamentForm.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
                 autoComplete="off"
               />
             </div>
@@ -144,11 +150,10 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="tournament-city">Город</Label>
               <select
-                key="tournament-city-select"
-                ref={tournamentCitySelectRef}
                 id="tournament-city"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                defaultValue=""
+                value={tournamentForm.city}
+                onChange={(e) => handleInputChange('city', e.target.value)}
               >
                 <option value="">Выберите город</option>
                 {appState.cities.map(city => (
@@ -162,11 +167,10 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="tournament-format">Формат</Label>
               <select
-                key="tournament-format-select"
-                ref={tournamentFormatSelectRef}
                 id="tournament-format"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                defaultValue=""
+                value={tournamentForm.format}
+                onChange={(e) => handleInputChange('format', e.target.value)}
               >
                 <option value="">Выберите формат</option>
                 {appState.tournamentFormats.map(format => (
@@ -182,11 +186,10 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-2">
               <input
-                key="tournament-rated-checkbox"
-                ref={tournamentIsRatedInputRef}
                 type="checkbox"
                 id="is-rated"
-                defaultChecked={true}
+                checked={tournamentForm.isRated}
+                onChange={(e) => handleInputChange('isRated', e.target.checked)}
                 className="w-4 h-4"
               />
               <Label htmlFor="is-rated">Рейтинговый турнир</Label>
@@ -195,13 +198,12 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="swiss-rounds">Туры швейцарки (1-8)</Label>
               <Input
-                key="tournament-swiss-rounds-input"
-                ref={tournamentSwissRoundsInputRef}
                 id="swiss-rounds"
                 type="number"
                 min="1"
                 max="8"
-                defaultValue="3"
+                value={tournamentForm.swissRounds}
+                onChange={(e) => handleInputChange('swissRounds', parseInt(e.target.value) || 3)}
                 autoComplete="off"
               />
             </div>
@@ -209,12 +211,11 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <div className="space-y-2">
               <Label htmlFor="top-rounds">Туры топа</Label>
               <Input
-                key="tournament-top-rounds-input"
-                ref={tournamentTopRoundsInputRef}
                 id="top-rounds"
                 type="number"
                 min="0"
-                defaultValue="0"
+                value={tournamentForm.topRounds}
+                onChange={(e) => handleInputChange('topRounds', parseInt(e.target.value) || 0)}
                 autoComplete="off"
               />
             </div>
@@ -224,7 +225,6 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Участники турнира</Label>
-
             </div>
             
             <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
@@ -241,6 +241,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
                       <input
                         type="checkbox"
                         id={`player-${player.id}`}
+                        checked={tournamentForm.participants.includes(player.id)}
+                        onChange={(e) => handleParticipantToggle(player.id, e.target.checked)}
                         className="w-4 h-4"
                       />
                       <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">

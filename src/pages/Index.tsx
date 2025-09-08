@@ -100,9 +100,7 @@ const Index = () => {
     participants: [] as string[]
   });
   
-  const tournamentNameRef = useRef<HTMLInputElement>(null);
-  const tournamentDateRef = useRef<HTMLInputElement>(null);
-  const tournamentDescriptionRef = useRef<HTMLInputElement>(null);
+  // Tournament refs removed - now using controlled components
 
   // Tournament editing state
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
@@ -690,9 +688,6 @@ const Index = () => {
             setTournamentForm={setTournamentForm}
             navigateTo={navigateTo}
             addTournament={createTournament}
-            tournamentNameRef={tournamentNameRef}
-            tournamentDateRef={tournamentDateRef}
-            tournamentDescriptionRef={tournamentDescriptionRef}
           />
         )}
 
