@@ -265,9 +265,7 @@ const Index = () => {
   const [editingFormat, setEditingFormat] = useState<{ id: string; name: string; coefficient: number } | null>(null);
   
   // Tournament creation states
-  const [newTournament, setNewTournament] = useState({
-    participants: [] as string[]
-  });
+  const [, forceUpdate] = useState({});
 
   // Cities management states
   const [newCityName, setNewCityName] = useState('');
@@ -289,6 +287,7 @@ const Index = () => {
   const tournamentIsRatedInputRef = useRef<HTMLInputElement>(null);
   const tournamentSwissRoundsInputRef = useRef<HTMLInputElement>(null);
   const tournamentTopRoundsInputRef = useRef<HTMLInputElement>(null);
+  const tournamentParticipantsRef = useRef<string[]>([]);
 
 
 
@@ -2178,12 +2177,13 @@ const Index = () => {
   // Tournament form handlers - все поля теперь используют refs
 
   const toggleParticipant = (playerId: string) => {
-    setNewTournament(prev => ({
-      ...prev,
-      participants: prev.participants.includes(playerId)
-        ? prev.participants.filter(id => id !== playerId)
-        : [...prev.participants, playerId]
-    }));
+    // Обновляем только ref, без состояния
+    tournamentParticipantsRef.current = tournamentParticipantsRef.current.includes(playerId)
+      ? tournamentParticipantsRef.current.filter(id => id !== playerId)
+      : [...tournamentParticipantsRef.current, playerId];
+    
+    // Принудительно обновляем только блок с участниками
+    forceUpdate({});
   };
 
   const CreateTournamentPage = React.memo(() => {
@@ -2212,7 +2212,7 @@ const Index = () => {
         alert('Выберите формат');
         return;
       }
-      if (newTournament.participants.length === 0) {
+      if (tournamentParticipantsRef.current.length === 0) {
         alert('Добавьте хотя бы одного участника');
         return;
       }
@@ -2227,7 +2227,7 @@ const Index = () => {
         isRated: tournamentIsRated,
         swissRounds: tournamentSwissRounds,
         topRounds: tournamentTopRounds,
-        participants: [...newTournament.participants],
+        participants: [...tournamentParticipantsRef.current],
         status: 'draft',
         rounds: [],
         currentRound: 0
@@ -2247,9 +2247,8 @@ const Index = () => {
       if (tournamentSwissRoundsInputRef.current) tournamentSwissRoundsInputRef.current.value = '3';
       if (tournamentTopRoundsInputRef.current) tournamentTopRoundsInputRef.current.value = '0';
       
-      setNewTournament({
-        participants: []
-      });
+      // Участники уже очищены выше через ref
+      tournamentParticipantsRef.current = [];
 
       alert(`Турнир "${tournament.name}" создан!`);
       navigateTo('tournaments');
@@ -2377,7 +2376,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <Label>Участники турнира</Label>
                 <div className="text-sm text-muted-foreground">
-                  Выбрано: {newTournament.participants.length} из {appState.players.length}
+                  Выбрано: {tournamentParticipantsRef.current.length} из {appState.players.length}
                 </div>
               </div>
               
@@ -2395,7 +2394,7 @@ const Index = () => {
                         <input
                           type="checkbox"
                           id={`player-${player.id}`}
-                          checked={newTournament.participants.includes(player.id)}
+                          checked={tournamentParticipantsRef.current.includes(player.id)}
                           onChange={() => toggleParticipant(player.id)}
                           className="w-4 h-4"
                         />
