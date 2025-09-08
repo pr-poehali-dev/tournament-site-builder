@@ -1642,7 +1642,7 @@ const Index = () => {
     </div>
   );
 
-  const PlayersPage = () => (
+  const PlayersPage = useCallback(() => (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -1651,7 +1651,7 @@ const Index = () => {
               <Icon name="Users" size={20} className="mr-2" />
               Управление игроками ({appState.players.length})
             </div>
-            <Button onClick={addPlayer}>
+            <Button onClick={() => playerNameInputRef.current?.focus()}>
               <Icon name="UserPlus" size={16} className="mr-2" />
               Добавить игрока
             </Button>
@@ -1739,7 +1739,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  );
+  ), [appState.players, appState.cities, appState.currentUser, newPlayer, addPlayer, deletePlayer, handleNewPlayerNameChange, handleNewPlayerCityChange, handlePlayerNameKeyPress]);
 
   const CitiesPage = useCallback(() => {
     return (
