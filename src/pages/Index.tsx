@@ -185,13 +185,19 @@ const Index = () => {
 
   // Auth functions
   const login = () => {
+    console.log('Login attempt with:', loginForm);
+    console.log('Available users:', appState.users);
+    
     const user = appState.users.find(u => 
       u.username === loginForm.username && 
       u.password === loginForm.password &&
       u.isActive
     );
     
+    console.log('Found user:', user);
+    
     if (user) {
+      console.log('Login successful, updating state...');
       setAppState(prev => ({ ...prev, currentUser: user, showLogin: false }));
       setLoginForm({ username: '', password: '' });
       setProfileEdit({
@@ -200,6 +206,8 @@ const Index = () => {
         newPassword: '',
         confirmPassword: ''
       });
+    } else {
+      console.log('Login failed - user not found or inactive');
     }
   };
 
@@ -640,8 +648,13 @@ const Index = () => {
   }
 
   // Rating Page Component  
-  const RatingPage = () => (
-    <div className="space-y-6">
+  const RatingPage = () => {
+    console.log('RatingPage rendering, players count:', appState.players.length);
+    console.log('Players data:', appState.players);
+    
+    return (
+    <div className="space-y-6" style={{background: 'red', padding: '20px'}}>
+      <h1 style={{color: 'white', fontSize: '24px'}}>RATING PAGE DEBUG</h1>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -1166,6 +1179,10 @@ const Index = () => {
   ), [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
 
   // Main render with navigation
+  console.log('Main render - currentPage:', appState.currentPage);
+  console.log('Main render - currentUser:', appState.currentUser);
+  console.log('Main render - showLogin:', appState.showLogin);
+  
   return (
     <div className="min-h-screen bg-muted/30 p-6">
       <div className="max-w-6xl mx-auto">
