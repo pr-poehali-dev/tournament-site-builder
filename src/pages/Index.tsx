@@ -2211,7 +2211,7 @@ const Index = () => {
     }));
   };
 
-  const CreateTournamentPage = useCallback(() => {
+  const CreateTournamentPage = () => {
     const handleTournamentSubmit = () => {
       const tournamentName = tournamentNameInputRef.current?.value?.trim() || '';
       
@@ -2294,6 +2294,7 @@ const Index = () => {
               <div className="space-y-2">
                 <Label htmlFor="tournament-name">Название турнира</Label>
                 <Input
+                  key="tournament-name-input"
                   ref={tournamentNameInputRef}
                   id="tournament-name"
                   type="text"
@@ -2436,7 +2437,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, tournamentNameInputRef]);
+  };
 
   // Check if showing login screen
   if (appState.showLogin) {
