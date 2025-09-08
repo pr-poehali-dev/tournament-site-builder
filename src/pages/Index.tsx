@@ -1516,10 +1516,6 @@ const Index = () => {
   }, [appState.tournamentFormats, editingFormat, addFormat, startEditFormat, deleteFormat, handleEditFormatNameChange, handleEditFormatCoefficientChange, saveEditFormat, cancelEditFormat]);
 
   // Мемоизированные обработчики для создания турнира
-  const handleTournamentNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTournament(prev => ({ ...prev, name: e.target.value }));
-  }, []);
-
   const handleTournamentDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, date: e.target.value }));
   }, []);
@@ -1555,7 +1551,11 @@ const Index = () => {
 
   const CreateTournamentPage = useCallback(() => {
     const handleTournamentSubmit = () => {
-      if (!newTournament.name.trim()) {
+      // Читаем название турнира прямо из DOM
+      const nameInput = document.getElementById('tournament-name') as HTMLInputElement;
+      const tournamentName = nameInput?.value?.trim() || '';
+      
+      if (!tournamentName) {
         alert('Введите название турнира');
         return;
       }
@@ -1578,7 +1578,7 @@ const Index = () => {
 
       const tournament: Tournament = {
         id: Date.now().toString(),
-        name: newTournament.name.trim(),
+        name: tournamentName,
         date: newTournament.date,
         city: newTournament.city,
         format: newTournament.format,
@@ -1629,8 +1629,7 @@ const Index = () => {
                 <Label htmlFor="tournament-name">Название турнира</Label>
                 <Input
                   id="tournament-name"
-                  value={newTournament.name}
-                  onChange={handleTournamentNameChange}
+                  defaultValue={newTournament.name}
                   placeholder="Введите название турнира"
                 />
               </div>
@@ -1770,7 +1769,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentNameChange, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
+  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant]);
 
   // Check if showing login screen
   if (appState.showLogin) {
