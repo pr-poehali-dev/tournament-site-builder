@@ -55,6 +55,7 @@ interface Tournament {
   date: string;
   city: string;
   format: string;
+  description: string;
   isRated: boolean;
   swissRounds: number;
   topRounds: number;
@@ -119,7 +120,53 @@ const Index = () => {
       { id: 'draft', name: 'Драфт', coefficient: 1 },
       { id: 'constructed', name: 'Констрактед', coefficient: 1 }
     ],
-    tournaments: [],
+    tournaments: [
+      {
+        id: '1',
+        name: 'Зимний турнир 2024',
+        date: '2024-12-15',
+        city: 'Москва',
+        format: 'Sealed',
+        description: 'Крупный турнир по формату Sealed',
+        isRated: true,
+        swissRounds: 5,
+        topRounds: 3,
+        participants: ['admin-1', '1', '2', '3'],
+        status: 'active' as const,
+        rounds: [],
+        currentRound: 0
+      },
+      {
+        id: '2', 
+        name: 'Весенний драфт',
+        date: '2024-03-10',
+        city: 'СПб',
+        format: 'Draft',
+        description: 'Турнир по драфту для всех уровней',
+        isRated: true,
+        swissRounds: 4,
+        topRounds: 2,
+        participants: ['1', '2', '4'],
+        status: 'completed' as const,
+        rounds: [],
+        currentRound: 0
+      },
+      {
+        id: '3',
+        name: 'Летний конструктед',
+        date: '2024-06-20',
+        city: 'Казань', 
+        format: 'Constructed',
+        description: 'Соревнование по конструктед формату',
+        isRated: false,
+        swissRounds: 3,
+        topRounds: 1,
+        participants: ['admin-1', '3', '4', '5'],
+        status: 'draft' as const,
+        rounds: [],
+        currentRound: 0
+      }
+    ],
     showLogin: false
   });
   
@@ -1608,9 +1655,15 @@ const Index = () => {
   );
 
   const MyTournamentsPage = () => {
+    const currentUserId = appState.currentUser?.id || '';
     const myTournaments = appState.tournaments.filter(tournament => 
-      tournament.participants.includes(appState.currentUser?.id || '')
+      tournament.participants.includes(currentUserId)
     );
+
+    // Отладочная информация
+    console.log('Current user ID:', currentUserId);
+    console.log('All tournaments:', appState.tournaments);
+    console.log('My tournaments:', myTournaments);
 
     return (
       <div className="space-y-6">
