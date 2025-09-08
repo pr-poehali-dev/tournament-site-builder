@@ -63,6 +63,7 @@ interface Tournament {
   status: 'draft' | 'active' | 'completed';
   rounds: Round[];
   currentRound: number;
+  confirmed?: boolean; // Подтверждён администратором
 }
 
 interface Player {
@@ -865,6 +866,163 @@ const Index = () => {
     }));
   }, []);
 
+  // ELO rating calculation function
+  const calculateNewRatings = useCallback((tournament: Tournament) => {
+    const K_FACTOR = 32; // ELO K-factor
+    const ratingChanges = new Map<string, number>();
+
+    // Initialize rating changes for all participants
+    tournament.participants.forEach(playerId => {
+      ratingChanges.set(playerId, 0);
+    });
+
+    // Process each match in all rounds
+    tournament.rounds.forEach(round => {
+      round.matches.forEach(match => {
+        if (!match.result || !match.player2Id) return; // Skip matches without results or byes
+
+        const player1Id = match.player1Id;
+        const player2Id = match.player2Id;
+
+        // Get current ratings (use current state, not initial)
+        const player1 = appState.players.find(p => p.id === player1Id);
+        const player2 = appState.players.find(p => p.id === player2Id);
+        
+        if (!player1 || !player2) return;
+
+        const rating1 = player1.rating + (ratingChanges.get(player1Id) || 0);
+        const rating2 = player2.rating + (ratingChanges.get(player2Id) || 0);
+
+        // Expected scores based on ELO formula
+        const expectedScore1 = 1 / (1 + Math.pow(10, (rating2 - rating1) / 400));
+        const expectedScore2 = 1 / (1 + Math.pow(10, (rating1 - rating2) / 400));
+
+        // Actual scores based on match result
+        let actualScore1 = 0;
+        let actualScore2 = 0;
+
+        switch (match.result) {
+          case 'win1':
+            actualScore1 = 1;
+            actualScore2 = 0;
+            break;
+          case 'win2':
+            actualScore1 = 0;
+            actualScore2 = 1;
+            break;
+          case 'draw':
+            actualScore1 = 0.5;
+            actualScore2 = 0.5;
+            break;
+        }
+
+        // Calculate rating changes
+        const ratingChange1 = K_FACTOR * (actualScore1 - expectedScore1);
+        const ratingChange2 = K_FACTOR * (actualScore2 - expectedScore2);
+
+        // Apply tournament format coefficient
+        const formatCoefficient = appState.tournamentFormats.find(f => f.name === tournament.format)?.coefficient || 1;
+        
+        ratingChanges.set(player1Id, (ratingChanges.get(player1Id) || 0) + (ratingChange1 * formatCoefficient));
+        ratingChanges.set(player2Id, (ratingChanges.get(player2Id) || 0) + (ratingChange2 * formatCoefficient));
+      });
+    });
+
+    return ratingChanges;
+  }, [appState.players, appState.tournamentFormats]);
+
+  const confirmTournament = useCallback((tournamentId: string) => {
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') {
+      alert('Только администратор может подтверждать турниры');
+      return;
+    }
+
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return;
+
+    if (tournament.status !== 'completed') {
+      alert('Можно подтверждать только завершённые турниры');
+      return;
+    }
+
+    if (tournament.confirmed) {
+      alert('Турнир уже подтверждён');
+      return;
+    }
+
+    // Calculate rating changes for rated tournaments
+    let ratingChanges = new Map<string, number>();
+    let tournamentStats = new Map<string, { wins: number; losses: number; draws: number }>();
+
+    if (tournament.isRated) {
+      ratingChanges = calculateNewRatings(tournament);
+      
+      // Calculate tournament statistics for each player
+      tournament.participants.forEach(playerId => {
+        let wins = 0, losses = 0, draws = 0;
+        
+        tournament.rounds.forEach(round => {
+          round.matches.forEach(match => {
+            if (match.player1Id === playerId) {
+              if (!match.player2Id) { // Bye
+                wins++;
+              } else if (match.result === 'win1') {
+                wins++;
+              } else if (match.result === 'win2') {
+                losses++;
+              } else if (match.result === 'draw') {
+                draws++;
+              }
+            } else if (match.player2Id === playerId) {
+              if (match.result === 'win2') {
+                wins++;
+              } else if (match.result === 'win1') {
+                losses++;
+              } else if (match.result === 'draw') {
+                draws++;
+              }
+            }
+          });
+        });
+
+        tournamentStats.set(playerId, { wins, losses, draws });
+      });
+    }
+
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId
+          ? { ...t, confirmed: true }
+          : t
+      ),
+      players: tournament.isRated 
+        ? prev.players.map(player => {
+            const ratingChange = ratingChanges.get(player.id) || 0;
+            const stats = tournamentStats.get(player.id);
+            
+            if (tournament.participants.includes(player.id) && stats) {
+              return {
+                ...player,
+                rating: Math.round(player.rating + ratingChange),
+                tournaments: player.tournaments + 1,
+                wins: player.wins + stats.wins,
+                losses: player.losses + stats.losses,
+                draws: player.draws + stats.draws
+              };
+            }
+            return player;
+          })
+        : prev.players
+    }));
+
+    const ratingMessage = tournament.isRated 
+      ? '\nРейтинги игроков обновлены согласно результатам турнира.'
+      : '';
+    
+    alert(`Турнир "${tournament.name}" подтверждён администратором!${ratingMessage}`);
+  }, [appState.tournaments, appState.currentUser, calculateNewRatings]);
+
   // Key press handlers (defined after main functions to avoid initialization errors)
   const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -1500,39 +1658,7 @@ const Index = () => {
         {/* Управление турами */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Туры турнира</span>
-              <div className="flex gap-2">
-                {tournament.rounds.length > 0 && (
-                  <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
-                    <Icon name="Trash2" size={16} className="mr-2" />
-                    Удалить последний тур
-                  </Button>
-                )}
-                {(() => {
-                  // Можем создать новый тур если:
-                  // 1. Не достигли максимального количества туров
-                  // 2. Все результаты предыдущего тура введены
-                  const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
-                  
-                  if (!canGenerateRound) return false;
-                  
-                  // Проверяем что все результаты предыдущего тура введены
-                  if (tournament.rounds.length > 0) {
-                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                    return allMatchesHaveResults;
-                  }
-                  
-                  return true; // Первый тур можно всегда создать
-                })() && (
-                  <Button onClick={() => generatePairings(tournament.id)}>
-                    <Icon name="Users" size={16} className="mr-2" />
-                    Создать {tournament.currentRound + 1} тур
-                  </Button>
-                )}
-              </div>
-            </CardTitle>
+            <CardTitle>Туры турнира</CardTitle>
           </CardHeader>
           <CardContent>
             {tournament.rounds.length === 0 ? (
@@ -1626,6 +1752,45 @@ const Index = () => {
               </div>
             )}
           </CardContent>
+        </Card>
+
+        {/* Управление турниром */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Управление турниром</span>
+              <div className="flex gap-2">
+                {tournament.rounds.length > 0 && (
+                  <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
+                    <Icon name="Trash2" size={16} className="mr-2" />
+                    Удалить последний тур
+                  </Button>
+                )}
+                {(() => {
+                  // Можем создать новый тур если:
+                  // 1. Не достигли максимального количества туров
+                  // 2. Все результаты предыдущего тура введены
+                  const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
+                  
+                  if (!canGenerateRound) return false;
+                  
+                  // Проверяем что все результаты предыдущего тура введены
+                  if (tournament.rounds.length > 0) {
+                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                    return allMatchesHaveResults;
+                  }
+                  
+                  return true; // Первый тур можно всегда создать
+                })() && (
+                  <Button onClick={() => generatePairings(tournament.id)}>
+                    <Icon name="Users" size={16} className="mr-2" />
+                    Создать {tournament.currentRound + 1} тур
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
         </Card>
 
         {/* Турнирная таблица */}
@@ -1771,6 +1936,12 @@ const Index = () => {
                     <Badge variant={tournament.status === 'draft' ? 'outline' : tournament.status === 'active' ? 'default' : 'secondary'}>
                       {tournament.status === 'draft' ? 'Черновик' : tournament.status === 'active' ? 'Активен' : 'Завершён'}
                     </Badge>
+                    {tournament.status === 'completed' && tournament.confirmed && (
+                      <Badge variant="default" className="bg-green-600">
+                        <Icon name="CheckCircle" size={12} className="mr-1" />
+                        Подтверждён
+                      </Badge>
+                    )}
                     <div>
                       <div className="font-medium text-lg">{tournament.name}</div>
                       <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -1797,6 +1968,14 @@ const Index = () => {
                       <Icon name="Settings" size={14} className="mr-1" />
                       Управление
                     </Button>
+                    {appState.currentUser?.role === 'admin' && 
+                     tournament.status === 'completed' && 
+                     !tournament.confirmed && (
+                      <Button variant="default" size="sm" onClick={() => confirmTournament(tournament.id)}>
+                        <Icon name="CheckCircle" size={14} className="mr-1" />
+                        Подтвердить турнир
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
