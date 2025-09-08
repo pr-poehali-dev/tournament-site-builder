@@ -2177,12 +2177,12 @@ const Index = () => {
   // Tournament form handlers - все поля теперь используют refs
 
   const toggleParticipant = (playerId: string) => {
-    // Обновляем только ref, без состояния
+    // Только изменение данных для визуализации, без побочных эффектов
     tournamentParticipantsRef.current = tournamentParticipantsRef.current.includes(playerId)
       ? tournamentParticipantsRef.current.filter(id => id !== playerId)
       : [...tournamentParticipantsRef.current, playerId];
     
-    // Принудительно обновляем только блок с участниками
+    // Принудительное обновление только для визуального отображения checkbox
     forceUpdate({});
   };
 
