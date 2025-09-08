@@ -1105,7 +1105,7 @@ const Index = () => {
   };
 
   // Page Components
-  const AdminPage = useCallback(() => (
+  const AdminPage = () => (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -1120,11 +1120,13 @@ const Index = () => {
             <div className="font-medium">Создать пользователя</div>
             <div className="grid grid-cols-2 gap-2">
               <Input
+                key="user-username-input"
                 ref={userUsernameInputRef}
                 type="text"
                 placeholder="Логин"
               />
               <Input
+                key="user-password-input"
                 ref={userPasswordInputRef}
                 type="password"
                 placeholder="Пароль"
@@ -1132,6 +1134,7 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <Input
+                key="user-name-input"
                 ref={userNameInputRef}
                 type="text"
                 placeholder="Имя"
@@ -1223,7 +1226,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
+  );
 
   const ProfilePage = () => (
     <div className="max-w-2xl mx-auto space-y-6">
