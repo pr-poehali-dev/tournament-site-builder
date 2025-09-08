@@ -111,6 +111,9 @@ const Index = () => {
   // Refs for input focus management
   const playerNameInputRef = useRef<HTMLInputElement>(null);
   const cityNameInputRef = useRef<HTMLInputElement>(null);
+  const userUsernameInputRef = useRef<HTMLInputElement>(null);
+  const userPasswordInputRef = useRef<HTMLInputElement>(null);
+  const userNameInputRef = useRef<HTMLInputElement>(null);
 
   // Input handlers with useCallback to prevent focus loss
   const handleLoginUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,24 +229,32 @@ const Index = () => {
       alert('У вас нет прав для создания пользователей');
       return;
     }
-    if (!newUser.username.trim() || !newUser.password.trim() || !newUser.name.trim()) {
+
+    // Получаем значения из DOM через refs
+    const username = userUsernameInputRef.current?.value?.trim() || '';
+    const password = userPasswordInputRef.current?.value?.trim() || '';
+    const name = userNameInputRef.current?.value?.trim() || '';
+    const city = newUser.city?.trim() || undefined; // Остается из состояния, так как Select
+    const role = newUser.role; // Остается из состояния, так как Select
+
+    if (!username || !password || !name) {
       alert('Заполните все обязательные поля');
       return;
     }
 
     // Проверка на уникальность логина
-    if (appState.users.some(u => u.username === newUser.username.trim())) {
+    if (appState.users.some(u => u.username === username)) {
       alert('Пользователь с таким логином уже существует');
       return;
     }
 
     const user: User = {
       id: Date.now().toString(),
-      username: newUser.username.trim(),
-      password: newUser.password.trim(),
-      name: newUser.name.trim(),
-      city: newUser.city?.trim() || undefined,
-      role: newUser.role,
+      username: username,
+      password: password,
+      name: name,
+      city: city,
+      role: role,
       isActive: true
     };
 
@@ -268,6 +279,12 @@ const Index = () => {
       players: newPlayer ? [...prev.players, newPlayer] : prev.players
     }));
 
+    // Очищаем поля через DOM refs
+    if (userUsernameInputRef.current) userUsernameInputRef.current.value = '';
+    if (userPasswordInputRef.current) userPasswordInputRef.current.value = '';
+    if (userNameInputRef.current) userNameInputRef.current.value = '';
+    
+    // Сбрасываем Select поля через состояние
     setNewUser({
       username: '',
       password: '',
@@ -660,7 +677,7 @@ const Index = () => {
   };
 
   // Page Components
-  const AdminPage = () => (
+  const AdminPage = useCallback(() => (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -674,23 +691,25 @@ const Index = () => {
           <div className="space-y-3 p-3 border rounded-lg">
             <div className="font-medium">Создать пользователя</div>
             <div className="grid grid-cols-2 gap-2">
-              <Input
+              <input
+                ref={userUsernameInputRef}
+                type="text"
                 placeholder="Логин"
-                value={newUser.username}
-                onChange={handleNewUserUsernameChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
-              <Input
-                placeholder="Пароль"
+              <input
+                ref={userPasswordInputRef}
                 type="password"
-                value={newUser.password}
-                onChange={handleNewUserPasswordChange}
+                placeholder="Пароль"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <Input
+              <input
+                ref={userNameInputRef}
+                type="text"
                 placeholder="Имя"
-                value={newUser.name}
-                onChange={handleNewUserNameChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
               <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
                 <SelectTrigger>
@@ -779,7 +798,7 @@ const Index = () => {
         </CardContent>
       </Card>
     </div>
-  );
+  ), [newUser, appState.cities, appState.users, appState.currentUser, handleNewUserCityChange, handleNewUserRoleChange, createUser, toggleUserStatus, deleteUser]);
 
   const ProfilePage = () => (
     <div className="max-w-2xl mx-auto space-y-6">
