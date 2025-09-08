@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -126,14 +126,7 @@ const Index = () => {
   // Auth states
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   
-  // User management states
-  const [newUser, setNewUser] = useState({
-    username: '',
-    password: '',
-    role: 'player' as const,
-    name: '',
-    city: ''
-  });
+
   
   // Profile edit states
   const [profileEdit, setProfileEdit] = useState({
@@ -178,15 +171,7 @@ const Index = () => {
   const formatNameInputRef = useRef<HTMLInputElement>(null);
   const formatCoefficientInputRef = useRef<HTMLInputElement>(null);
 
-  // Инициализация города по умолчанию при смене пользователя
-  useEffect(() => {
-    if (appState.currentUser) {
-      setNewUser(prev => ({
-        ...prev,
-        city: appState.currentUser?.city || ''
-      }));
-    }
-  }, [appState.currentUser]);
+
 
   // Input handlers with useCallback to prevent focus loss
   const handleLoginUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,13 +184,7 @@ const Index = () => {
 
 
 
-  const handleNewUserCityChange = useCallback((value: string) => {
-    setNewUser(prev => ({ ...prev, city: value }));
-  }, []);
 
-  const handleNewUserRoleChange = useCallback((value: 'admin' | 'judge' | 'player') => {
-    setNewUser(prev => ({ ...prev, role: value }));
-  }, []);
 
   const handleNewPlayerNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNewPlayer(prev => ({ ...prev, name: e.target.value }));
@@ -273,11 +252,6 @@ const Index = () => {
         newPassword: '',
         confirmPassword: ''
       });
-      // Устанавливаем город по умолчанию для создания новых пользователей
-      setNewUser(prev => ({
-        ...prev,
-        city: user.city || ''
-      }));
     } else {
       console.log('Login failed - user not found or inactive');
     }
@@ -1036,6 +1010,10 @@ const Index = () => {
     const localUsernameRef = useRef<HTMLInputElement>(null);
     const localPasswordRef = useRef<HTMLInputElement>(null);
     const localNameRef = useRef<HTMLInputElement>(null);
+    
+    // Локальное состояние для Select полей - полностью независимое
+    const [localCity, setLocalCity] = useState(appState.currentUser?.city || '');
+    const [localRole, setLocalRole] = useState<'admin' | 'judge' | 'player'>('player');
 
     const handleCreateUser = () => {
       if (!appState.currentUser || appState.currentUser.role !== 'admin') {
@@ -1043,12 +1021,12 @@ const Index = () => {
         return;
       }
 
-      // Получаем значения из локальных refs
+      // Получаем значения из локальных refs и локального состояния
       const username = localUsernameRef.current?.value?.trim() || '';
       const password = localPasswordRef.current?.value?.trim() || '';
       const name = localNameRef.current?.value?.trim() || '';
-      const city = newUser.city?.trim() || undefined;
-      const role = newUser.role;
+      const city = localCity?.trim() || undefined;
+      const role = localRole;
 
       if (!username || !password || !name) {
         alert('Заполните все обязательные поля');
@@ -1098,10 +1076,7 @@ const Index = () => {
       if (localNameRef.current) localNameRef.current.value = '';
       
       // Сбрасываем только роль, город сохраняем
-      setNewUser(prev => ({
-        ...prev,
-        role: 'player'
-      }));
+      setLocalRole('player');
 
       const message = (user.role === 'judge' || user.role === 'player')
         ? `Пользователь ${user.name} создан! ${user.role === 'judge' ? 'Судья' : 'Игрок'} также автоматически добавлен в список игроков.`
@@ -1130,7 +1105,7 @@ const Index = () => {
             type="text"
             placeholder="Имя"
           />
-          <Select value={newUser.city} onValueChange={handleNewUserCityChange}>
+          <Select value={localCity} onValueChange={setLocalCity}>
             <SelectTrigger>
               <SelectValue placeholder="Город" />
             </SelectTrigger>
@@ -1142,7 +1117,7 @@ const Index = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={newUser.role} onValueChange={handleNewUserRoleChange}>
+          <Select value={localRole} onValueChange={setLocalRole}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
