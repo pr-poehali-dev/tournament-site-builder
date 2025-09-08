@@ -170,59 +170,19 @@ const Index = () => {
         name: 'Миша Спешнев',
         isActive: true,
         city: 'Рязань'
-      },
-      {
-        id: 'user9',
-        username: 'user9',
-        password: '1234',
-        role: 'player',
-        name: 'Альберт',
-        isActive: true,
-        city: 'Рязань'
-      },
-      {
-        id: 'user10',
-        username: 'user10',
-        password: '1234',
-        role: 'player',
-        name: 'Сергей Чикучинов',
-        isActive: true,
-        city: 'Рязань'
-      },
-      {
-        id: 'user11',
-        username: 'user11',
-        password: '1234',
-        role: 'player',
-        name: 'Дмитрий Тимофеев',
-        isActive: true,
-        city: 'Рязань'
-      },
-      {
-        id: 'user12',
-        username: 'user12',
-        password: '1234',
-        role: 'player',
-        name: 'Евгений Суныгин',
-        isActive: true,
-        city: 'Рязань'
       }
     ],
     currentUser: null,
     currentPage: 'rating',
     players: [
-      { id: 'user1', name: 'Дмитрий Бурцев', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user2', name: 'Илья Читаев', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user3', name: 'Ефим', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user4', name: 'Ферестан', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user5', name: 'Демьян', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user6', name: 'Герман', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user7', name: 'Настя', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user8', name: 'Миша Спешнев', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user9', name: 'Альберт', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user10', name: 'Сергей Чикучинов', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user11', name: 'Дмитрий Тимофеев', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 },
-      { id: 'user12', name: 'Евгений Суныгин', city: 'Рязань', rating: 1200, tournaments: 0, wins: 0, losses: 0, draws: 0 }
+      { id: 'player1', name: 'Дмитрий Бурцев', city: 'Рязань', rating: 2100, tournaments: 12, wins: 10, losses: 1, draws: 1 },
+      { id: 'player2', name: 'Илья Читаев', city: 'Рязань', rating: 2050, tournaments: 10, wins: 8, losses: 1, draws: 1 },
+      { id: 'player3', name: 'Ефим', city: 'Рязань', rating: 2000, tournaments: 8, wins: 6, losses: 1, draws: 1 },
+      { id: 'player4', name: 'Ферестан', city: 'Рязань', rating: 1900, tournaments: 15, wins: 11, losses: 3, draws: 1 },
+      { id: 'player5', name: 'Демьян', city: 'Рязань', rating: 1850, tournaments: 12, wins: 8, losses: 3, draws: 1 },
+      { id: 'player6', name: 'Герман', city: 'Рязань', rating: 1800, tournaments: 10, wins: 6, losses: 3, draws: 1 },
+      { id: 'player7', name: 'Настя', city: 'Рязань', rating: 1750, tournaments: 8, wins: 4, losses: 3, draws: 1 },
+      { id: 'player8', name: 'Миша Спешнев', city: 'Рязань', rating: 1700, tournaments: 6, wins: 3, losses: 2, draws: 1 }
     ],
     cities: [
       { id: 'ryazan', name: 'Рязань' }
@@ -232,7 +192,53 @@ const Index = () => {
       { id: 'draft', name: 'Драфт', coefficient: 1 },
       { id: 'constructed', name: 'Констрактед', coefficient: 1 }
     ],
-    tournaments: [],
+    tournaments: [
+      {
+        id: '1',
+        name: 'Рязанский турнир Magic: The Gathering',
+        date: '2024-12-15',
+        city: 'Рязань',
+        format: 'Sealed',
+        description: 'Турнир по формату Sealed в Рязани',
+        isRated: true,
+        swissRounds: 4,
+        topRounds: 2,
+        participants: ['user1', 'user4', 'user5', 'user6'],
+        status: 'active' as const,
+        rounds: [],
+        currentRound: 0
+      },
+      {
+        id: '2', 
+        name: 'Зимний Draft',
+        date: '2024-01-20',
+        city: 'Рязань',
+        format: 'Draft',
+        description: 'Турнир по драфту среди игроков Рязани',
+        isRated: true,
+        swissRounds: 3,
+        topRounds: 1,
+        participants: ['user2', 'user7', 'user8'],
+        status: 'completed' as const,
+        rounds: [],
+        currentRound: 0
+      },
+      {
+        id: '3',
+        name: 'Constructed Championship',
+        date: '2024-03-10',
+        city: 'Рязань', 
+        format: 'Constructed',
+        description: 'Чемпионат по конструктед формату',
+        isRated: true,
+        swissRounds: 5,
+        topRounds: 3,
+        participants: ['user3', 'user4', 'user5', 'user6', 'user7', 'user8'],
+        status: 'draft' as const,
+        rounds: [],
+        currentRound: 0
+      }
+    ],
     showLogin: false
   });
   
@@ -858,117 +864,6 @@ const Index = () => {
       )
     }));
   }, []);
-
-  const finishTournament = useCallback((tournamentId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      tournaments: prev.tournaments.map(tournament =>
-        tournament.id === tournamentId
-          ? { ...tournament, status: 'completed' as const }
-          : tournament
-      )
-    }));
-  }, []);
-
-  const confirmTournament = useCallback((tournamentId: string) => {
-    const tournament = appState.tournaments.find(t => t.id === tournamentId);
-    if (!tournament || tournament.status !== 'completed') return;
-
-    // Вычисляем новые рейтинги для участников
-    const ratingChanges: { [playerId: string]: number } = {};
-    
-    // Получаем коэффициент формата
-    const formatCoeff = appState.tournamentFormats.find(f => f.name === tournament.format)?.coefficient || 1;
-    
-    tournament.participants.forEach(playerId => {
-      let totalScore = 0;
-      let gamesPlayed = 0;
-      
-      tournament.rounds.forEach(round => {
-        const playerMatches = round.matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
-        playerMatches.forEach(match => {
-          if (match.result) {
-            gamesPlayed++;
-            if (match.player1Id === playerId) {
-              if (match.result === 'win1') totalScore += 1;
-              else if (match.result === 'draw') totalScore += 0.5;
-            } else if (match.player2Id === playerId) {
-              if (match.result === 'win2') totalScore += 1;
-              else if (match.result === 'draw') totalScore += 0.5;
-            }
-          }
-          // БАЙ засчитывается как победа
-          if (!match.player2Id && match.player1Id === playerId) {
-            gamesPlayed++;
-            totalScore += 1;
-          }
-        });
-      });
-      
-      // Базовый расчет: 10 очков рейтинга за игру * процент побед * коэффициент формата
-      const winRate = gamesPlayed > 0 ? totalScore / gamesPlayed : 0;
-      const ratingChange = Math.round(gamesPlayed * 10 * (winRate - 0.5) * formatCoeff);
-      ratingChanges[playerId] = ratingChange;
-    });
-    
-    // Обновляем рейтинги игроков
-    setAppState(prev => ({
-      ...prev,
-      tournaments: prev.tournaments.map(t =>
-        t.id === tournamentId
-          ? { ...t, status: 'confirmed' as const }
-          : t
-      ),
-      players: prev.players.map(player => {
-        const change = ratingChanges[player.id];
-        return change !== undefined
-          ? { 
-              ...player, 
-              rating: Math.max(800, player.rating + change), // Минимальный рейтинг 800
-              tournaments: player.tournaments + 1,
-              wins: player.wins + (tournament.rounds.reduce((wins, round) => {
-                const playerMatches = round.matches.filter(m => m.player1Id === player.id || m.player2Id === player.id);
-                return wins + playerMatches.reduce((matchWins, match) => {
-                  if (match.result) {
-                    if ((match.player1Id === player.id && match.result === 'win1') ||
-                        (match.player2Id === player.id && match.result === 'win2')) {
-                      return matchWins + 1;
-                    }
-                    if (!match.player2Id && match.player1Id === player.id) {
-                      return matchWins + 1; // БАЙ
-                    }
-                  }
-                  return matchWins;
-                }, 0);
-              }, 0)),
-              losses: player.losses + (tournament.rounds.reduce((losses, round) => {
-                const playerMatches = round.matches.filter(m => m.player1Id === player.id || m.player2Id === player.id);
-                return losses + playerMatches.reduce((matchLosses, match) => {
-                  if (match.result) {
-                    if ((match.player1Id === player.id && match.result === 'win2') ||
-                        (match.player2Id === player.id && match.result === 'win1')) {
-                      return matchLosses + 1;
-                    }
-                  }
-                  return matchLosses;
-                }, 0);
-              }, 0)),
-              draws: player.draws + (tournament.rounds.reduce((draws, round) => {
-                const playerMatches = round.matches.filter(m => m.player1Id === player.id || m.player2Id === player.id);
-                return draws + playerMatches.reduce((matchDraws, match) => {
-                  if (match.result === 'draw') {
-                    return matchDraws + 1;
-                  }
-                  return matchDraws;
-                }, 0);
-              }, 0))
-            }
-          : player;
-      })
-    }));
-
-    alert(`Турнир "${tournament.name}" подтвержден! Рейтинги участников пересчитаны.`);
-  }, [appState.tournaments, appState.tournamentFormats]);
 
   // Key press handlers (defined after main functions to avoid initialization errors)
   const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1605,7 +1500,39 @@ const Index = () => {
         {/* Управление турами */}
         <Card>
           <CardHeader>
-            <CardTitle>Туры турнира</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Туры турнира</span>
+              <div className="flex gap-2">
+                {tournament.rounds.length > 0 && (
+                  <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
+                    <Icon name="Trash2" size={16} className="mr-2" />
+                    Удалить последний тур
+                  </Button>
+                )}
+                {(() => {
+                  // Можем создать новый тур если:
+                  // 1. Не достигли максимального количества туров
+                  // 2. Все результаты предыдущего тура введены
+                  const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
+                  
+                  if (!canGenerateRound) return false;
+                  
+                  // Проверяем что все результаты предыдущего тура введены
+                  if (tournament.rounds.length > 0) {
+                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
+                    return allMatchesHaveResults;
+                  }
+                  
+                  return true; // Первый тур можно всегда создать
+                })() && (
+                  <Button onClick={() => generatePairings(tournament.id)}>
+                    <Icon name="Users" size={16} className="mr-2" />
+                    Создать {tournament.currentRound + 1} тур
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {tournament.rounds.length === 0 ? (
@@ -1701,58 +1628,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Управление турниром */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-2 justify-center">
-              {tournament.rounds.length > 0 && (
-                <Button variant="outline" onClick={() => deleteLastRound(tournament.id)}>
-                  <Icon name="Trash2" size={16} className="mr-2" />
-                  Удалить последний тур
-                </Button>
-              )}
-              {(() => {
-                // Можем создать новый тур если:
-                // 1. Не достигли максимального количества туров
-                // 2. Все результаты предыдущего тура введены
-                const canGenerateRound = tournament.currentRound < (tournament.swissRounds + tournament.topRounds);
-                
-                if (!canGenerateRound) {
-                  // Проверяем можем ли завершить турнир
-                  if (tournament.rounds.length > 0) {
-                    const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                    const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                    if (allMatchesHaveResults && tournament.status !== 'completed') {
-                      return (
-                        <Button onClick={() => finishTournament(tournament.id)} className="bg-green-600 hover:bg-green-700">
-                          <Icon name="Trophy" size={16} className="mr-2" />
-                          Завершить турнир
-                        </Button>
-                      );
-                    }
-                  }
-                  return null;
-                }
-                
-                // Проверяем что все результаты предыдущего тура введены
-                if (tournament.rounds.length > 0) {
-                  const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                  const allMatchesHaveResults = lastRound.matches.every(match => match.result !== undefined);
-                  if (!allMatchesHaveResults) return null;
-                }
-                
-                return (
-                  <Button onClick={() => generatePairings(tournament.id)}>
-                    <Icon name="Users" size={16} className="mr-2" />
-                    Создать {tournament.currentRound + 1} тур
-                  </Button>
-                );
-              })()}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Турнирная таблица */
+        {/* Турнирная таблица */}
         <Card>
           <CardHeader>
             <CardTitle>Турнирная таблица</CardTitle>
@@ -1921,16 +1797,6 @@ const Index = () => {
                       <Icon name="Settings" size={14} className="mr-1" />
                       Управление
                     </Button>
-                    {appState.currentUser?.role === 'admin' && tournament.status === 'completed' && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => confirmTournament(tournament.id)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Icon name="Check" size={14} className="mr-1" />
-                        Подтвердить турнир
-                      </Button>
-                    )}
                   </div>
                 </div>
               ))}
@@ -1998,7 +1864,7 @@ const Index = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">Прогресс</div>
-                          <div className="font-medium">{completedRounds}{"/"}{totalRounds} туров</div>
+                          <div className="font-medium">{completedRounds}/{totalRounds} туров</div>
                           <div className="text-xs text-muted-foreground">{progress}%</div>
                         </div>
                       </div>
@@ -2088,7 +1954,7 @@ const Index = () => {
                     <div className="font-medium">{player.name}</div>
                     <div className="text-sm text-muted-foreground">
                       {player.city && `${player.city} • `}
-                      {player.tournaments} турниров • {`${player.wins}П/${player.losses}Пр/${player.draws}Н`}
+                      {player.tournaments} турниров • {player.wins}П/{player.losses}Пр/{player.draws}Н
                     </div>
                   </div>
                 </div>
