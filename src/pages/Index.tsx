@@ -20,7 +20,12 @@ interface User {
   city?: string;
 }
 
-type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile';
+type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities';
+
+interface City {
+  id: string;
+  name: string;
+}
 
 interface Player {
   id: string;
@@ -38,6 +43,7 @@ interface AppState {
   currentUser: User | null;
   currentPage: Page;
   players: Player[];
+  cities: City[];
   showLogin: boolean;
 }
 
@@ -61,6 +67,14 @@ const Index = () => {
       { id: '4', name: 'Екатерина Козлова', city: 'Москва', rating: 1890, tournaments: 10, wins: 6, losses: 3, draws: 1 },
       { id: '5', name: 'Дмитрий Новиков', city: 'Уфа', rating: 1820, tournaments: 6, wins: 3, losses: 2, draws: 1 }
     ],
+    cities: [
+      { id: 'moscow', name: 'Москва' },
+      { id: 'spb', name: 'СПб' },
+      { id: 'kazan', name: 'Казань' },
+      { id: 'ufa', name: 'Уфа' },
+      { id: 'nnovgorod', name: 'Нижний Новгород' },
+      { id: 'ekb', name: 'Екатеринбург' }
+    ],
     showLogin: false
   });
   
@@ -83,6 +97,10 @@ const Index = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Cities management states
+  const [newCityName, setNewCityName] = useState('');
+  const [editingCity, setEditingCity] = useState<{ id: string; name: string } | null>(null);
 
   // Navigation functions
   const navigateTo = (page: Page) => {
@@ -144,9 +162,25 @@ const Index = () => {
       isActive: true
     };
 
+    // Создаем игрока для судей автоматически
+    let newPlayer: Player | null = null;
+    if (user.role === 'judge') {
+      newPlayer = {
+        id: `player-${user.id}`,
+        name: user.name,
+        city: user.city,
+        rating: 1200,
+        tournaments: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0
+      };
+    }
+
     setAppState(prev => ({
       ...prev,
-      users: [...prev.users, user]
+      users: [...prev.users, user],
+      players: newPlayer ? [...prev.players, newPlayer] : prev.players
     }));
 
     setNewUser({
@@ -157,7 +191,10 @@ const Index = () => {
       city: ''
     });
 
-    alert(`Пользователь ${user.name} успешно создан!`);
+    const message = user.role === 'judge' 
+      ? `Пользователь ${user.name} создан! Судья также автоматически добавлен в список игроков.`
+      : `Пользователь ${user.name} успешно создан!`;
+    alert(message);
   };
 
   const toggleUserStatus = (userId: string) => {
@@ -279,6 +316,105 @@ const Index = () => {
     alert(`Турнир "${tournamentName}" будет создан в следующей версии!`);
   };
 
+  // Cities management functions
+  const addCity = () => {
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') {
+      alert('У вас нет прав для добавления городов');
+      return;
+    }
+    if (!newCityName.trim()) {
+      alert('Введите название города');
+      return;
+    }
+
+    // Проверка на уникальность названия
+    if (appState.cities.some(city => city.name.toLowerCase() === newCityName.trim().toLowerCase())) {
+      alert('Город с таким названием уже существует');
+      return;
+    }
+
+    const city: City = {
+      id: Date.now().toString(),
+      name: newCityName.trim()
+    };
+
+    setAppState(prev => ({
+      ...prev,
+      cities: [...prev.cities, city]
+    }));
+
+    setNewCityName('');
+    alert(`Город ${city.name} успешно добавлен!`);
+  };
+
+  const deleteCity = (cityId: string) => {
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') {
+      alert('У вас нет прав для удаления городов');
+      return;
+    }
+
+    const city = appState.cities.find(c => c.id === cityId);
+    if (!city) return;
+
+    // Проверяем, используется ли город
+    const isUsed = appState.players.some(player => player.city === city.name) ||
+                   appState.users.some(user => user.city === city.name);
+    
+    if (isUsed) {
+      alert('Нельзя удалить город, который используется игроками или пользователями');
+      return;
+    }
+
+    if (confirm(`Удалить город "${city.name}"?`)) {
+      setAppState(prev => ({
+        ...prev,
+        cities: prev.cities.filter(c => c.id !== cityId)
+      }));
+      alert(`Город ${city.name} удален!`);
+    }
+  };
+
+  const startEditCity = (city: City) => {
+    setEditingCity(city);
+  };
+
+  const saveEditCity = () => {
+    if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
+    if (!editingCity || !editingCity.name.trim()) return;
+
+    // Проверка на уникальность названия (исключая текущий город)
+    if (appState.cities.some(city => 
+      city.id !== editingCity.id && 
+      city.name.toLowerCase() === editingCity.name.trim().toLowerCase()
+    )) {
+      alert('Город с таким названием уже существует');
+      return;
+    }
+
+    const oldName = appState.cities.find(c => c.id === editingCity.id)?.name;
+
+    setAppState(prev => ({
+      ...prev,
+      cities: prev.cities.map(city =>
+        city.id === editingCity.id ? { ...city, name: editingCity.name.trim() } : city
+      ),
+      // Обновляем название города у всех игроков и пользователей
+      players: prev.players.map(player =>
+        player.city === oldName ? { ...player, city: editingCity.name.trim() } : player
+      ),
+      users: prev.users.map(user =>
+        user.city === oldName ? { ...user, city: editingCity.name.trim() } : user
+      )
+    }));
+
+    setEditingCity(null);
+    alert(`Город переименован в ${editingCity.name.trim()}!`);
+  };
+
+  const cancelEditCity = () => {
+    setEditingCity(null);
+  };
+
   // Header Navigation Component
   const NavigationHeader = () => (
     <div className="flex items-center justify-between mb-8 bg-card p-4 rounded-lg shadow-sm border">
@@ -309,6 +445,12 @@ const Index = () => {
                 <DropdownMenuItem onClick={() => navigateTo('admin')}>
                   <Icon name="Settings" size={16} className="mr-2" />
                   Админка
+                </DropdownMenuItem>
+              )}
+              {appState.currentUser.role === 'admin' && (
+                <DropdownMenuItem onClick={() => navigateTo('cities')}>
+                  <Icon name="MapPin" size={16} className="mr-2" />
+                  Города
                 </DropdownMenuItem>
               )}
               {(appState.currentUser.role === 'admin' || appState.currentUser.role === 'judge') && (
@@ -478,11 +620,18 @@ const Index = () => {
                 value={newUser.name}
                 onChange={(e) => setNewUser({...newUser, name: e.target.value})}
               />
-              <Input
-                placeholder="Город"
-                value={newUser.city}
-                onChange={(e) => setNewUser({...newUser, city: e.target.value})}
-              />
+              <Select value={newUser.city} onValueChange={(value) => setNewUser({...newUser, city: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Город" />
+                </SelectTrigger>
+                <SelectContent>
+                  {appState.cities.map(city => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={newUser.role} onValueChange={(value: 'admin' | 'judge' | 'player') => setNewUser({...newUser, role: value})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -604,12 +753,18 @@ const Index = () => {
             <div className="grid gap-4">
               <div>
                 <Label htmlFor="city">Город</Label>
-                <Input
-                  id="city"
-                  value={profileEdit.city}
-                  onChange={(e) => setProfileEdit({...profileEdit, city: e.target.value})}
-                  placeholder="Введите город"
-                />
+                <Select value={profileEdit.city} onValueChange={(value) => setProfileEdit({...profileEdit, city: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите город" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appState.cities.map(city => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-3">
@@ -731,12 +886,18 @@ const Index = () => {
                 onChange={(e) => setNewUser(prev => ({...prev, name: e.target.value}))}
                 onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
               />
-              <Input
-                placeholder="Город"
-                value={newUser.city}
-                onChange={(e) => setNewUser(prev => ({...prev, city: e.target.value}))}
-                onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
-              />
+              <Select value={newUser.city} onValueChange={(value) => setNewUser(prev => ({...prev, city: value}))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите город" />
+                </SelectTrigger>
+                <SelectContent>
+                  {appState.cities.map(city => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button onClick={addPlayer}>
                 <Icon name="Plus" size={16} />
               </Button>
@@ -797,6 +958,110 @@ const Index = () => {
     </div>
   );
 
+  const CitiesPage = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Icon name="MapPin" size={20} className="mr-2" />
+              Управление городами ({appState.cities.length})
+            </div>
+          </CardTitle>
+          <CardDescription>Добавление, редактирование и удаление городов</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Форма добавления города */}
+          <div className="space-y-3 p-3 border rounded-lg">
+            <div className="font-medium">Добавить новый город</div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Название города"
+                value={newCityName}
+                onChange={(e) => setNewCityName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addCity()}
+              />
+              <Button onClick={addCity}>
+                <Icon name="Plus" size={16} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Список городов */}
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {appState.cities.map((city) => (
+              <div key={city.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex-1">
+                  {editingCity?.id === city.id ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={editingCity.name}
+                        onChange={(e) => setEditingCity({...editingCity, name: e.target.value})}
+                        onKeyPress={(e) => e.key === 'Enter' && saveEditCity()}
+                      />
+                      <Button size="sm" onClick={saveEditCity}>
+                        <Icon name="Check" size={14} />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={cancelEditCity}>
+                        <Icon name="X" size={14} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="font-medium">{city.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Игроков: {appState.players.filter(p => p.city === city.name).length}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {editingCity?.id !== city.id && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEditCity(city)}
+                    >
+                      <Icon name="Edit" size={14} />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Удалить город</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Вы уверены что хотите удалить город {city.name}? Это действие нельзя отменить.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Отмена</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteCity(city.id)}>
+                            Удалить
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
+              </div>
+            ))}
+            {appState.cities.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Icon name="MapPin" size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Пока нет городов</p>
+                <p className="text-sm mt-2">Добавьте города для организации турниров</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   // Main render with navigation
   return (
     <div className="min-h-screen bg-muted/30 p-6">
@@ -809,6 +1074,7 @@ const Index = () => {
         {appState.currentPage === 'tournaments' && <TournamentsPage />}
         {appState.currentPage === 'my-tournaments' && <MyTournamentsPage />}
         {appState.currentPage === 'players' && <PlayersPage />}
+        {appState.currentPage === 'cities' && <CitiesPage />}
       </div>
     </div>
   );
