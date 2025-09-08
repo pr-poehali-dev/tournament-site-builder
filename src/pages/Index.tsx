@@ -323,9 +323,9 @@ const Index = () => {
       isActive: true
     };
 
-    // Создаем игрока для судей автоматически
+    // Создаем игрока для судей и игроков автоматически
     let newPlayer: Player | null = null;
-    if (user.role === 'judge') {
+    if (user.role === 'judge' || user.role === 'player') {
       newPlayer = {
         id: `player-${user.id}`,
         name: user.name,
@@ -358,8 +358,8 @@ const Index = () => {
       city: ''
     });
 
-    const message = user.role === 'judge' 
-      ? `Пользователь ${user.name} создан! Судья также автоматически добавлен в список игроков.`
+    const message = (user.role === 'judge' || user.role === 'player')
+      ? `Пользователь ${user.name} создан! ${user.role === 'judge' ? 'Судья' : 'Игрок'} также автоматически добавлен в список игроков.`
       : `Пользователь ${user.name} успешно создан!`;
     alert(message);
   };
@@ -381,7 +381,9 @@ const Index = () => {
     
     setAppState(prev => ({
       ...prev,
-      users: prev.users.filter(user => user.id !== userId)
+      users: prev.users.filter(user => user.id !== userId),
+      // Также удаляем связанного игрока, если он существует
+      players: prev.players.filter(player => player.id !== `player-${userId}`)
     }));
   };
 
