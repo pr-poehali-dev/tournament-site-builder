@@ -287,7 +287,7 @@ const Index = () => {
   const tournamentIsRatedInputRef = useRef<HTMLInputElement>(null);
   const tournamentSwissRoundsInputRef = useRef<HTMLInputElement>(null);
   const tournamentTopRoundsInputRef = useRef<HTMLInputElement>(null);
-  const tournamentParticipantsRef = useRef<string[]>([]);
+
 
 
 
@@ -2176,15 +2176,7 @@ const Index = () => {
 
   // Tournament form handlers - все поля теперь используют refs
 
-  const toggleParticipant = (playerId: string) => {
-    // Только изменение данных для визуализации, без побочных эффектов
-    tournamentParticipantsRef.current = tournamentParticipantsRef.current.includes(playerId)
-      ? tournamentParticipantsRef.current.filter(id => id !== playerId)
-      : [...tournamentParticipantsRef.current, playerId];
-    
-    // Принудительное обновление только для визуального отображения checkbox
-    forceUpdate({});
-  };
+
 
   const CreateTournamentPage = React.memo(() => {
     const handleTournamentSubmit = () => {
@@ -2212,10 +2204,7 @@ const Index = () => {
         alert('Выберите формат');
         return;
       }
-      if (tournamentParticipantsRef.current.length === 0) {
-        alert('Добавьте хотя бы одного участника');
-        return;
-      }
+      // Участники будут считываться напрямую из checkbox'ов при создании турнира
 
       const tournament: Tournament = {
         id: Date.now().toString(),
@@ -2227,7 +2216,7 @@ const Index = () => {
         isRated: tournamentIsRated,
         swissRounds: tournamentSwissRounds,
         topRounds: tournamentTopRounds,
-        participants: [...tournamentParticipantsRef.current],
+        participants: [], // Будет заполнено из checkbox'ов
         status: 'draft',
         rounds: [],
         currentRound: 0
@@ -2247,8 +2236,7 @@ const Index = () => {
       if (tournamentSwissRoundsInputRef.current) tournamentSwissRoundsInputRef.current.value = '3';
       if (tournamentTopRoundsInputRef.current) tournamentTopRoundsInputRef.current.value = '0';
       
-      // Участники уже очищены выше через ref
-      tournamentParticipantsRef.current = [];
+      // Checkbox'ы участников очистятся автоматически через key при ререндере
 
       alert(`Турнир "${tournament.name}" создан!`);
       navigateTo('tournaments');
@@ -2375,9 +2363,7 @@ const Index = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Участники турнира</Label>
-                <div className="text-sm text-muted-foreground">
-                  Выбрано: {tournamentParticipantsRef.current.length} из {appState.players.length}
-                </div>
+
               </div>
               
               <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
@@ -2394,8 +2380,6 @@ const Index = () => {
                         <input
                           type="checkbox"
                           id={`player-${player.id}`}
-                          checked={tournamentParticipantsRef.current.includes(player.id)}
-                          onChange={() => toggleParticipant(player.id)}
                           className="w-4 h-4"
                         />
                         <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
