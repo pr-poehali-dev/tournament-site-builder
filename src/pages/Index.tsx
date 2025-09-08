@@ -409,20 +409,22 @@ const Index = () => {
       alert('У вас нет прав для добавления городов');
       return;
     }
-    if (!newCityName.trim()) {
+    
+    const inputValue = cityNameInputRef.current?.value?.trim() || '';
+    if (!inputValue) {
       alert('Введите название города');
       return;
     }
 
     // Проверка на уникальность названия
-    if (appState.cities.some(city => city.name.toLowerCase() === newCityName.trim().toLowerCase())) {
+    if (appState.cities.some(city => city.name.toLowerCase() === inputValue.toLowerCase())) {
       alert('Город с таким названием уже существует');
       return;
     }
 
     const city: City = {
       id: Date.now().toString(),
-      name: newCityName.trim()
+      name: inputValue
     };
 
     setAppState(prev => ({
@@ -430,7 +432,10 @@ const Index = () => {
       cities: [...prev.cities, city]
     }));
 
-    setNewCityName('');
+    // Очищаем поле через DOM
+    if (cityNameInputRef.current) {
+      cityNameInputRef.current.value = '';
+    }
 
     // Восстанавливаем фокус на поле названия города
     setTimeout(() => {
@@ -1042,12 +1047,17 @@ const Index = () => {
           <CardContent className="space-y-6">
             {/* Форма добавления города */}
             <div className="flex gap-2">
-              <Input
+              <input
+                ref={cityNameInputRef}
+                type="text"
                 placeholder="Название нового города"
-                value={newCityName}
-                onChange={handleNewCityNameChange}
-                onKeyPress={handleCityNameKeyPress}
-                className="flex-1"
+                defaultValue=""
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    addCity();
+                  }
+                }}
+                className="flex-1 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
               <Button onClick={addCity}>
                 <Icon name="Plus" size={16} className="mr-2" />
@@ -1144,7 +1154,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [appState.cities, appState.players, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, addCity, startEditCity, deleteCity, handleEditCityNameChange, handleEditCityKeyPress, saveEditCity, cancelEditCity]);
+  }, [appState.cities, appState.players, editingCity, addCity, startEditCity, deleteCity, handleEditCityNameChange, handleEditCityKeyPress, saveEditCity, cancelEditCity]);
 
   // Check if showing login screen
   if (appState.showLogin) {
