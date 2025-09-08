@@ -266,7 +266,6 @@ const Index = () => {
   
   // Tournament creation states
   const [newTournament, setNewTournament] = useState({
-    name: '',
     date: '',
     city: '',
     format: '',
@@ -2262,7 +2261,6 @@ const Index = () => {
         tournamentNameInputRef.current.value = '';
       }
       setNewTournament({
-        name: '',
         date: '',
         city: '',
         format: '',
@@ -2299,6 +2297,7 @@ const Index = () => {
                   id="tournament-name"
                   type="text"
                   placeholder="Введите название турнира"
+                  autoComplete="off"
                 />
               </div>
               
