@@ -175,24 +175,6 @@ const Index = () => {
     }
   }, [editingCity]);
 
-  const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      addPlayer();
-    }
-  }, [addPlayer]);
-
-  const handleCityNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      addCity();
-    }
-  }, [addCity]);
-
-  const handleEditCityKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      saveEditCity();
-    }
-  }, [saveEditCity]);
-
   // Navigation functions
   const navigateTo = (page: Page) => {
     setAppState(prev => ({ ...prev, currentPage: page }));
@@ -511,6 +493,25 @@ const Index = () => {
   const cancelEditCity = () => {
     setEditingCity(null);
   };
+
+  // Key press handlers (defined after main functions to avoid initialization errors)
+  const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      addPlayer();
+    }
+  }, [addPlayer]);
+
+  const handleCityNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      addCity();
+    }
+  }, [addCity]);
+
+  const handleEditCityKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      saveEditCity();
+    }
+  }, [saveEditCity]);
 
   // Header Navigation Component
   const NavigationHeader = () => (
