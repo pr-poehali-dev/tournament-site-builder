@@ -175,6 +175,24 @@ const Index = () => {
     }
   }, [editingCity]);
 
+  const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      addPlayer();
+    }
+  }, [addPlayer]);
+
+  const handleCityNameKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      addCity();
+    }
+  }, [addCity]);
+
+  const handleEditCityKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      saveEditCity();
+    }
+  }, [saveEditCity]);
+
   // Navigation functions
   const navigateTo = (page: Page) => {
     setAppState(prev => ({ ...prev, currentPage: page }));
@@ -329,7 +347,7 @@ const Index = () => {
   };
 
   // Player management functions
-  const addPlayer = () => {
+  const addPlayer = useCallback(() => {
     if (!appState.currentUser || !['admin', 'judge'].includes(appState.currentUser.role)) {
       alert('У вас нет прав для добавления игроков');
       return;
@@ -364,7 +382,7 @@ const Index = () => {
     setTimeout(() => {
       playerNameInputRef.current?.focus();
     }, 0);
-  };
+  }, [appState.currentUser, newPlayer.name, newPlayer.city, appState.players]);
 
   const deletePlayer = (playerId: string) => {
     if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
@@ -392,7 +410,7 @@ const Index = () => {
   };
 
   // Cities management functions
-  const addCity = () => {
+  const addCity = useCallback(() => {
     if (!appState.currentUser || appState.currentUser.role !== 'admin') {
       alert('У вас нет прав для добавления городов');
       return;
@@ -424,7 +442,7 @@ const Index = () => {
     setTimeout(() => {
       cityNameInputRef.current?.focus();
     }, 0);
-  };
+  }, [appState.currentUser, newCityName, appState.cities]);
 
   const deleteCity = (cityId: string) => {
     if (!appState.currentUser || appState.currentUser.role !== 'admin') {
@@ -457,7 +475,7 @@ const Index = () => {
     setEditingCity(city);
   };
 
-  const saveEditCity = () => {
+  const saveEditCity = useCallback(() => {
     if (!appState.currentUser || appState.currentUser.role !== 'admin') return;
     if (!editingCity || !editingCity.name.trim()) return;
 
@@ -488,7 +506,7 @@ const Index = () => {
 
     setEditingCity(null);
     alert(`Город переименован в ${editingCity.name.trim()}!`);
-  };
+  }, [appState.currentUser, editingCity, appState.cities, appState.players, appState.users]);
 
   const cancelEditCity = () => {
     setEditingCity(null);
@@ -964,7 +982,7 @@ const Index = () => {
                 placeholder="Имя игрока"
                 value={newPlayer.name}
                 onChange={handleNewPlayerNameChange}
-                onKeyPress={(e) => e.key === 'Enter' && addPlayer()}
+                onKeyPress={handlePlayerNameKeyPress}
               />
               <Select value={newPlayer.city} onValueChange={handleNewPlayerCityChange}>
                 <SelectTrigger>
@@ -1060,7 +1078,7 @@ const Index = () => {
                 placeholder="Название города"
                 value={newCityName}
                 onChange={handleNewCityNameChange}
-                onKeyPress={(e) => e.key === 'Enter' && addCity()}
+                onKeyPress={handleCityNameKeyPress}
               />
               <Button onClick={addCity}>
                 <Icon name="Plus" size={16} />
@@ -1078,7 +1096,7 @@ const Index = () => {
                       <Input
                         value={editingCity.name}
                         onChange={handleEditCityNameChange}
-                        onKeyPress={(e) => e.key === 'Enter' && saveEditCity()}
+                        onKeyPress={handleEditCityKeyPress}
                       />
                       <Button size="sm" onClick={saveEditCity}>
                         <Icon name="Check" size={14} />
