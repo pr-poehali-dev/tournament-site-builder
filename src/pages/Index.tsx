@@ -2178,38 +2178,38 @@ const Index = () => {
 
   // Мемоизированные обработчики для создания турнира
 
-  const handleTournamentDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTournamentDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, date: e.target.value }));
-  }, []);
+  };
 
-  const handleTournamentCityChange = useCallback((value: string) => {
+  const handleTournamentCityChange = (value: string) => {
     setNewTournament(prev => ({ ...prev, city: value }));
-  }, []);
+  };
 
-  const handleTournamentFormatChange = useCallback((value: string) => {
+  const handleTournamentFormatChange = (value: string) => {
     setNewTournament(prev => ({ ...prev, format: value }));
-  }, []);
+  };
 
-  const handleTournamentIsRatedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTournamentIsRatedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, isRated: e.target.checked }));
-  }, []);
+  };
 
-  const handleSwissRoundsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSwissRoundsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, swissRounds: Math.max(1, Math.min(8, parseInt(e.target.value) || 1)) }));
-  }, []);
+  };
 
-  const handleTopRoundsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTopRoundsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewTournament(prev => ({ ...prev, topRounds: Math.max(0, parseInt(e.target.value) || 0) }));
-  }, []);
+  };
 
-  const toggleParticipant = useCallback((playerId: string) => {
+  const toggleParticipant = (playerId: string) => {
     setNewTournament(prev => ({
       ...prev,
       participants: prev.participants.includes(playerId)
         ? prev.participants.filter(id => id !== playerId)
         : [...prev.participants, playerId]
     }));
-  }, []);
+  };
 
   const CreateTournamentPage = useCallback(() => {
     const handleTournamentSubmit = () => {
@@ -2436,7 +2436,7 @@ const Index = () => {
         </Card>
       </div>
     );
-  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, handleTournamentDateChange, handleTournamentCityChange, handleTournamentFormatChange, handleTournamentIsRatedChange, handleSwissRoundsChange, handleTopRoundsChange, toggleParticipant, tournamentNameInputRef]);
+  }, [newTournament, appState.cities, appState.tournamentFormats, appState.players, navigateTo, tournamentNameInputRef]);
 
   // Check if showing login screen
   if (appState.showLogin) {
