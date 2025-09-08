@@ -170,10 +170,13 @@ const Index = () => {
   }, []);
 
   const handleEditCityNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (editingCity) {
-      setEditingCity({ ...editingCity, name: e.target.value });
-    }
-  }, [editingCity]);
+    setEditingCity(prev => {
+      if (prev) {
+        return { ...prev, name: e.target.value };
+      }
+      return prev;
+    });
+  }, []);
 
   // Navigation functions
   const navigateTo = (page: Page) => {
