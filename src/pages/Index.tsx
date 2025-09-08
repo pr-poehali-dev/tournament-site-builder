@@ -599,107 +599,58 @@ const Index = () => {
     </div>
   );
 
-  // Login screen
-  if (appState.showLogin) {
-    return (
-      <div className="min-h-screen bg-muted/30 p-6 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center flex items-center justify-center">
-              <Icon name="Shield" size={20} className="mr-2" />
-              Вход в систему
-            </CardTitle>
-            <CardDescription className="text-center">
-              Войдите для доступа к турнирной системе
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="username">Имя пользователя</Label>
-              <Input
-                id="username"
-                value={loginForm.username}
-                onChange={handleLoginUsernameChange}
-                placeholder="admin"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Пароль</Label>
-              <Input
-                id="password"
-                type="password"
-                value={loginForm.password}
-                onChange={handleLoginPasswordChange}
-                placeholder="admin"
-                onKeyPress={(e) => e.key === 'Enter' && login()}
-              />
-            </div>
-            <Button onClick={login} className="w-full">
-              <Icon name="LogIn" size={16} className="mr-2" />
-              Войти
-            </Button>
-            <div className="text-xs text-muted-foreground text-center">
-              Для тестирования: admin / admin
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Rating Page Component  
   const RatingPage = () => {
     console.log('RatingPage rendering, players count:', appState.players.length);
     console.log('Players data:', appState.players);
     
     return (
-    <div className="space-y-6" style={{background: 'red', padding: '20px'}}>
-      <h1 style={{color: 'white', fontSize: '24px'}}>RATING PAGE DEBUG</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Icon name="Award" size={20} className="mr-2" />
-            Рейтинг игроков
-          </CardTitle>
-          <CardDescription>Общий рейтинг всех зарегистрированных игроков</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {appState.players
-              .sort((a, b) => b.rating - a.rating)
-              .map((player, index) => (
-                <div key={player.id} className="flex items-center justify-between p-4 rounded border bg-card">
-                  <div className="flex items-center gap-4">
-                    <Badge variant={index === 0 ? 'default' : index < 3 ? 'secondary' : 'outline'} className="w-8 h-8 flex items-center justify-center rounded-full">
-                      {index + 1}
-                    </Badge>
-                    <div>
-                      <div className="font-medium text-lg">{player.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {player.city && `${player.city} • `}
-                        {player.tournaments} турниров • 
-                        {player.wins}П/{player.losses}Пр/{player.draws}Н
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Icon name="Award" size={20} className="mr-2" />
+              Рейтинг игроков
+            </CardTitle>
+            <CardDescription>Общий рейтинг всех зарегистрированных игроков</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {appState.players
+                .sort((a, b) => b.rating - a.rating)
+                .map((player, index) => (
+                  <div key={player.id} className="flex items-center justify-between p-4 rounded border bg-card">
+                    <div className="flex items-center gap-4">
+                      <Badge variant={index === 0 ? 'default' : index < 3 ? 'secondary' : 'outline'} className="w-8 h-8 flex items-center justify-center rounded-full">
+                        {index + 1}
+                      </Badge>
+                      <div>
+                        <div className="font-medium text-lg">{player.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {player.city && `${player.city} • `}
+                          {player.tournaments} турниров • 
+                          {player.wins}П/{player.losses}Пр/{player.draws}Н
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary">{player.rating}</div>
+                      <div className="text-xs text-muted-foreground">Рейтинг</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{player.rating}</div>
-                    <div className="text-xs text-muted-foreground">Рейтинг</div>
-                  </div>
+                ))}
+              {appState.players.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="Award" size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>Пока нет игроков в рейтинге</p>
+                  <p className="text-sm mt-2">Игроки появятся после участия в турнирах</p>
                 </div>
-              ))}
-            {appState.players.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Icon name="Award" size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Пока нет игроков в рейтинге</p>
-                <p className="text-sm mt-2">Игроки появятся после участия в турнирах</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
 
   // Page Components
   const AdminPage = () => (
@@ -1177,6 +1128,54 @@ const Index = () => {
       </Card>
     </div>
   ), [appState.cities, newCityName, editingCity, handleNewCityNameChange, handleCityNameKeyPress, handleEditCityNameChange, handleEditCityKeyPress, addCity, saveEditCity, cancelEditCity, startEditCity, deleteCity, appState.players]);
+
+  // Check if showing login screen
+  if (appState.showLogin) {
+    return (
+      <div className="min-h-screen bg-muted/30 p-6 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center flex items-center justify-center">
+              <Icon name="Shield" size={20} className="mr-2" />
+              Вход в систему
+            </CardTitle>
+            <CardDescription className="text-center">
+              Войдите для доступа к турнирной системе
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="username">Имя пользователя</Label>
+              <Input
+                id="username"
+                value={loginForm.username}
+                onChange={handleLoginUsernameChange}
+                placeholder="admin"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Пароль</Label>
+              <Input
+                id="password"
+                type="password"
+                value={loginForm.password}
+                onChange={handleLoginPasswordChange}
+                placeholder="admin"
+                onKeyPress={(e) => e.key === 'Enter' && login()}
+              />
+            </div>
+            <Button onClick={login} className="w-full">
+              <Icon name="LogIn" size={16} className="mr-2" />
+              Войти
+            </Button>
+            <div className="text-xs text-muted-foreground text-center">
+              Для тестирования: admin / admin
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Main render with navigation
   console.log('Main render - currentPage:', appState.currentPage);
