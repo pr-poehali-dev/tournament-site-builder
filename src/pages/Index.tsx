@@ -28,6 +28,7 @@ import { PlayersPage } from '@/components/pages/PlayersPage';
 import { CitiesPage } from '@/components/pages/CitiesPage';
 import { FormatsPage } from '@/components/pages/FormatsPage';
 import { CreateTournamentPage } from '@/components/pages/CreateTournamentPage';
+import { TournamentViewPage } from '@/components/pages/TournamentViewPage';
 
 const Index = () => {
   // Get all state and handlers from custom hook
@@ -727,6 +728,14 @@ const Index = () => {
         )}
 
         {appState.currentPage === 'tournamentEdit' && <TournamentEditPage />}
+
+        {typeof appState.currentPage === 'object' && appState.currentPage.page === 'tournament-view' && (
+          <TournamentViewPage
+            appState={appState}
+            tournamentId={appState.currentPage.tournamentId}
+            navigateTo={navigateTo}
+          />
+        )}
       </main>
     </div>
   );

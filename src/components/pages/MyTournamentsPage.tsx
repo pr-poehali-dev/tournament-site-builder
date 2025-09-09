@@ -131,7 +131,11 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({ appState, 
                                    place === 3 ? 'text-orange-600' : 'text-muted-foreground';
                   
                   return (
-                    <TableRow key={tournament.id}>
+                    <TableRow 
+                      key={tournament.id}
+                      className="cursor-pointer hover:bg-muted/80"
+                      onClick={() => navigateTo({ page: 'tournament-view', tournamentId: tournament.id })}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {tournament.name}

@@ -8,7 +8,7 @@ export interface User {
   city?: string;
 }
 
-export type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats' | 'create-tournament' | 'tournamentEdit';
+export type Page = 'rating' | 'tournaments' | 'admin' | 'my-tournaments' | 'players' | 'profile' | 'cities' | 'formats' | 'create-tournament' | 'tournamentEdit' | { page: 'tournament-view'; tournamentId: string };
 
 export interface City {
   id: string;
