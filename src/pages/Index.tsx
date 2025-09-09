@@ -838,7 +838,7 @@ const Index = () => {
                 const handlePlayerChange = (matchIndex: number, playerSlot: 'player1Id' | 'player2Id', playerId: string | null) => {
                   setTempMatches(prev => prev.map((match, idx) => 
                     idx === matchIndex 
-                      ? { ...match, [playerSlot]: playerId || undefined }
+                      ? { ...match, [playerSlot]: playerId === 'BYE' ? undefined : playerId }
                       : match
                   ));
                 };
@@ -880,14 +880,14 @@ const Index = () => {
                         </div>
                         <div className="flex items-center gap-2 flex-1">
                           <Select 
-                            value={match.player1Id || ''}
-                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player1Id', value || null)}
+                            value={match.player1Id || 'BYE'}
+                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player1Id', value === 'BYE' ? null : value)}
                           >
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Выберите игрока 1" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">БАЙ</SelectItem>
+                              <SelectItem value="BYE">БАЙ</SelectItem>
                               {availablePlayers.map(player => (
                                 <SelectItem key={player.id} value={player.id}>
                                   {player.name}
@@ -897,14 +897,14 @@ const Index = () => {
                           </Select>
                           <span className="text-gray-500">VS</span>
                           <Select 
-                            value={match.player2Id || ''}
-                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player2Id', value || null)}
+                            value={match.player2Id || 'BYE'}
+                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player2Id', value === 'BYE' ? null : value)}
                           >
                             <SelectTrigger className="flex-1">
                               <SelectValue placeholder="Выберите игрока 2" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">БАЙ</SelectItem>
+                              <SelectItem value="BYE">БАЙ</SelectItem>
                               {availablePlayers.map(player => (
                                 <SelectItem key={player.id} value={player.id}>
                                   {player.name}
