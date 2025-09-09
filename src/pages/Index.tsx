@@ -260,40 +260,6 @@ const Index = () => {
   }, []);
 
   // Tournament management handlers
-  const createTournament = useCallback(() => {
-    const newTournament: Tournament = {
-      id: `tournament${Date.now()}`,
-      name: tournamentForm.name,
-      date: tournamentForm.date,
-      city: appState.cities.find(c => c.id === tournamentForm.city)?.name || '',
-      format: appState.tournamentFormats.find(f => f.id === tournamentForm.format)?.name || '',
-      description: tournamentForm.description,
-      isRated: tournamentForm.isRated,
-      swissRounds: tournamentForm.swissRounds,
-      topRounds: tournamentForm.topRounds,
-      participants: tournamentForm.participants,
-      status: 'draft',
-      rounds: [],
-      currentRound: 0
-    };
-
-    addTournament(newTournament);
-    
-    // Reset form
-    setTournamentForm({
-      name: '',
-      date: '',
-      city: 'ryazan',
-      format: 'sealed',
-      description: '',
-      isRated: true,
-      swissRounds: 3,
-      topRounds: 1,
-      participants: []
-    });
-    
-    navigateTo('tournaments');
-  }, [tournamentForm, appState.cities, appState.tournamentFormats, addTournament, navigateTo]);
 
   const startEditTournament = useCallback((tournament: Tournament) => {
     setEditingTournament(tournament);
@@ -687,7 +653,7 @@ const Index = () => {
             tournamentForm={tournamentForm}
             setTournamentForm={setTournamentForm}
             navigateTo={navigateTo}
-            addTournament={createTournament}
+            addTournament={addTournament}
           />
         )}
 
