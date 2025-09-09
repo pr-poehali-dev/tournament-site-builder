@@ -332,6 +332,32 @@ const Index = () => {
                               <span className="text-sm text-gray-500">
                                 {match.points1}:{match.points2}
                               </span>
+                              {/* Allow editing result if it's the last round and no next round exists */}
+                              {tournament.rounds && round.number === tournament.rounds.length && (
+                                <div className="flex gap-1 ml-2">
+                                  <Button
+                                    size="sm"
+                                    variant={match.result === 'win1' ? 'default' : 'outline'}
+                                    onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win1')}
+                                  >
+                                    3-0
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={match.result === 'draw' ? 'default' : 'outline'}
+                                    onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'draw')}
+                                  >
+                                    1-1
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={match.result === 'win2' ? 'default' : 'outline'}
+                                    onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win2')}
+                                  >
+                                    0-3
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             !match.player2Id ? (
