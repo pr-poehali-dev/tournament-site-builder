@@ -484,11 +484,14 @@ const Index = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
+                      console.log('Button clicked!');
                       const lastRound = tournament.rounds[tournament.rounds.length - 1];
-                      console.log('Opening pairing editor for round:', lastRound.id, lastRound);
+                      console.log('Last round:', lastRound);
+                      console.log('Setting states...');
                       setEditingRoundId(lastRound.id);
                       setTempMatches([...lastRound.matches]);
                       setIsEditingPairings(true);
+                      console.log('States set - isEditingPairings should be true');
                     }}
                     className="flex items-center gap-2"
                   >
@@ -793,13 +796,13 @@ const Index = () => {
       </main>
 
       {/* Global Pairing Edit Dialog */}
-      {isEditingPairings && editingRoundId && (
+      {isEditingPairings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Изменить пары тура</CardTitle>
               <CardDescription>
-                Выберите игроков для каждого стола. БАЙ означает, что игрок проходит без игры.
+                Отладка: editingRoundId = {editingRoundId}, tempMatches.length = {tempMatches.length}
               </CardDescription>
             </CardHeader>
             <CardContent>
