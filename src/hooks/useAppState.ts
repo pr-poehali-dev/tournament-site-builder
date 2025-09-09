@@ -233,14 +233,24 @@ export const useAppState = () => {
               ...tournament,
               rounds: tournament.rounds.map(round =>
                 round.id === roundId
-                  ? {
-                      ...round,
-                      matches: round.matches.map(match =>
+                  ? (() => {
+                      const updatedMatches = round.matches.map(match =>
                         match.id === matchId
                           ? { ...match, result, points1, points2 }
                           : match
-                      )
-                    }
+                      );
+                      
+                      // Check if all matches in this round are completed
+                      const isRoundCompleted = updatedMatches.every(match => 
+                        !match.player2Id || match.result
+                      );
+                      
+                      return {
+                        ...round,
+                        matches: updatedMatches,
+                        isCompleted: isRoundCompleted
+                      };
+                    })()
                   : round
               )
             }

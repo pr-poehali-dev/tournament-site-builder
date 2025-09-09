@@ -337,7 +337,29 @@ const Index = () => {
                             !match.player2Id ? (
                               <Badge variant="secondary">БАЙ</Badge>
                             ) : (
-                              <Badge variant="outline">Ожидает результата</Badge>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win1')}
+                                >
+                                  3-0
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'draw')}
+                                >
+                                  1-1
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win2')}
+                                >
+                                  0-3
+                                </Button>
+                              </div>
                             )
                           )}
                         </div>
@@ -358,27 +380,41 @@ const Index = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2 justify-center">
-                {tournament.currentRound < totalRounds && tournament.status === 'active' && (
-                  <Button 
-                    onClick={() => {
-                      const pairings = generatePairings(tournament.id);
-                      if (pairings.success) {
-                        const newRound: Round = {
-                          id: `round-${Date.now()}`,
-                          number: tournament.currentRound + 1,
-                          matches: pairings.matches,
-                          isCompleted: false
-                        };
-                        addTournamentRound(tournament.id, newRound);
-                      } else {
-                        alert(pairings.error);
-                      }
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Icon name="Plus" size={16} />
-                    Создать {tournament.currentRound + 1} тур
-                  </Button>
+                {(() => {
+                  const canCreateNextRound = tournament.currentRound < totalRounds && (tournament.status === 'active' || tournament.status === 'draft');
+                  const lastRound = tournament.rounds && tournament.rounds.length > 0 ? tournament.rounds[tournament.rounds.length - 1] : null;
+                  const isLastRoundCompleted = !lastRound || lastRound.matches?.every(match => !match.player2Id || match.result) || false;
+                  
+                  return canCreateNextRound && (tournament.rounds?.length === 0 || !tournament.rounds?.length || isLastRoundCompleted) && (
+                    <Button 
+                      onClick={() => {
+                        const pairings = generatePairings(tournament.id);
+                        if (pairings.success) {
+                          const newRound: Round = {
+                            id: `round-${Date.now()}`,
+                            number: tournament.currentRound + 1,
+                            matches: pairings.matches,
+                            isCompleted: false
+                          };
+                          addTournamentRound(tournament.id, newRound);
+                        } else {
+                          alert(pairings.error);
+                        }
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Icon name="Plus" size={16} />
+                      Создать {tournament.currentRound + 1} тур
+                    </Button>
+                  );
+                })()}
+                
+                {/* Show message if can't create next round */}
+                {tournament.currentRound < totalRounds && (tournament.status === 'active' || tournament.status === 'draft') && tournament.rounds && tournament.rounds.length > 0 && !tournament.rounds[tournament.rounds.length - 1].matches?.every(match => !match.player2Id || match.result) && (
+                  <div className="text-center text-sm text-muted-foreground bg-muted p-3 rounded">
+                    <Icon name="Clock" size={16} className="inline mr-2" />
+                    Завершите все матчи текущего тура для создания следующего
+                  </div>
                 )}
                 
                 {tournament.rounds && tournament.rounds.length > 0 && (
