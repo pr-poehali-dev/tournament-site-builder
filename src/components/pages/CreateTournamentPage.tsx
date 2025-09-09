@@ -70,8 +70,9 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       swissRounds: Math.max(1, Math.min(8, swissRounds)),
       topRounds: Math.max(0, topRounds),
       participants,
-      status: 'registration',
-      currentRound: 0
+      status: 'draft',
+      currentRound: 0,
+      rounds: []
     };
 
     addTournament(tournament);

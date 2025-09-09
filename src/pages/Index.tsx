@@ -291,13 +291,13 @@ const Index = () => {
           </CardHeader>
         </Card>
 
-        {tournament.rounds.length > 0 && (
+        {tournament.rounds && tournament.rounds.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Туры турнира</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {tournament.rounds.map((round) => (
+              {tournament.rounds?.map((round) => (
                 <div key={round.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold">Тур {round.number}</h3>
@@ -375,7 +375,7 @@ const Index = () => {
                   </Button>
                 )}
                 
-                {tournament.rounds.length > 0 && (
+                {tournament.rounds && tournament.rounds.length > 0 && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" className="flex items-center gap-2">
