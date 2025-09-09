@@ -450,12 +450,19 @@ export const useAppState = () => {
       return { success: false, error: 'Недостаточно участников для создания пар' };
     }
 
-    // Get players data
-    const participants = tournament.participants.map(playerId => 
+    // Get players data, excluding dropped players
+    const droppedPlayerIds = new Set(tournament.droppedPlayerIds || []);
+    const activePlayers = tournament.participants.filter(playerId => !droppedPlayerIds.has(playerId));
+    
+    if (activePlayers.length < 2) {
+      return { success: false, error: 'Недостаточно активных участников для создания пар (некоторые игроки дропнули)' };
+    }
+    
+    const participants = activePlayers.map(playerId => 
       appState.players.find(p => p.id === playerId)
     ).filter(Boolean) as Player[];
 
-    if (participants.length !== tournament.participants.length) {
+    if (participants.length !== activePlayers.length) {
       return { success: false, error: 'Не все участники найдены в базе игроков' };
     }
 
