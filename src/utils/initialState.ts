@@ -157,7 +157,7 @@ export const getInitialState = (): AppState => ({
       id: "user4",
       name: "Шлёнкин Юрий",
       city: "Рязань",
-      rating: 1900,
+      rating: 1200,
       tournaments: 0,
       wins: 0,
       losses: 0,
