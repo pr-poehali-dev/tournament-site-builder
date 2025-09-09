@@ -363,7 +363,13 @@ const Index = () => {
                     onClick={() => {
                       const pairings = generatePairings(tournament.id);
                       if (pairings.success) {
-                        addTournamentRound(tournament.id, pairings.matches);
+                        const newRound: Round = {
+                          id: `round-${Date.now()}`,
+                          number: tournament.currentRound + 1,
+                          matches: pairings.matches,
+                          isCompleted: false
+                        };
+                        addTournamentRound(tournament.id, newRound);
                       } else {
                         alert(pairings.error);
                       }
@@ -446,8 +452,8 @@ const Index = () => {
                       let draws = 0;
                       let opponentIds: string[] = [];
 
-                      tournament.rounds.forEach(round => {
-                        const match = round.matches.find(m => 
+                      tournament.rounds?.forEach(round => {
+                        const match = round.matches?.find(m => 
                           m.player1Id === participantId || m.player2Id === participantId
                         );
                         if (match) {
@@ -477,8 +483,8 @@ const Index = () => {
 
                       const buchholz = opponentIds.reduce((acc, opponentId) => {
                         let opponentPoints = 0;
-                        tournament.rounds.forEach(round => {
-                          const opponentMatch = round.matches.find(m => 
+                        tournament.rounds?.forEach(round => {
+                          const opponentMatch = round.matches?.find(m => 
                             m.player1Id === opponentId || m.player2Id === opponentId
                           );
                           if (opponentMatch) {
