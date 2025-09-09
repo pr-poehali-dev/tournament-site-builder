@@ -296,6 +296,24 @@ export const useAppState = () => {
     }));
   };
 
+  // Combined tournament and player update for confirmations
+  const confirmTournamentWithPlayerUpdates = useCallback((tournamentId: string, tournamentUpdates: Partial<Tournament>, playersUpdates?: Map<string, Partial<Player>>) => {
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId
+          ? { ...t, ...tournamentUpdates }
+          : t
+      ),
+      players: playersUpdates 
+        ? prev.players.map(player => {
+            const updates = playersUpdates.get(player.id);
+            return updates ? { ...player, ...updates } : player;
+          })
+        : prev.players
+    }));
+  }, []);
+
   // Calculate rating changes and confirm tournament
   const confirmTournament = useCallback((tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
@@ -353,24 +371,6 @@ export const useAppState = () => {
     // Update tournament and players
     confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
   }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
-
-  // Combined tournament and player update for confirmations
-  const confirmTournamentWithPlayerUpdates = useCallback((tournamentId: string, tournamentUpdates: Partial<Tournament>, playersUpdates?: Map<string, Partial<Player>>) => {
-    setAppState(prev => ({
-      ...prev,
-      tournaments: prev.tournaments.map(t =>
-        t.id === tournamentId
-          ? { ...t, ...tournamentUpdates }
-          : t
-      ),
-      players: playersUpdates 
-        ? prev.players.map(player => {
-            const updates = playersUpdates.get(player.id);
-            return updates ? { ...player, ...updates } : player;
-          })
-        : prev.players
-    }));
-  }, []);
 
   // Generate pairings for next tournament round using Swiss system
   const generatePairings = useCallback((tournamentId: string) => {
