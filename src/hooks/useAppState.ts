@@ -314,58 +314,101 @@ export const useAppState = () => {
     }));
   }, []);
 
-  // Calculate rating changes and confirm tournament
+  // Calculate Elo rating changes and confirm tournament
   const confirmTournament = useCallback((tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament || tournament.status !== 'completed') return;
 
-    // Calculate rating changes for each participant
+    // Get players with their initial ratings
+    const playerRatings = new Map<string, number>();
+    const playerStats = new Map<string, { wins: number; losses: number; draws: number }>();
+    
+    tournament.participants.forEach(participantId => {
+      const player = appState.players.find(p => p.id === participantId);
+      if (player) {
+        playerRatings.set(participantId, player.rating);
+        playerStats.set(participantId, { wins: 0, losses: 0, draws: 0 });
+      }
+    });
+
+    // Elo rating calculation function
+    const calculateEloChange = (playerRating: number, opponentRating: number, result: number, kFactor: number = 32) => {
+      const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
+      return Math.round(kFactor * (result - expectedScore));
+    };
+
+    // Process each round sequentially to update ratings
+    tournament.rounds?.forEach(round => {
+      round.matches?.forEach(match => {
+        if (match.result) {
+          const player1Id = match.player1Id;
+          const player2Id = match.player2Id;
+          
+          if (!player2Id) {
+            // Bye - no rating change, just count as win
+            const stats = playerStats.get(player1Id);
+            if (stats) {
+              stats.wins += 1;
+            }
+          } else {
+            const player1Rating = playerRatings.get(player1Id) || 1200;
+            const player2Rating = playerRatings.get(player2Id) || 1200;
+            
+            let result1: number, result2: number;
+            
+            // Determine match results (0 = loss, 0.5 = draw, 1 = win)
+            if (match.result === 'win1') {
+              result1 = 1;
+              result2 = 0;
+              const stats1 = playerStats.get(player1Id);
+              const stats2 = playerStats.get(player2Id);
+              if (stats1) stats1.wins += 1;
+              if (stats2) stats2.losses += 1;
+            } else if (match.result === 'win2') {
+              result1 = 0;
+              result2 = 1;
+              const stats1 = playerStats.get(player1Id);
+              const stats2 = playerStats.get(player2Id);
+              if (stats1) stats1.losses += 1;
+              if (stats2) stats2.wins += 1;
+            } else { // draw
+              result1 = 0.5;
+              result2 = 0.5;
+              const stats1 = playerStats.get(player1Id);
+              const stats2 = playerStats.get(player2Id);
+              if (stats1) stats1.draws += 1;
+              if (stats2) stats2.draws += 1;
+            }
+            
+            // Calculate Elo changes
+            const change1 = calculateEloChange(player1Rating, player2Rating, result1);
+            const change2 = calculateEloChange(player2Rating, player1Rating, result2);
+            
+            // Update ratings for next matches
+            playerRatings.set(player1Id, Math.max(0, player1Rating + change1));
+            playerRatings.set(player2Id, Math.max(0, player2Rating + change2));
+          }
+        }
+      });
+    });
+
+    // Prepare final updates for all players
     const ratingChanges = new Map<string, Partial<Player>>();
     
     tournament.participants.forEach(participantId => {
       const player = appState.players.find(p => p.id === participantId);
-      if (!player) return;
-
-      let wins = 0;
-      let losses = 0;
-      let draws = 0;
-
-      // Count wins/losses/draws for this player
-      tournament.rounds?.forEach(round => {
-        const match = round.matches?.find(m => 
-          m.player1Id === participantId || m.player2Id === participantId
-        );
-        
-        if (match) {
-          if (!match.player2Id) {
-            // Bye - counts as win
-            wins += 1;
-          } else if (match.result) {
-            const isPlayer1 = match.player1Id === participantId;
-            if (match.result === 'draw') {
-              draws += 1;
-            } else if (
-              (match.result === 'win1' && isPlayer1) ||
-              (match.result === 'win2' && !isPlayer1)
-            ) {
-              wins += 1;
-            } else {
-              losses += 1;
-            }
-          }
-        }
-      });
-
-      // Simple rating calculation: +10 per win, -5 per loss, +2 per draw
-      const ratingChange = (wins * 10) - (losses * 5) + (draws * 2);
+      const finalRating = playerRatings.get(participantId);
+      const stats = playerStats.get(participantId);
       
-      ratingChanges.set(participantId, {
-        rating: Math.max(0, player.rating + ratingChange),
-        tournaments: player.tournaments + 1,
-        wins: player.wins + wins,
-        losses: player.losses + losses,
-        draws: player.draws + draws
-      });
+      if (player && finalRating !== undefined && stats) {
+        ratingChanges.set(participantId, {
+          rating: finalRating,
+          tournaments: player.tournaments + 1,
+          wins: player.wins + stats.wins,
+          losses: player.losses + stats.losses,
+          draws: player.draws + stats.draws
+        });
+      }
     });
 
     // Update tournament and players
