@@ -57,6 +57,7 @@ const Index = () => {
     addTournamentRound,
     updateMatchResult,
     togglePlayerDrop,
+    updateRoundMatches,
     deleteLastRound,
     finishTournament,
     confirmTournament,
@@ -90,6 +91,10 @@ const Index = () => {
   const [editingFormat, setEditingFormat] = useState({ name: '', coefficient: 1 });
   const [newFormat, setNewFormat] = useState({ name: '', coefficient: 1 });
   const formatNameInputRef = useRef<HTMLInputElement>(null);
+
+  // Pairing editing state
+  const [isEditingPairings, setIsEditingPairings] = useState(false);
+  const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
 
   // Tournament creation form states and refs
   const [tournamentForm, setTournamentForm] = useState({
@@ -472,6 +477,22 @@ const Index = () => {
                     Завершите все матчи текущего тура для создания следующего
                   </div>
                 )}
+
+                {/* Button to edit current round pairings */}
+                {tournament.rounds && tournament.rounds.length > 0 && !tournament.rounds[tournament.rounds.length - 1]?.isCompleted && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const lastRound = tournament.rounds[tournament.rounds.length - 1];
+                      setEditingRoundId(lastRound.id);
+                      setIsEditingPairings(true);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon name="RefreshCw" size={16} />
+                    Изменить пары в рамках тура
+                  </Button>
+                )}
                 
                 {tournament.rounds && tournament.rounds.length > 0 && (
                   <AlertDialog>
@@ -630,6 +651,126 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Pairing Edit Dialog */}
+        {isEditingPairings && editingRoundId && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Изменить пары тура</CardTitle>
+              <CardDescription>
+                Выберите игроков для каждого стола. БАЙ означает, что игрок проходит без игры.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const editingRound = tournament.rounds?.find(r => r.id === editingRoundId);
+                if (!editingRound) return null;
+
+                const availablePlayers = tournament.participants
+                  .filter(playerId => !(tournament.droppedPlayerIds || []).includes(playerId))
+                  .map(playerId => ({
+                    id: playerId,
+                    name: appState.users.find(u => u.id === playerId)?.name || 'Неизвестный'
+                  }));
+
+                const [tempMatches, setTempMatches] = useState(editingRound.matches);
+
+                const handlePlayerChange = (matchIndex: number, playerSlot: 'player1Id' | 'player2Id', playerId: string | null) => {
+                  setTempMatches(prev => prev.map((match, idx) => 
+                    idx === matchIndex 
+                      ? { ...match, [playerSlot]: playerId || undefined }
+                      : match
+                  ));
+                };
+
+                const savePairings = () => {
+                  // Validate that no player appears twice
+                  const usedPlayerIds = new Set<string>();
+                  let isValid = true;
+                  
+                  for (const match of tempMatches) {
+                    if (match.player1Id && usedPlayerIds.has(match.player1Id)) {
+                      alert('Игрок не может играть в двух парах одновременно');
+                      isValid = false;
+                      break;
+                    }
+                    if (match.player2Id && usedPlayerIds.has(match.player2Id)) {
+                      alert('Игрок не может играть в двух парах одновременно');
+                      isValid = false;
+                      break;
+                    }
+                    if (match.player1Id) usedPlayerIds.add(match.player1Id);
+                    if (match.player2Id) usedPlayerIds.add(match.player2Id);
+                  }
+
+                  if (isValid) {
+                    updateRoundMatches(tournament.id, editingRoundId, tempMatches);
+                    setIsEditingPairings(false);
+                    setEditingRoundId(null);
+                  }
+                };
+
+                return (
+                  <div className="space-y-4">
+                    {tempMatches.map((match, matchIndex) => (
+                      <div key={match.id} className="flex items-center gap-4 p-3 border rounded-lg">
+                        <div className="font-medium min-w-[80px]">
+                          Стол {match.tableNumber}
+                        </div>
+                        <div className="flex items-center gap-2 flex-1">
+                          <Select 
+                            value={match.player1Id || ''}
+                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player1Id', value || null)}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Выберите игрока 1" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">БАЙ</SelectItem>
+                              {availablePlayers.map(player => (
+                                <SelectItem key={player.id} value={player.id}>
+                                  {player.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-gray-500">VS</span>
+                          <Select 
+                            value={match.player2Id || ''}
+                            onValueChange={(value) => handlePlayerChange(matchIndex, 'player2Id', value || null)}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Выберите игрока 2" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">БАЙ</SelectItem>
+                              {availablePlayers.map(player => (
+                                <SelectItem key={player.id} value={player.id}>
+                                  {player.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => {
+                        setIsEditingPairings(false);
+                        setEditingRoundId(null);
+                      }}>
+                        Отмена
+                      </Button>
+                      <Button onClick={savePairings}>
+                        Сохранить изменения
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };

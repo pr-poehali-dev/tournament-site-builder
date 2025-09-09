@@ -298,6 +298,24 @@ export const useAppState = () => {
     }));
   }, []);
 
+  const updateRoundMatches = useCallback((tournamentId: string, roundId: string, updatedMatches: Match[]) => {
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(tournament =>
+        tournament.id === tournamentId
+          ? {
+              ...tournament,
+              rounds: tournament.rounds.map(round =>
+                round.id === roundId
+                  ? { ...round, matches: updatedMatches }
+                  : round
+              )
+            }
+          : tournament
+      )
+    }));
+  }, []);
+
   const finishTournament = useCallback((tournamentId: string) => {
     setAppState(prev => ({
       ...prev,
@@ -621,6 +639,7 @@ export const useAppState = () => {
     addTournamentRound,
     updateMatchResult,
     togglePlayerDrop,
+    updateRoundMatches,
     deleteLastRound,
     finishTournament,
     confirmTournament,
