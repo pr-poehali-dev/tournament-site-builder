@@ -304,6 +304,49 @@ export const useAppState = () => {
     }));
   };
 
+  // Generate pairings for next tournament round
+  const generatePairings = useCallback((tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) {
+      return { success: false, error: 'Турнир не найден' };
+    }
+
+    if (tournament.participants.length < 2) {
+      return { success: false, error: 'Недостаточно участников для создания пар' };
+    }
+
+    // Get players data
+    const participants = tournament.participants.map(playerId => 
+      appState.players.find(p => p.id === playerId)
+    ).filter(Boolean) as Player[];
+
+    if (participants.length !== tournament.participants.length) {
+      return { success: false, error: 'Не все участники найдены в базе игроков' };
+    }
+
+    // Simple pairing algorithm: shuffle players and pair them
+    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    const matches: Match[] = [];
+    
+    for (let i = 0; i < shuffled.length; i += 2) {
+      const player1 = shuffled[i];
+      const player2 = shuffled[i + 1];
+      
+      const match: Match = {
+        id: `match-${Date.now()}-${i}`,
+        player1Id: player1.id,
+        player2Id: player2?.id,
+        points1: 0,
+        points2: 0,
+        tableNumber: Math.floor(i / 2) + 1
+      };
+      
+      matches.push(match);
+    }
+
+    return { success: true, matches };
+  }, [appState.tournaments, appState.players]);
+
   return {
     // State
     appState,
@@ -349,6 +392,7 @@ export const useAppState = () => {
     deleteLastRound,
     finishTournament,
     confirmTournamentWithPlayerUpdates,
+    generatePairings,
     
     // Raw state setter (for complex updates)
     setAppState,
