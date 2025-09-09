@@ -365,7 +365,7 @@ const Index = () => {
                             !match.player2Id ? (
                               <Badge variant="secondary">БАЙ</Badge>
                             ) : (
-                              <div className="flex gap-1">
+                              <div className="flex gap-1 flex-wrap">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -386,6 +386,20 @@ const Index = () => {
                                   onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'win2')}
                                 >
                                   0-3
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'drop1')}
+                                >
+                                  Дроп1
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => updateMatchResult(tournament.id, round.id, match.id, 'drop2')}
+                                >
+                                  Дроп2
                                 </Button>
                               </div>
                             )
