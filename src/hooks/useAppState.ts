@@ -296,8 +296,66 @@ export const useAppState = () => {
     }));
   };
 
+  // Calculate rating changes and confirm tournament
+  const confirmTournament = useCallback((tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament || tournament.status !== 'completed') return;
+
+    // Calculate rating changes for each participant
+    const ratingChanges = new Map<string, Partial<Player>>();
+    
+    tournament.participants.forEach(participantId => {
+      const player = appState.players.find(p => p.id === participantId);
+      if (!player) return;
+
+      let wins = 0;
+      let losses = 0;
+      let draws = 0;
+
+      // Count wins/losses/draws for this player
+      tournament.rounds?.forEach(round => {
+        const match = round.matches?.find(m => 
+          m.player1Id === participantId || m.player2Id === participantId
+        );
+        
+        if (match) {
+          if (!match.player2Id) {
+            // Bye - counts as win
+            wins += 1;
+          } else if (match.result) {
+            const isPlayer1 = match.player1Id === participantId;
+            if (match.result === 'draw') {
+              draws += 1;
+            } else if (
+              (match.result === 'win1' && isPlayer1) ||
+              (match.result === 'win2' && !isPlayer1)
+            ) {
+              wins += 1;
+            } else {
+              losses += 1;
+            }
+          }
+        }
+      });
+
+      // Simple rating calculation: +10 per win, -5 per loss, +2 per draw
+      const ratingChange = (wins * 10) - (losses * 5) + (draws * 2);
+      
+      ratingChanges.set(participantId, {
+        rating: Math.max(0, player.rating + ratingChange),
+        tournaments: player.tournaments + 1,
+        wins: player.wins + wins,
+        losses: player.losses + losses,
+        draws: player.draws + draws
+      });
+    });
+
+    // Update tournament and players
+    confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
+  }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
+
   // Combined tournament and player update for confirmations
-  const confirmTournamentWithPlayerUpdates = (tournamentId: string, tournamentUpdates: Partial<Tournament>, playersUpdates?: Map<string, Partial<Player>>) => {
+  const confirmTournamentWithPlayerUpdates = useCallback((tournamentId: string, tournamentUpdates: Partial<Tournament>, playersUpdates?: Map<string, Partial<Player>>) => {
     setAppState(prev => ({
       ...prev,
       tournaments: prev.tournaments.map(t =>
@@ -312,7 +370,7 @@ export const useAppState = () => {
           })
         : prev.players
     }));
-  };
+  }, []);
 
   // Generate pairings for next tournament round using Swiss system
   const generatePairings = useCallback((tournamentId: string) => {
@@ -490,6 +548,7 @@ export const useAppState = () => {
     updateMatchResult,
     deleteLastRound,
     finishTournament,
+    confirmTournament,
     confirmTournamentWithPlayerUpdates,
     generatePairings,
     

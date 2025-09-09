@@ -56,6 +56,7 @@ const Index = () => {
     updateMatchResult,
     deleteLastRound,
     finishTournament,
+    confirmTournament,
     confirmTournamentWithPlayerUpdates,
     generatePairings
   } = useAppState();
@@ -657,7 +658,7 @@ const Index = () => {
             appState={appState}
             createTournament={goToCreateTournament}
             startEditTournament={startEditTournament}
-            confirmTournament={confirmTournamentWithPlayerUpdates}
+            confirmTournament={confirmTournament}
           />
         )}
 
