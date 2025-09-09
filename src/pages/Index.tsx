@@ -95,6 +95,7 @@ const Index = () => {
   // Pairing editing state
   const [isEditingPairings, setIsEditingPairings] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
+  const [tempMatches, setTempMatches] = useState<any[]>([]);
 
   // Tournament creation form states and refs
   const [tournamentForm, setTournamentForm] = useState({
@@ -485,6 +486,7 @@ const Index = () => {
                     onClick={() => {
                       const lastRound = tournament.rounds[tournament.rounds.length - 1];
                       setEditingRoundId(lastRound.id);
+                      setTempMatches([...lastRound.matches]);
                       setIsEditingPairings(true);
                     }}
                     className="flex items-center gap-2"
@@ -673,8 +675,6 @@ const Index = () => {
                     name: appState.users.find(u => u.id === playerId)?.name || 'Неизвестный'
                   }));
 
-                const [tempMatches, setTempMatches] = useState(editingRound.matches);
-
                 const handlePlayerChange = (matchIndex: number, playerSlot: 'player1Id' | 'player2Id', playerId: string | null) => {
                   setTempMatches(prev => prev.map((match, idx) => 
                     idx === matchIndex 
@@ -704,9 +704,10 @@ const Index = () => {
                   }
 
                   if (isValid) {
-                    updateRoundMatches(tournament.id, editingRoundId, tempMatches);
+                    updateRoundMatches(tournament.id, editingRoundId!, tempMatches);
                     setIsEditingPairings(false);
                     setEditingRoundId(null);
+                    setTempMatches([]);
                   }
                 };
 
@@ -758,6 +759,7 @@ const Index = () => {
                       <Button variant="outline" onClick={() => {
                         setIsEditingPairings(false);
                         setEditingRoundId(null);
+                        setTempMatches([]);
                       }}>
                         Отмена
                       </Button>
