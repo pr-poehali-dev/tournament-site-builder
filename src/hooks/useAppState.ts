@@ -259,6 +259,30 @@ export const useAppState = () => {
     }));
   }, []);
 
+  const togglePlayerDrop = useCallback((tournamentId: string, playerId: string) => {
+    setAppState(prev => {
+      const tournament = prev.tournaments.find(t => t.id === tournamentId);
+      if (!tournament) return prev;
+
+      const droppedPlayers = new Set(tournament.droppedPlayerIds || []);
+      
+      if (droppedPlayers.has(playerId)) {
+        droppedPlayers.delete(playerId);
+      } else {
+        droppedPlayers.add(playerId);
+      }
+
+      return {
+        ...prev,
+        tournaments: prev.tournaments.map(t =>
+          t.id === tournamentId
+            ? { ...t, droppedPlayerIds: Array.from(droppedPlayers) }
+            : t
+        )
+      };
+    });
+  }, []);
+
   const deleteLastRound = useCallback((tournamentId: string) => {
     setAppState(prev => ({
       ...prev,
@@ -589,6 +613,7 @@ export const useAppState = () => {
     updateTournaments,
     addTournamentRound,
     updateMatchResult,
+    togglePlayerDrop,
     deleteLastRound,
     finishTournament,
     confirmTournament,
