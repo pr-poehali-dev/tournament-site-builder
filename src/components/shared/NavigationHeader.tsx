@@ -70,12 +70,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               <Icon name="User" size={16} className="mr-2" />
               Мои турниры
             </DropdownMenuItem>
-            {(appState.currentUser.role === 'admin' || appState.currentUser.role === 'judge') && (
-              <DropdownMenuItem onClick={() => navigateTo('players')}>
-                <Icon name="Users" size={16} className="mr-2" />
-                Игроки
-              </DropdownMenuItem>
-            )}
+
             <DropdownMenuItem onClick={() => navigateTo('profile')}>
               <Icon name="UserCog" size={16} className="mr-2" />
               Профиль

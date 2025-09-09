@@ -25,7 +25,7 @@ import { AdminPage } from '@/components/pages/AdminPage';
 import { ProfilePage } from '@/components/pages/ProfilePage';
 import { TournamentsPage } from '@/components/pages/TournamentsPage';
 import { MyTournamentsPage } from '@/components/pages/MyTournamentsPage';
-import { PlayersPage } from '@/components/pages/PlayersPage';
+
 import { CitiesPage } from '@/components/pages/CitiesPage';
 import { FormatsPage } from '@/components/pages/FormatsPage';
 import { CreateTournamentPage } from '@/components/pages/CreateTournamentPage';
@@ -76,9 +76,7 @@ const Index = () => {
     city: ''
   });
 
-  // Player form states
-  const [newPlayer, setNewPlayer] = useState({ name: '', city: '' });
-  const playerNameInputRef = useRef<HTMLInputElement>(null);
+
 
   // City form states
   const [editingCityId, setEditingCityId] = useState<string | null>(null);
@@ -186,42 +184,7 @@ const Index = () => {
     setProfileEdit(prev => ({ ...prev, isEditing: false }));
   }, []);
 
-  // Player management handlers
-  const handleNewPlayerNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewPlayer(prev => ({ ...prev, name: e.target.value }));
-  }, []);
 
-  const handleNewPlayerCityChange = useCallback((value: string) => {
-    setNewPlayer(prev => ({ ...prev, city: value }));
-  }, []);
-
-  const handlePlayerNameKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleAddPlayer();
-    }
-  }, []);
-
-  const handleAddPlayer = useCallback(() => {
-    if (newPlayer.name.trim()) {
-      const newPlayerData = {
-        id: `player${Date.now()}`,
-        name: newPlayer.name.trim(),
-        city: newPlayer.city,
-        rating: 1200,
-        tournaments: 0,
-        wins: 0,
-        losses: 0,
-        draws: 0
-      };
-      
-      addPlayer(newPlayerData);
-      setNewPlayer({ name: '', city: '' });
-      
-      setTimeout(() => {
-        playerNameInputRef.current?.focus();
-      }, 0);
-    }
-  }, [newPlayer, addPlayer]);
 
   // City management handlers
   const startEditCity = useCallback((city: any) => {
@@ -727,18 +690,7 @@ const Index = () => {
           />
         )}
 
-        {appState.currentPage === 'players' && (
-          <PlayersPage
-            appState={appState}
-            newPlayer={newPlayer}
-            addPlayer={handleAddPlayer}
-            deletePlayer={deletePlayer}
-            handleNewPlayerNameChange={handleNewPlayerNameChange}
-            handleNewPlayerCityChange={handleNewPlayerCityChange}
-            handlePlayerNameKeyPress={handlePlayerNameKeyPress}
-            playerNameInputRef={playerNameInputRef}
-          />
-        )}
+
 
         {appState.currentPage === 'cities' && (
           <CitiesPage
