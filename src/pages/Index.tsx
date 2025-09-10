@@ -629,29 +629,32 @@ const Index = () => {
                       let opponentIds: string[] = [];
 
                       tournament.rounds?.forEach(round => {
-                        const match = round.matches?.find(m => 
-                          m.player1Id === participantId || m.player2Id === participantId
-                        );
-                        if (match) {
-                          if (!match.player2Id) {
-                            points += 3;
-                            wins += 1;
-                          } else if (match.result) {
-                            const isPlayer1 = match.player1Id === participantId;
-                            const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-                            opponentIds.push(opponentId);
-
-                            if (match.result === 'draw') {
-                              points += 1;
-                              draws += 1;
-                            } else if (
-                              (match.result === 'win1' && isPlayer1) ||
-                              (match.result === 'win2' && !isPlayer1)
-                            ) {
+                        // Only count Swiss rounds for points and Buchholz
+                        if (round.number <= tournament.swissRounds) {
+                          const match = round.matches?.find(m => 
+                            m.player1Id === participantId || m.player2Id === participantId
+                          );
+                          if (match) {
+                            if (!match.player2Id) {
                               points += 3;
                               wins += 1;
-                            } else {
-                              losses += 1;
+                            } else if (match.result) {
+                              const isPlayer1 = match.player1Id === participantId;
+                              const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                              opponentIds.push(opponentId);
+
+                              if (match.result === 'draw') {
+                                points += 1;
+                                draws += 1;
+                              } else if (
+                                (match.result === 'win1' && isPlayer1) ||
+                                (match.result === 'win2' && !isPlayer1)
+                              ) {
+                                points += 3;
+                                wins += 1;
+                              } else {
+                                losses += 1;
+                              }
                             }
                           }
                         }
@@ -660,21 +663,24 @@ const Index = () => {
                       const buchholz = opponentIds.reduce((acc, opponentId) => {
                         let opponentPoints = 0;
                         tournament.rounds?.forEach(round => {
-                          const opponentMatch = round.matches?.find(m => 
-                            m.player1Id === opponentId || m.player2Id === opponentId
-                          );
-                          if (opponentMatch) {
-                            if (!opponentMatch.player2Id) {
-                              opponentPoints += 3;
-                            } else if (opponentMatch.result) {
-                              const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
-                              if (opponentMatch.result === 'draw') {
-                                opponentPoints += 1;
-                              } else if (
-                                (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
-                                (opponentMatch.result === 'win2' && !isOpponentPlayer1)
-                              ) {
+                          // Only count Swiss rounds for Buchholz coefficient
+                          if (round.number <= tournament.swissRounds) {
+                            const opponentMatch = round.matches?.find(m => 
+                              m.player1Id === opponentId || m.player2Id === opponentId
+                            );
+                            if (opponentMatch) {
+                              if (!opponentMatch.player2Id) {
                                 opponentPoints += 3;
+                              } else if (opponentMatch.result) {
+                                const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                                if (opponentMatch.result === 'draw') {
+                                  opponentPoints += 1;
+                                } else if (
+                                  (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
+                                  (opponentMatch.result === 'win2' && !isOpponentPlayer1)
+                                ) {
+                                  opponentPoints += 3;
+                                }
                               }
                             }
                           }
