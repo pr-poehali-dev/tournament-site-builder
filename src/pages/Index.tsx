@@ -91,7 +91,7 @@ const getTopStatus = (tournament: any, playerId: string): string => {
   });
 
   if (furthestRound === 0) {
-    return "Не прошёл в топ";
+    return "-";
   }
 
   // Determine status based on furthest round reached and current status
