@@ -469,7 +469,7 @@ export const useAppState = () => {
   }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
 
   // Generate TOP elimination bracket pairings (Olympic system)
-  const generateTopPairings = useCallback((tournament: Tournament, participants: Player[]) => {
+  const generateTopPairings = useCallback((tournament: Tournament, participants: Player[], nextRoundNumber: number) => {
     // Calculate final Swiss standings
     const playerStandings = participants.map(player => {
       let points = 0;
@@ -511,15 +511,14 @@ export const useAppState = () => {
     const topRounds = tournament.topRounds;
     const bracketSize = Math.pow(2, topRounds); // 2^topRounds players in first TOP round
     
-    // Current TOP round number (1-based)
-    const currentTopRound = tournament.currentRound - tournament.swissRounds;
+    // Current TOP round number (1-based) - based on the round we're creating
+    const topRoundNumber = nextRoundNumber - tournament.swissRounds;
     
     // If this is the first TOP round, create bracket from Swiss standings
-    if (currentTopRound === 1) {
-      // Take top players for bracket - exact number needed for the bracket
-      const actualBracketSize = Math.min(bracketSize, playerStandings.length);
-      // Round down to nearest power of 2 to ensure complete bracket
-      const finalBracketSize = Math.pow(2, Math.floor(Math.log2(actualBracketSize)));
+    if (topRoundNumber === 1) {
+      // For Olympic system, take exact bracket size based on topRounds
+      // 3 topRounds = TOP-8 (8 players), 2 topRounds = TOP-4 (4 players), etc.
+      const finalBracketSize = Math.min(bracketSize, playerStandings.length);
       
       const topPlayers = playerStandings.slice(0, finalBracketSize);
       
@@ -629,7 +628,7 @@ export const useAppState = () => {
     const isTopRound = nextRoundNumber > tournament.swissRounds;
     
     if (isTopRound) {
-      return generateTopPairings(tournament, participants);
+      return generateTopPairings(tournament, participants, nextRoundNumber);
     }
 
     // Calculate current standings for each player

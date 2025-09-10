@@ -270,7 +270,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
               <Card key={roundIndex}>
                 <CardHeader>
                   <CardTitle className="text-lg">
-                    {getRoundName(tournament, roundIndex + 1)}
+                    {getRoundName(tournament, round.number)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
