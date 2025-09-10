@@ -240,6 +240,7 @@ const Index = () => {
   }, [navigateTo]);
 
   const goToCreateTournament = useCallback(() => {
+    console.log('goToCreateTournament called, navigating to create-tournament');
     navigateTo('create-tournament');
   }, [navigateTo]);
 
@@ -727,13 +728,16 @@ const Index = () => {
         )}
 
         {appState.currentPage === 'create-tournament' && (
-          <CreateTournamentPage
-            appState={appState}
-            tournamentForm={tournamentForm}
-            setTournamentForm={setTournamentForm}
-            navigateTo={navigateTo}
-            addTournament={addTournament}
-          />
+          <div>
+            <p>Debug: Rendering CreateTournamentPage, currentPage = {appState.currentPage}</p>
+            <CreateTournamentPage
+              appState={appState}
+              tournamentForm={tournamentForm}
+              setTournamentForm={setTournamentForm}
+              navigateTo={navigateTo}
+              addTournament={addTournament}
+            />
+          </div>
         )}
 
         {appState.currentPage === 'tournamentEdit' && <TournamentEditPage />}
