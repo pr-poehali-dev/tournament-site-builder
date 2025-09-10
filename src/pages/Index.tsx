@@ -31,6 +31,26 @@ import { FormatsPage } from '@/components/pages/FormatsPage';
 import { CreateTournamentPage } from '@/components/pages/CreateTournamentPage';
 import { TournamentViewPage } from '@/components/pages/TournamentViewPage';
 
+// Helper function to get round name
+const getRoundName = (tournament: any, roundNumber: number): string => {
+  if (roundNumber <= tournament.swissRounds) {
+    return `${roundNumber} тур`;
+  } else {
+    const topRoundNumber = roundNumber - tournament.swissRounds;
+    const totalTopRounds = tournament.topRounds;
+    const playersInFirstTopRound = Math.pow(2, totalTopRounds);
+    const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
+    
+    if (playersInThisRound === 2) {
+      return 'Финал';
+    } else if (playersInThisRound === 4) {
+      return 'Полуфинал';
+    } else {
+      return `ТОП-${playersInThisRound}`;
+    }
+  }
+};
+
 const Index = () => {
   // Get all state and handlers from custom hook
   const {
@@ -451,7 +471,7 @@ const Index = () => {
                       className="flex items-center gap-2"
                     >
                       <Icon name="Plus" size={16} />
-                      Создать {tournament.currentRound + 1} тур
+                      Создать {getRoundName(tournament, tournament.currentRound + 1)}
                     </Button>
                   );
                 })()}

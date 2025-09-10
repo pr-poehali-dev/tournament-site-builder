@@ -7,6 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament, Page } from '@/types';
 
+// Helper function to get round name
+const getRoundName = (tournament: Tournament, roundNumber: number): string => {
+  if (roundNumber <= tournament.swissRounds) {
+    return `${roundNumber} тур`;
+  } else {
+    const topRoundNumber = roundNumber - tournament.swissRounds;
+    const totalTopRounds = tournament.topRounds;
+    const playersInFirstTopRound = Math.pow(2, totalTopRounds);
+    const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
+    
+    if (playersInThisRound === 2) {
+      return 'Финал';
+    } else if (playersInThisRound === 4) {
+      return 'Полуфинал';
+    } else {
+      return `ТОП-${playersInThisRound}`;
+    }
+  }
+};
+
 interface TournamentViewPageProps {
   appState: AppState;
   tournamentId: string;
@@ -251,7 +271,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
               <Card key={roundIndex}>
                 <CardHeader>
                   <CardTitle className="text-lg">
-                    Тур {roundIndex + 1}
+                    {getRoundName(tournament, roundIndex + 1)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

@@ -468,12 +468,11 @@ export const useAppState = () => {
     confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
   }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
 
-  // Generate TOP elimination bracket pairings
+  // Generate TOP elimination bracket pairings (Olympic system)
   const generateTopPairings = useCallback((tournament: Tournament, participants: Player[]) => {
     // Calculate final Swiss standings
     const playerStandings = participants.map(player => {
       let points = 0;
-      let tiebreakers = 0;
 
       // Go through all Swiss rounds to calculate points
       tournament.rounds?.forEach(round => {
@@ -502,52 +501,35 @@ export const useAppState = () => {
         }
       });
 
-      return { player, points, tiebreakers };
+      return { player, points };
     });
 
     // Sort by points (descending) to get final Swiss standings
     playerStandings.sort((a, b) => b.points - a.points);
 
-    // Determine bracket size based on topRounds
+    // Determine bracket size based on topRounds (Olympic system)
     const topRounds = tournament.topRounds;
-    let bracketSize: number;
+    const bracketSize = Math.pow(2, topRounds); // 2^topRounds players in first TOP round
     
-    switch (topRounds) {
-      case 1: bracketSize = 2; break;   // Финал (2 игрока)
-      case 2: bracketSize = 4; break;   // Полуфинал + финал (4 игрока)  
-      case 3: bracketSize = 8; break;   // Четвертьфинал + полуфинал + финал
-      case 4: bracketSize = 16; break;  // 1/8 финала + четверть + полу + финал
-      case 5: bracketSize = 32; break;  // 1/16 + 1/8 + четверть + полу + финал
-      case 6: bracketSize = 64; break;  // 1/32 + 1/16 + 1/8 + четверть + полу + финал
-      default: bracketSize = Math.min(8, playerStandings.length); break;
-    }
-
-    // Take top players for bracket
-    const topPlayers = playerStandings.slice(0, Math.min(bracketSize, playerStandings.length));
-    
-    if (topPlayers.length < 2) {
-      return { success: false, error: 'Недостаточно игроков для создания топа' };
-    }
-
-    // Determine which round of the bracket we're creating
+    // Current TOP round number (1-based)
     const currentTopRound = tournament.currentRound - tournament.swissRounds;
-    const totalTopRounds = Math.ceil(Math.log2(topPlayers.length));
-    const roundFromEnd = totalTopRounds - currentTopRound + 1;
-
-    // Calculate how many players should be in this round
-    const playersInThisRound = Math.pow(2, roundFromEnd);
     
     // If this is the first TOP round, create bracket from Swiss standings
     if (currentTopRound === 1) {
-      // Pair: 1st vs last, 2nd vs second-to-last, etc.
+      // Take top players for bracket
+      const topPlayers = playerStandings.slice(0, Math.min(bracketSize, playerStandings.length));
+      
+      if (topPlayers.length < 2) {
+        return { success: false, error: 'Недостаточно игроков для создания топа' };
+      }
+
+      // Olympic system pairing: 1 vs N, 2 vs N-1, 3 vs N-2, etc.
       const matches: Match[] = [];
       let tableNumber = 1;
       
-      const playersForBracket = topPlayers.slice(0, playersInThisRound);
-      
-      for (let i = 0; i < playersForBracket.length / 2; i++) {
-        const player1 = playersForBracket[i];
-        const player2 = playersForBracket[playersForBracket.length - 1 - i];
+      for (let i = 0; i < topPlayers.length / 2; i++) {
+        const player1 = topPlayers[i];
+        const player2 = topPlayers[topPlayers.length - 1 - i];
         
         matches.push({
           id: `match-${Date.now()}-${tableNumber}`,
@@ -566,34 +548,44 @@ export const useAppState = () => {
         return { success: false, error: 'Предыдущий раунд не найден' };
       }
       
-      // Get winners from previous round
-      const winners: string[] = [];
+      // Get winners from previous round in table order
+      const winners: { playerId: string, tableNumber: number }[] = [];
       previousRound.matches?.forEach(match => {
+        let winnerId: string | null = null;
         if (match.result === 'win1') {
-          winners.push(match.player1Id);
+          winnerId = match.player1Id;
         } else if (match.result === 'win2') {
-          winners.push(match.player2Id!);
+          winnerId = match.player2Id!;
+        }
+        
+        if (winnerId) {
+          winners.push({ playerId: winnerId, tableNumber: match.tableNumber });
         }
       });
+      
+      // Sort by table number to maintain bracket structure
+      winners.sort((a, b) => a.tableNumber - b.tableNumber);
       
       if (winners.length < 2) {
         return { success: false, error: 'Недостаточно победителей для следующего раунда' };
       }
       
-      // Pair winners sequentially (1 vs 2, 3 vs 4, etc.)
+      // Olympic system pairing for next round:
+      // Winner of table 1 vs winner of last table, winner of table 2 vs winner of second-to-last table, etc.
       const matches: Match[] = [];
       let tableNumber = 1;
       
-      for (let i = 0; i < winners.length; i += 2) {
-        if (i + 1 < winners.length) {
-          matches.push({
-            id: `match-${Date.now()}-${tableNumber}`,
-            player1Id: winners[i],
-            player2Id: winners[i + 1],
-            tableNumber: tableNumber++,
-            result: null
-          });
-        }
+      for (let i = 0; i < winners.length / 2; i++) {
+        const player1 = winners[i];
+        const player2 = winners[winners.length - 1 - i];
+        
+        matches.push({
+          id: `match-${Date.now()}-${tableNumber}`,
+          player1Id: player1.playerId,
+          player2Id: player2.playerId,
+          tableNumber: tableNumber++,
+          result: null
+        });
       }
       
       return { success: true, matches };
