@@ -240,7 +240,6 @@ const Index = () => {
   }, [navigateTo]);
 
   const goToCreateTournament = useCallback(() => {
-    console.log('goToCreateTournament called, navigating to create-tournament');
     navigateTo('create-tournament');
   }, [navigateTo]);
 
@@ -728,8 +727,9 @@ const Index = () => {
         )}
 
         {appState.currentPage === 'create-tournament' && (
-          <div>
-            <p>Debug: Rendering CreateTournamentPage, currentPage = {appState.currentPage}</p>
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Создание турнира</h1>
+            <p>Тестовая страница - если видите это, маршрутизация работает!</p>
             <CreateTournamentPage
               appState={appState}
               tournamentForm={tournamentForm}
