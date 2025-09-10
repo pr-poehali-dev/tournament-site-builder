@@ -907,7 +907,7 @@ const Index = () => {
                     <th className="text-left p-2 font-medium">Игрок</th>
                     <th className="text-left p-2 font-medium">Очки</th>
                     <th className="text-left p-2 font-medium">Бух.</th>
-                    <th className="text-left p-2 font-medium">"Бух-2"</th>
+                    <th className="text-left p-2 font-medium">Бух-2</th>
                     <th className="text-left p-2 font-medium">П-Н-П</th>
                     {tournament.topRounds > 0 &&
                       tournament.currentRound > tournament.swissRounds && (
