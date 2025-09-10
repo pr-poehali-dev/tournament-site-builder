@@ -7,6 +7,142 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament, Page } from '@/types';
 
+// Helper function to get player's TOP status
+const getTopStatus = (tournament: Tournament, playerId: string): string => {
+  if (tournament.topRounds === 0 || tournament.currentRound <= tournament.swissRounds) {
+    return '';
+  }
+  
+  // Find the furthest TOP round the player reached
+  let furthestRound = 0;
+  let isStillActive = false;
+  let wonLastMatch = false;
+  
+  tournament.rounds?.forEach((round: any) => {
+    if (round.number > tournament.swissRounds) {
+      const match = round.matches?.find((m: any) => 
+        m.player1Id === playerId || m.player2Id === playerId
+      );
+      
+      if (match) {
+        furthestRound = round.number;
+        
+        if (match.result) {
+          const isPlayer1 = match.player1Id === playerId;
+          wonLastMatch = (match.result === 'win1' && isPlayer1) || 
+                        (match.result === 'win2' && !isPlayer1);
+          isStillActive = wonLastMatch;
+        } else {
+          isStillActive = true; // Match not played yet
+          wonLastMatch = false;
+        }
+      }
+    }
+  });
+  
+  if (furthestRound === 0) {
+    return 'Не прошёл в топ';
+  }
+  
+  // Determine status based on furthest round reached and current status
+  const topRoundNumber = furthestRound - tournament.swissRounds;
+  const totalTopRounds = tournament.topRounds;
+  
+  // If player won their last match or match not played yet, they're still active
+  if (isStillActive) {
+    if (totalTopRounds - topRoundNumber + 1 === 2) {
+      return '🏆 Финалист';
+    } else if (totalTopRounds - topRoundNumber + 1 === 4) {
+      return '🥉 Полуфиналист';
+    } else {
+      const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
+      return `ТОП-${playersInThisRound}`;
+    }
+  } else {
+    // Player lost their last match
+    const playersInPreviousRound = Math.pow(2, totalTopRounds - topRoundNumber + 2);
+    if (playersInPreviousRound === 4) {
+      return 'Вылет в полуфинале';
+    } else if (playersInPreviousRound === 2) {
+      return '🥈 Вице-чемпион';
+    } else {
+      return `Вылет в ТОП-${playersInPreviousRound}`;
+    }
+  }
+};
+
+// Helper function to sort players by TOP tournament results
+const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
+  // Find the furthest TOP round each player reached and their status
+  const getTopPerformance = (playerId: string) => {
+    let furthestRound = 0;
+    let isStillActive = false;
+    let wonLastMatch = false;
+    
+    // Find the furthest round the player participated in
+    tournament.rounds?.forEach((round: any) => {
+      if (round.number > tournament.swissRounds) {
+        const match = round.matches?.find((m: any) => 
+          m.player1Id === playerId || m.player2Id === playerId
+        );
+        
+        if (match) {
+          furthestRound = round.number;
+          
+          if (match.result) {
+            const isPlayer1 = match.player1Id === playerId;
+            wonLastMatch = (match.result === 'win1' && isPlayer1) || 
+                          (match.result === 'win2' && !isPlayer1);
+            isStillActive = wonLastMatch;
+          } else {
+            isStillActive = true; // Match not played yet
+            wonLastMatch = false;
+          }
+        }
+      }
+    });
+    
+    // If player never played in TOP rounds, they didn't make it to TOP
+    if (furthestRound === 0) {
+      return { 
+        furthestRound: tournament.swissRounds, // Use Swiss rounds as baseline
+        isStillActive: false,
+        madeToTop: false
+      };
+    }
+    
+    return { furthestRound, isStillActive, madeToTop: true };
+  };
+
+  const playerA = getTopPerformance(a.user.id);
+  const playerB = getTopPerformance(b.user.id);
+  
+  // 1. Players who made it to TOP rank higher than those who didn't
+  if (playerA.madeToTop !== playerB.madeToTop) {
+    return playerB.madeToTop ? 1 : -1;
+  }
+  
+  // 2. If both made to TOP, player who went further ranks higher
+  if (playerA.madeToTop && playerB.madeToTop) {
+    if (playerA.furthestRound !== playerB.furthestRound) {
+      return playerB.furthestRound - playerA.furthestRound;
+    }
+    
+    // 3. If same round reached, active player (still in tournament) ranks higher
+    if (playerA.isStillActive !== playerB.isStillActive) {
+      return playerB.isStillActive ? 1 : -1;
+    }
+  }
+  
+  // 4. If same TOP performance (or both didn't make TOP), use Swiss standings
+  if (a.points !== b.points) {
+    return b.points - a.points;
+  }
+  
+  // 5. If same points, use Buchholz
+  return b.buchholz - a.buchholz;
+};
+
 // Helper function to get round name
 const getRoundName = (tournament: Tournament, roundNumber: number): string => {
   if (roundNumber <= tournament.swissRounds) {
@@ -59,67 +195,100 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
     );
   }
 
-  // Calculate final standings
+  // Calculate final standings using the same logic as Index.tsx
   const calculateStandings = () => {
-    return tournament.participants.map(participantId => {
-      const player = appState.players.find(p => p.id === participantId);
-      if (!player) return null;
+    return tournament.participants
+      .map(participantId => {
+        const user = appState.users.find(u => u.id === participantId);
+        if (!user) return null;
 
-      let score = 0;
-      let wins = 0;
-      let draws = 0;
-      let losses = 0;
-      const opponents: string[] = [];
+        let points = 0;
+        let wins = 0;
+        let losses = 0;
+        let draws = 0;
+        let opponentIds: string[] = [];
 
-      tournament.rounds?.forEach(round => {
-        const match = round.matches?.find(m => 
-          m.player1Id === participantId || m.player2Id === participantId
-        );
-        
-        if (match && match.result) {
-          if (!match.player2Id) {
-            // Bye
-            score += 1;
-            wins += 1;
-          } else {
-            const isPlayer1 = match.player1Id === participantId;
-            const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-            opponents.push(opponentId);
+        tournament.rounds?.forEach(round => {
+          // Only count Swiss rounds for points and Buchholz
+          if (round.number <= tournament.swissRounds) {
+            const match = round.matches?.find(m => 
+              m.player1Id === participantId || m.player2Id === participantId
+            );
+            if (match) {
+              if (!match.player2Id) {
+                points += 3;
+                wins += 1;
+              } else if (match.result) {
+                const isPlayer1 = match.player1Id === participantId;
+                const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                opponentIds.push(opponentId);
 
-            if (match.result === 'draw') {
-              score += 0.5;
-              draws += 1;
-            } else if (
-              (match.result === 'win1' && isPlayer1) ||
-              (match.result === 'win2' && !isPlayer1)
-            ) {
-              score += 1;
-              wins += 1;
-            } else {
-              losses += 1;
+                if (match.result === 'draw') {
+                  points += 1;
+                  draws += 1;
+                } else if (
+                  (match.result === 'win1' && isPlayer1) ||
+                  (match.result === 'win2' && !isPlayer1)
+                ) {
+                  points += 3;
+                  wins += 1;
+                } else {
+                  losses += 1;
+                }
+              }
             }
           }
-        }
-      });
+        });
 
-      return {
-        player,
-        score,
-        wins,
-        draws,
-        losses,
-        opponents,
-        tiebreaker1: wins,
-        tiebreaker2: draws
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => {
-      if (!a || !b) return 0;
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.tiebreaker1 !== a.tiebreaker1) return b.tiebreaker1 - a.tiebreaker1;
-      return b.tiebreaker2 - a.tiebreaker2;
-    });
+        // Calculate Buchholz coefficient
+        const buchholz = opponentIds.reduce((acc, opponentId) => {
+          let opponentPoints = 0;
+          tournament.rounds?.forEach(round => {
+            // Only count Swiss rounds for Buchholz coefficient
+            if (round.number <= tournament.swissRounds) {
+              const opponentMatch = round.matches?.find(m => 
+                m.player1Id === opponentId || m.player2Id === opponentId
+              );
+              if (opponentMatch) {
+                if (!opponentMatch.player2Id) {
+                  opponentPoints += 3;
+                } else if (opponentMatch.result) {
+                  const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                  if (opponentMatch.result === 'draw') {
+                    opponentPoints += 1;
+                  } else if (
+                    (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
+                    (opponentMatch.result === 'win2' && !isOpponentPlayer1)
+                  ) {
+                    opponentPoints += 3;
+                  }
+                }
+              }
+            }
+          });
+          return acc + opponentPoints;
+        }, 0);
+
+        return {
+          user,
+          points,
+          buchholz,
+          wins,
+          losses,
+          draws
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        // Special sorting logic for tournaments with TOP rounds
+        if (tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds) {
+          return sortByTopResults(a!, b!, tournament);
+        }
+        
+        // Standard Swiss system sorting
+        if (b!.points !== a!.points) return b!.points - a!.points;
+        return b!.buchholz - a!.buchholz;
+      });
   };
 
   const standings = calculateStandings();
@@ -208,57 +377,60 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
               <CardTitle>Турнирная таблица</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">№</TableHead>
-                    <TableHead>Игрок</TableHead>
-                    <TableHead className="text-center">Рейтинг</TableHead>
-                    <TableHead className="text-center">Очки</TableHead>
-                    <TableHead className="text-center">Победы</TableHead>
-                    <TableHead className="text-center">Ничьи</TableHead>
-                    <TableHead className="text-center">Поражения</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {standings.map((standing, index) => {
-                    if (!standing) return null;
-                    const isCurrentPlayer = standing.player.id === currentUserId;
-                    
-                    return (
-                      <TableRow 
-                        key={standing.player.id}
-                        className={isCurrentPlayer ? 'bg-muted/50' : ''}
-                      >
-                        <TableCell className="font-medium">
-                          {index + 1 === 1 ? '🥇' : index + 1 === 2 ? '🥈' : index + 1 === 3 ? '🥉' : index + 1}
-                        </TableCell>
-                        <TableCell className={isCurrentPlayer ? 'font-bold' : ''}>
-                          {standing.player.name}
-                          {isCurrentPlayer && (
-                            <Badge variant="outline" className="ml-2 text-xs">Вы</Badge>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-2 font-medium">Место</th>
+                      <th className="text-left p-2 font-medium">Игрок</th>
+                      <th className="text-left p-2 font-medium">Очки</th>
+                      <th className="text-left p-2 font-medium">Бухгольц</th>
+                      <th className="text-left p-2 font-medium">П-Н-П</th>
+                      {tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds && (
+                        <th className="text-left p-2 font-medium">Статус в топе</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((participant, index) => {
+                      if (!participant) return null;
+                      const isCurrentPlayer = participant.user.id === currentUserId;
+                      
+                      return (
+                        <tr key={participant.user.id} className={`border-b hover:bg-gray-50 ${
+                          isCurrentPlayer ? 'bg-blue-50' : ''
+                        }`}>
+                          <td className="p-2">
+                            <Badge variant="outline">{index + 1}</Badge>
+                          </td>
+                          <td className={`p-2 ${isCurrentPlayer ? 'font-bold' : 'font-medium'}`}>
+                            {participant.user.name}
+                            {isCurrentPlayer && (
+                              <Badge variant="outline" className="ml-2 text-xs">Вы</Badge>
+                            )}
+                          </td>
+                          <td className={`p-2 ${isCurrentPlayer ? 'font-bold' : ''}`}>
+                            {participant.points}
+                          </td>
+                          <td className={`p-2 ${isCurrentPlayer ? 'font-bold' : ''}`}>
+                            {participant.buchholz}
+                          </td>
+                          <td className={`p-2 text-sm text-gray-600 ${isCurrentPlayer ? 'font-bold' : ''}`}>
+                            {participant.wins}-{participant.draws}-{participant.losses}
+                          </td>
+                          {tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds && (
+                            <td className={`p-2 text-sm ${isCurrentPlayer ? 'font-bold' : ''}`}>
+                              <span className="font-medium">
+                                {getTopStatus(tournament, participant.user.id)}
+                              </span>
+                            </td>
                           )}
-                        </TableCell>
-                        <TableCell className={`text-center ${isCurrentPlayer ? 'font-bold' : ''}`}>
-                          {standing.player.rating}
-                        </TableCell>
-                        <TableCell className={`text-center ${isCurrentPlayer ? 'font-bold' : ''}`}>
-                          {standing.score}
-                        </TableCell>
-                        <TableCell className={`text-center ${isCurrentPlayer ? 'font-bold' : ''}`}>
-                          {standing.wins}
-                        </TableCell>
-                        <TableCell className={`text-center ${isCurrentPlayer ? 'font-bold' : ''}`}>
-                          {standing.draws}
-                        </TableCell>
-                        <TableCell className={`text-center ${isCurrentPlayer ? 'font-bold' : ''}`}>
-                          {standing.losses}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -285,8 +457,8 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
                     </TableHeader>
                     <TableBody>
                       {round.matches?.map((match, matchIndex) => {
-                        const player1 = appState.players.find(p => p.id === match.player1Id);
-                        const player2 = match.player2Id ? appState.players.find(p => p.id === match.player2Id) : null;
+                        const player1 = appState.users.find(p => p.id === match.player1Id);
+                        const player2 = match.player2Id ? appState.users.find(p => p.id === match.player2Id) : null;
                         const isPlayer1Current = match.player1Id === currentUserId;
                         const isPlayer2Current = match.player2Id === currentUserId;
                         const isCurrentPlayerMatch = isPlayer1Current || isPlayer2Current;
