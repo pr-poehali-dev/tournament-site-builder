@@ -840,6 +840,7 @@ const Index = () => {
             setTournamentForm={setTournamentForm}
             navigateTo={navigateTo}
             addTournament={addTournament}
+            startEditTournament={startEditTournament}
           />
         )}
 

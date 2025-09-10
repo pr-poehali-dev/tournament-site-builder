@@ -26,6 +26,7 @@ interface CreateTournamentPageProps {
   addTournament: (tournament: Tournament) => void;
   tournamentForm: TournamentForm;
   setTournamentForm: React.Dispatch<React.SetStateAction<TournamentForm>>;
+  startEditTournament: (tournament: Tournament) => void;
 }
 
 export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.memo(({
@@ -33,7 +34,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
   navigateTo,
   addTournament,
   tournamentForm,
-  setTournamentForm
+  setTournamentForm,
+  startEditTournament
 }) => {
   const handleTournamentSubmit = () => {
     const { name, date, city, format, isRated, swissRounds, topRounds, participants } = tournamentForm;
@@ -98,7 +100,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     });
     
     // Переходим к странице управления созданным турниром
-    navigateTo({ page: 'tournament-manage', tournamentId: tournament.id });
+    startEditTournament(tournament);
   };
 
   const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {
