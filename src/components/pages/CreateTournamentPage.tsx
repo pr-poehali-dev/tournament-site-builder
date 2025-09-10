@@ -98,7 +98,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     });
     
     // Переходим к странице управления созданным турниром
-    navigateTo({ page: 'tournament-view', tournamentId: tournament.id });
+    navigateTo({ page: 'tournament-manage', tournamentId: tournament.id });
   };
 
   const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {
