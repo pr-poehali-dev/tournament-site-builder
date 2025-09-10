@@ -74,7 +74,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       participants,
       status: 'draft',
       currentRound: 0,
-      rounds: []
+      rounds: [],
+      judgeId: appState.currentUser?.id || ''
     };
 
     addTournament(tournament);
