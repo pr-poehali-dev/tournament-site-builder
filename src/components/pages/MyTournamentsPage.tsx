@@ -8,11 +8,13 @@ import { canManageTournament } from '@/utils/permissions';
 
 // Helper function to sort players by TOP tournament results (same as in Index.tsx)
 const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
-  // Find the furthest TOP round each player reached (highest round number where they played)
-  const getFurthestTopRound = (playerId: string) => {
+  // Find the furthest TOP round each player reached and their status
+  const getTopPerformance = (playerId: string) => {
     let furthestRound = 0;
     let isStillActive = false;
+    let wonLastMatch = false;
     
+    // Find the furthest round the player participated in
     tournament.rounds?.forEach((round: any) => {
       if (round.number > tournament.swissRounds) {
         const match = round.matches?.find((m: any) => 
@@ -22,40 +24,57 @@ const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
         if (match) {
           furthestRound = round.number;
           
-          // Check if player won this match (still active)
           if (match.result) {
             const isPlayer1 = match.player1Id === playerId;
-            isStillActive = (match.result === 'win1' && isPlayer1) || 
-                           (match.result === 'win2' && !isPlayer1);
+            wonLastMatch = (match.result === 'win1' && isPlayer1) || 
+                          (match.result === 'win2' && !isPlayer1);
+            isStillActive = wonLastMatch;
           } else {
             isStillActive = true; // Match not played yet
+            wonLastMatch = false;
           }
         }
       }
     });
     
-    return { furthestRound, isStillActive };
+    // If player never played in TOP rounds, they didn't make it to TOP
+    if (furthestRound === 0) {
+      return { 
+        furthestRound: tournament.swissRounds, // Use Swiss rounds as baseline
+        isStillActive: false,
+        madeToTop: false
+      };
+    }
+    
+    return { furthestRound, isStillActive, madeToTop: true };
   };
 
-  const playerA = getFurthestTopRound(a.participantId);
-  const playerB = getFurthestTopRound(b.participantId);
+  const playerA = getTopPerformance(a.participantId);
+  const playerB = getTopPerformance(b.participantId);
   
-  // Player who went further in TOP rounds gets higher position
-  if (playerA.furthestRound !== playerB.furthestRound) {
-    return playerB.furthestRound - playerA.furthestRound;
+  // 1. Players who made it to TOP rank higher than those who didn't
+  if (playerA.madeToTop !== playerB.madeToTop) {
+    return playerB.madeToTop ? 1 : -1;
   }
   
-  // If both reached the same round, active player (winner) ranks higher
-  if (playerA.isStillActive !== playerB.isStillActive) {
-    return playerB.isStillActive ? 1 : -1;
+  // 2. If both made to TOP, player who went further ranks higher
+  if (playerA.madeToTop && playerB.madeToTop) {
+    if (playerA.furthestRound !== playerB.furthestRound) {
+      return playerB.furthestRound - playerA.furthestRound;
+    }
+    
+    // 3. If same round reached, active player (still in tournament) ranks higher
+    if (playerA.isStillActive !== playerB.isStillActive) {
+      return playerB.isStillActive ? 1 : -1;
+    }
   }
   
-  // If same TOP performance, use Swiss standings (total points including TOP)
+  // 4. If same TOP performance (or both didn't make TOP), use Swiss standings
   if (a.score !== b.score) {
     return b.score - a.score;
   }
   
-  // If same points, use tiebreakers
+  // 5. If same points, use tiebreakers
   if (a.tiebreaker1 !== b.tiebreaker1) {
     return b.tiebreaker1 - a.tiebreaker1;
   }
