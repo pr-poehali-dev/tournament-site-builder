@@ -164,7 +164,10 @@ const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
   }
 
   // 5. If same points, use Buchholz
-  return b.buchholz - a.buchholz;
+  if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
+  
+  // 6. If same Buchholz, use Sum Buchholz
+  return b.sumBuchholz - a.sumBuchholz;
 };
 
 // Helper function to get round name
@@ -267,7 +270,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
           }
         });
 
-        // Calculate Buchholz coefficient
+        // Calculate Buchholz coefficient (sum of opponent points)
         const buchholz = opponentIds.reduce((acc, opponentId) => {
           let opponentPoints = 0;
           tournament.rounds?.forEach((round) => {
@@ -297,10 +300,66 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
           return acc + opponentPoints;
         }, 0);
 
+        // Calculate Sum Buchholz coefficient (sum of opponent Buchholz coefficients)
+        const sumBuchholz = opponentIds.reduce((acc, opponentId) => {
+          // Calculate this opponent's Buchholz coefficient
+          let opponentBuchholz = 0;
+          
+          // Get this opponent's opponents
+          let opponentOpponentIds: string[] = [];
+          tournament.rounds?.forEach((round) => {
+            if (round.number <= tournament.swissRounds) {
+              const opponentMatch = round.matches?.find(
+                (m) => m.player1Id === opponentId || m.player2Id === opponentId,
+              );
+              if (opponentMatch && opponentMatch.result) {
+                if (!opponentMatch.player2Id) {
+                  // BYE - no additional opponents
+                } else {
+                  const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                  const opponentOpponentId = isOpponentPlayer1 ? opponentMatch.player2Id : opponentMatch.player1Id;
+                  opponentOpponentIds.push(opponentOpponentId);
+                }
+              }
+            }
+          });
+          
+          // Calculate opponent's Buchholz (sum of their opponent points)
+          opponentBuchholz = opponentOpponentIds.reduce((oppAcc, oppOppId) => {
+            let oppOppPoints = 0;
+            tournament.rounds?.forEach((round) => {
+              if (round.number <= tournament.swissRounds) {
+                const oppOppMatch = round.matches?.find(
+                  (m) => m.player1Id === oppOppId || m.player2Id === oppOppId,
+                );
+                if (oppOppMatch) {
+                  if (!oppOppMatch.player2Id) {
+                    oppOppPoints += 3;
+                  } else if (oppOppMatch.result) {
+                    const isOppOppPlayer1 = oppOppMatch.player1Id === oppOppId;
+                    if (oppOppMatch.result === "draw") {
+                      oppOppPoints += 1;
+                    } else if (
+                      (oppOppMatch.result === "win1" && isOppOppPlayer1) ||
+                      (oppOppMatch.result === "win2" && !isOppOppPlayer1)
+                    ) {
+                      oppOppPoints += 3;
+                    }
+                  }
+                }
+              }
+            });
+            return oppAcc + oppOppPoints;
+          }, 0);
+          
+          return acc + opponentBuchholz;
+        }, 0);
+
         return {
           user,
           points,
           buchholz,
+          sumBuchholz,
           wins,
           losses,
           draws,
@@ -318,7 +377,8 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
 
         // Standard Swiss system sorting
         if (b!.points !== a!.points) return b!.points - a!.points;
-        return b!.buchholz - a!.buchholz;
+        if (b!.buchholz !== a!.buchholz) return b!.buchholz - a!.buchholz;
+        return b!.sumBuchholz - a!.sumBuchholz;
       });
   };
 
@@ -427,6 +487,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
                       <th className="text-left p-2 font-medium">Игрок</th>
                       <th className="text-left p-2 font-medium">Очки</th>
                       <th className="text-left p-2 font-medium">Бухгольц</th>
+                      <th className="text-left p-2 font-medium">Сум. коэф. Бухгольца</th>
                       <th className="text-left p-2 font-medium">П-Н-П</th>
                       {tournament.topRounds > 0 &&
                         tournament.currentRound > tournament.swissRounds && (
@@ -471,6 +532,11 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
                             className={`p-2 ${isCurrentPlayer ? "font-bold" : ""}`}
                           >
                             {participant.buchholz}
+                          </td>
+                          <td
+                            className={`p-2 ${isCurrentPlayer ? "font-bold" : ""}`}
+                          >
+                            {participant.sumBuchholz}
                           </td>
                           <td
                             className={`p-2 text-sm text-gray-600 ${isCurrentPlayer ? "font-bold" : ""}`}
