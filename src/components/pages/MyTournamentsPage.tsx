@@ -261,16 +261,16 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
                         })
                       }
                     > 
-                //     <TableCell className="font-medium">
-                //        <div className="flex items-center gap-2">
-                //          {tournament.name}
-                //         {tournament.confirmed && (
+                     <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {tournament.name}
+                //        {tournament.confirmed && (
                 //            <Badge variant="secondary" className="text-xs">
                 //              Подтверждён
-                //            </Badge>
+                //           </Badge>
                 //          )}
-                //        </div>
-                //      </TableCell>
+                        </div>
+                      </TableCell>
                       <TableCell>{formatTournamentType(tournament)}</TableCell>
                       <TableCell>{tournament.date}</TableCell>
                       <TableCell className="text-center">
