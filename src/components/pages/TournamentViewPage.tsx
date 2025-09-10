@@ -14,7 +14,6 @@ const getRoundName = (tournament: Tournament, roundNumber: number): string => {
   } else {
     const topRoundNumber = roundNumber - tournament.swissRounds;
     const totalTopRounds = tournament.topRounds;
-    const playersInFirstTopRound = Math.pow(2, totalTopRounds);
     const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
     
     if (playersInThisRound === 2) {

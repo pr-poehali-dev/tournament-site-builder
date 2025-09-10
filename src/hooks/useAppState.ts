@@ -516,8 +516,12 @@ export const useAppState = () => {
     
     // If this is the first TOP round, create bracket from Swiss standings
     if (currentTopRound === 1) {
-      // Take top players for bracket
-      const topPlayers = playerStandings.slice(0, Math.min(bracketSize, playerStandings.length));
+      // Take top players for bracket - exact number needed for the bracket
+      const actualBracketSize = Math.min(bracketSize, playerStandings.length);
+      // Round down to nearest power of 2 to ensure complete bracket
+      const finalBracketSize = Math.pow(2, Math.floor(Math.log2(actualBracketSize)));
+      
+      const topPlayers = playerStandings.slice(0, finalBracketSize);
       
       if (topPlayers.length < 2) {
         return { success: false, error: 'Недостаточно игроков для создания топа' };
@@ -559,7 +563,7 @@ export const useAppState = () => {
         }
         
         if (winnerId) {
-          winners.push({ playerId: winnerId, tableNumber: match.tableNumber });
+          winners.push({ playerId: winnerId, tableNumber: match.tableNumber || 1 });
         }
       });
       
@@ -571,10 +575,11 @@ export const useAppState = () => {
       }
       
       // Olympic system pairing for next round:
-      // Winner of table 1 vs winner of last table, winner of table 2 vs winner of second-to-last table, etc.
+      // Classic Olympic system: pair winners based on bracket structure
       const matches: Match[] = [];
       let tableNumber = 1;
       
+      // Olympic system: pair 1st table winner with last table winner, 2nd with 2nd-to-last, etc.
       for (let i = 0; i < winners.length / 2; i++) {
         const player1 = winners[i];
         const player2 = winners[winners.length - 1 - i];

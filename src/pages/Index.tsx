@@ -38,13 +38,12 @@ const getRoundName = (tournament: any, roundNumber: number): string => {
   } else {
     const topRoundNumber = roundNumber - tournament.swissRounds;
     const totalTopRounds = tournament.topRounds;
-    const playersInFirstTopRound = Math.pow(2, totalTopRounds);
     const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
     
     if (playersInThisRound === 2) {
       return 'Финал';
     } else if (playersInThisRound === 4) {
-      return 'Полуфинал';
+      return 'Полуфинал'; 
     } else {
       return `ТОП-${playersInThisRound}`;
     }
