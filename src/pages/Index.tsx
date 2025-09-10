@@ -122,7 +122,7 @@ const getTopStatus = (tournament: any, playerId: string): string => {
     } else if (playersInPreviousRound === 2) {
       return "🥈 Вице-чемпион";
     } else {
-      return `Вылет в ТОП-${playersInPreviousRound / 2}`;
+      return `ТОП-${playersInPreviousRound / 2}`;
     }
   }
 };
