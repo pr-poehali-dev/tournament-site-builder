@@ -223,6 +223,19 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             </div>
           </div>
 
+          {/* Судья турнира */}
+          <div className="space-y-4">
+            <Label>Судья турнира</Label>
+            <SimpleJudgeSearch
+              users={appState.users}
+              cities={appState.cities}
+              selectedJudgeId={tournamentForm.judgeId}
+              onJudgeChange={handleJudgeChange}
+              placeholder="Выберите судью турнира"
+              defaultCityFilter={tournamentForm.city}
+            />
+          </div>
+
           {/* Участники */}
           <div className="space-y-4">
             <Label>Участники турнира</Label>

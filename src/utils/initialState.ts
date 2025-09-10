@@ -275,6 +275,7 @@ export const getInitialState = (): AppState => ({
         "user11",
         "user12",
       ],
+      judgeId: "admin", // Администратор как судья для существующего турнира
       status: "active" as const,
       rounds: [],
       currentRound: 0,

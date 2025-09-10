@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament } from '@/types';
+import { canManageTournament } from '@/utils/permissions';
 
 interface TournamentsPageProps {
   appState: AppState;
@@ -76,10 +77,12 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     <Icon name="Eye" size={14} className="mr-1" />
                     Просмотр
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => startEditTournament(tournament)}>
-                    <Icon name="Settings" size={14} className="mr-1" />
-                    Управление
-                  </Button>
+                  {canManageTournament(appState.currentUser, tournament) && (
+                    <Button variant="outline" size="sm" onClick={() => startEditTournament(tournament)}>
+                      <Icon name="Settings" size={14} className="mr-1" />
+                      Управление
+                    </Button>
+                  )}
                   {appState.currentUser?.role === 'admin' && 
                    tournament.status === 'completed' && 
                    !tournament.confirmed && (

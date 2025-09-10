@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Icon from '@/components/ui/icon';
 import type { AppState, Page, Tournament } from '@/types';
+import { canManageTournament } from '@/utils/permissions';
 
 interface MyTournamentsPageProps {
   appState: AppState;
