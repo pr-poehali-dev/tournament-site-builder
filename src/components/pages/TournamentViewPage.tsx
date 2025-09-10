@@ -165,7 +165,7 @@ const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
 
   // 5. If same points, use Buchholz
   if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
-  
+
   // 6. If same Buchholz, use Sum Buchholz
   return b.sumBuchholz - a.sumBuchholz;
 };
@@ -304,7 +304,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
         const sumBuchholz = opponentIds.reduce((acc, opponentId) => {
           // Calculate this opponent's Buchholz coefficient
           let opponentBuchholz = 0;
-          
+
           // Get this opponent's opponents
           let opponentOpponentIds: string[] = [];
           tournament.rounds?.forEach((round) => {
@@ -316,14 +316,17 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
                 if (!opponentMatch.player2Id) {
                   // BYE - no additional opponents
                 } else {
-                  const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
-                  const opponentOpponentId = isOpponentPlayer1 ? opponentMatch.player2Id : opponentMatch.player1Id;
+                  const isOpponentPlayer1 =
+                    opponentMatch.player1Id === opponentId;
+                  const opponentOpponentId = isOpponentPlayer1
+                    ? opponentMatch.player2Id
+                    : opponentMatch.player1Id;
                   opponentOpponentIds.push(opponentOpponentId);
                 }
               }
             }
           });
-          
+
           // Calculate opponent's Buchholz (sum of their opponent points)
           opponentBuchholz = opponentOpponentIds.reduce((oppAcc, oppOppId) => {
             let oppOppPoints = 0;
@@ -351,7 +354,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
             });
             return oppAcc + oppOppPoints;
           }, 0);
-          
+
           return acc + opponentBuchholz;
         }, 0);
 
@@ -486,8 +489,8 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
                       <th className="text-left p-2 font-medium">Место</th>
                       <th className="text-left p-2 font-medium">Игрок</th>
                       <th className="text-left p-2 font-medium">Очки</th>
-                      <th className="text-left p-2 font-medium">Бухгольц</th>
-                      <th className="text-left p-2 font-medium">Сум. коэф. Бухгольца</th>
+                      <th className="text-left p-2 font-medium">Бух</th>
+                      <th className="text-left p-2 font-medium">"Бух-2"</th>
                       <th className="text-left p-2 font-medium">П-Н-П</th>
                       {tournament.topRounds > 0 &&
                         tournament.currentRound > tournament.swissRounds && (
