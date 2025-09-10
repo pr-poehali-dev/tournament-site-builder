@@ -36,6 +36,7 @@ interface AdminPageProps {
   deleteUser: (userId: string) => void;
   addUser: (user: User) => void;
   addPlayer: (player: Player) => void;
+  resetToInitialState?: () => void;
 }
 
 // User Creation Form Component
@@ -169,6 +170,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({
   deleteUser,
   addUser,
   addPlayer,
+  resetToInitialState,
 }) => (
   <div className="space-y-6">
     <Card>
@@ -265,5 +267,30 @@ export const AdminPage: React.FC<AdminPageProps> = ({
         </div>
       </CardContent>
     </Card>
+    
+    {/* Debug Section */}
+    {resetToInitialState && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Icon name="RotateCcw" size={20} className="mr-2" />
+            Отладка
+          </CardTitle>
+          <CardDescription>
+            Функции для разработчика
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={resetToInitialState}
+            variant="destructive"
+            size="sm"
+          >
+            <Icon name="RotateCcw" size={14} className="mr-2" />
+            Сбросить данные
+          </Button>
+        </CardContent>
+      </Card>
+    )}
   </div>
 );

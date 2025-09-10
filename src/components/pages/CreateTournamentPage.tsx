@@ -92,10 +92,12 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       isRated: true,
       swissRounds: 3,
       topRounds: 1,
-      participants: []
+      participants: [],
+      judgeId: appState.currentUser?.id || ''
     });
     
-    navigateTo('tournaments');
+    // Переходим к странице управления созданным турниром
+    navigateTo({ page: 'tournament-view', tournamentId: tournament.id });
   };
 
   const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {

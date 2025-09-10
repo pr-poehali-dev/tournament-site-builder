@@ -7,7 +7,18 @@ export const useAppState = () => {
   // Load initial state from localStorage or use default
   const [appState, setAppState] = useState<AppState>(() => {
     const savedState = loadStateFromLocalStorage();
-    return savedState || getInitialState();
+    if (savedState) {
+      // Migrate old tournaments to include judgeId field
+      const migratedState = {
+        ...savedState,
+        tournaments: (savedState.tournaments || []).map((tournament: any) => ({
+          ...tournament,
+          judgeId: tournament.judgeId || 'admin' // Default to admin if missing
+        }))
+      };
+      return migratedState;
+    }
+    return getInitialState();
   });
 
   // Auto-save to localStorage whenever appState changes
@@ -648,5 +659,11 @@ export const useAppState = () => {
     
     // Raw state setter (for complex updates)
     setAppState,
+    
+    // Debug function to reset data
+    resetToInitialState: () => {
+      localStorage.removeItem('tournament-manager-state');
+      setAppState(getInitialState());
+    },
   };
 };

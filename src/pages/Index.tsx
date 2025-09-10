@@ -62,6 +62,7 @@ const Index = () => {
     finishTournament,
     confirmTournament,
     confirmTournamentWithPlayerUpdates,
+    resetToInitialState,
     generatePairings
   } = useAppState();
 
@@ -679,6 +680,7 @@ const Index = () => {
             deleteUser={deleteUser}
             addUser={addUser}
             addPlayer={addPlayer}
+            resetToInitialState={resetToInitialState}
           />
         )}
 
