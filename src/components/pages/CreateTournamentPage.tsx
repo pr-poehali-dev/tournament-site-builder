@@ -225,9 +225,11 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <Label>Участники турнира</Label>
             <PlayerSearch
               players={appState.users}
+              cities={appState.cities}
               selectedPlayerIds={tournamentForm.participants}
               onPlayersChange={handleParticipantsChange}
               placeholder="Найти и добавить участников..."
+              defaultCityFilter={tournamentForm.city}
             />
             
             {tournamentForm.participants.length === 0 && (
