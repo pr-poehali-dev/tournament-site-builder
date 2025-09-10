@@ -266,7 +266,7 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
                           {tournament.name}
                           {tournament.confirmed && (
                             <Badge variant="secondary" className="text-xs">
-                              Подтверждён
+                              Под
                             </Badge>
                           )}
                         </div>
