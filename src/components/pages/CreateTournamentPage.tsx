@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
+import { PlayerSearch } from '@/components/ui/player-search';
 import type { AppState, Tournament, Page } from '@/types';
 
 interface TournamentForm {
@@ -100,12 +101,10 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     }));
   };
 
-  const handleParticipantToggle = (playerId: string, checked: boolean) => {
+  const handleParticipantsChange = (playerIds: string[]) => {
     setTournamentForm(prev => ({
       ...prev,
-      participants: checked
-        ? [...prev.participants, playerId]
-        : prev.participants.filter(id => id !== playerId)
+      participants: playerIds
     }));
   };
 
@@ -223,39 +222,20 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
 
           {/* Участники */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Участники турнира</Label>
-            </div>
+            <Label>Участники турнира</Label>
+            <PlayerSearch
+              players={appState.users}
+              selectedPlayerIds={tournamentForm.participants}
+              onPlayersChange={handleParticipantsChange}
+              placeholder="Найти и добавить участников..."
+            />
             
-            <div className="border rounded-lg p-4 max-h-64 overflow-y-auto">
-              {appState.players.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Icon name="Users" size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>Нет игроков</p>
-                  <p className="text-sm mt-2">Добавьте игроков в системе</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {appState.players.map(player => (
-                    <div key={player.id} className="flex items-center space-x-2 p-2 rounded border hover:bg-accent/50 transition-colors">
-                      <input
-                        type="checkbox"
-                        id={`player-${player.id}`}
-                        checked={tournamentForm.participants.includes(player.id)}
-                        onChange={(e) => handleParticipantToggle(player.id, e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
-                        <div className="font-medium">{player.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {player.city} • Рейтинг: {player.rating}
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {tournamentForm.participants.length === 0 && (
+              <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
+                <Icon name="Users" size={32} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Начните вводить имя игрока для поиска</p>
+              </div>
+            )}
           </div>
 
           {/* Кнопки */}
