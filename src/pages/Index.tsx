@@ -31,6 +31,59 @@ import { FormatsPage } from '@/components/pages/FormatsPage';
 import { CreateTournamentPage } from '@/components/pages/CreateTournamentPage';
 import { TournamentViewPage } from '@/components/pages/TournamentViewPage';
 
+// Helper function to sort players by TOP tournament results
+const sortByTopResults = (a: any, b: any, tournament: any, users: any[]) => {
+  // Find the furthest TOP round each player reached (highest round number where they played)
+  const getFurthestTopRound = (playerId: string) => {
+    let furthestRound = 0;
+    let isStillActive = false;
+    
+    tournament.rounds?.forEach((round: any) => {
+      if (round.number > tournament.swissRounds) {
+        const match = round.matches?.find((m: any) => 
+          m.player1Id === playerId || m.player2Id === playerId
+        );
+        
+        if (match) {
+          furthestRound = round.number;
+          
+          // Check if player won this match (still active)
+          if (match.result) {
+            const isPlayer1 = match.player1Id === playerId;
+            isStillActive = (match.result === 'win1' && isPlayer1) || 
+                           (match.result === 'win2' && !isPlayer1);
+          } else {
+            isStillActive = true; // Match not played yet
+          }
+        }
+      }
+    });
+    
+    return { furthestRound, isStillActive };
+  };
+
+  const playerA = getFurthestTopRound(a.user.id);
+  const playerB = getFurthestTopRound(b.user.id);
+  
+  // Player who went further in TOP rounds gets higher position
+  if (playerA.furthestRound !== playerB.furthestRound) {
+    return playerB.furthestRound - playerA.furthestRound;
+  }
+  
+  // If both reached the same round, active player (winner) ranks higher
+  if (playerA.isStillActive !== playerB.isStillActive) {
+    return playerB.isStillActive ? 1 : -1;
+  }
+  
+  // If same TOP performance, use Swiss standings (total points including TOP)
+  if (a.points !== b.points) {
+    return b.points - a.points;
+  }
+  
+  // If same points, use Buchholz
+  return b.buchholz - a.buchholz;
+};
+
 // Helper function to get round name
 const getRoundName = (tournament: any, roundNumber: number): string => {
   if (roundNumber <= tournament.swissRounds) {
@@ -640,6 +693,12 @@ const Index = () => {
                     })
                     .filter(Boolean)
                     .sort((a, b) => {
+                      // Special sorting logic for tournaments with TOP rounds
+                      if (tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds) {
+                        return sortByTopResults(a!, b!, tournament, appState.users);
+                      }
+                      
+                      // Standard Swiss system sorting
                       if (b!.points !== a!.points) return b!.points - a!.points;
                       return b!.buchholz - a!.buchholz;
                     })
