@@ -6,6 +6,63 @@ import Icon from '@/components/ui/icon';
 import type { AppState, Page, Tournament } from '@/types';
 import { canManageTournament } from '@/utils/permissions';
 
+// Helper function to sort players by TOP tournament results (same as in Index.tsx)
+const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
+  // Find the furthest TOP round each player reached (highest round number where they played)
+  const getFurthestTopRound = (playerId: string) => {
+    let furthestRound = 0;
+    let isStillActive = false;
+    
+    tournament.rounds?.forEach((round: any) => {
+      if (round.number > tournament.swissRounds) {
+        const match = round.matches?.find((m: any) => 
+          m.player1Id === playerId || m.player2Id === playerId
+        );
+        
+        if (match) {
+          furthestRound = round.number;
+          
+          // Check if player won this match (still active)
+          if (match.result) {
+            const isPlayer1 = match.player1Id === playerId;
+            isStillActive = (match.result === 'win1' && isPlayer1) || 
+                           (match.result === 'win2' && !isPlayer1);
+          } else {
+            isStillActive = true; // Match not played yet
+          }
+        }
+      }
+    });
+    
+    return { furthestRound, isStillActive };
+  };
+
+  const playerA = getFurthestTopRound(a.participantId);
+  const playerB = getFurthestTopRound(b.participantId);
+  
+  // Player who went further in TOP rounds gets higher position
+  if (playerA.furthestRound !== playerB.furthestRound) {
+    return playerB.furthestRound - playerA.furthestRound;
+  }
+  
+  // If both reached the same round, active player (winner) ranks higher
+  if (playerA.isStillActive !== playerB.isStillActive) {
+    return playerB.isStillActive ? 1 : -1;
+  }
+  
+  // If same TOP performance, use Swiss standings (total points including TOP)
+  if (a.score !== b.score) {
+    return b.score - a.score;
+  }
+  
+  // If same points, use tiebreakers
+  if (a.tiebreaker1 !== b.tiebreaker1) {
+    return b.tiebreaker1 - a.tiebreaker1;
+  }
+  
+  return b.tiebreaker2 - a.tiebreaker2;
+};
+
 interface MyTournamentsPageProps {
   appState: AppState;
   navigateTo: (page: Page) => void;
@@ -29,28 +86,31 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({ appState, 
       let wins = 0;
       let draws = 0;
       
-      // Count points from all matches
+      // Count points from Swiss rounds only (same system as Index.tsx: 3-1-0)
       tournament.rounds?.forEach(round => {
-        const match = round.matches?.find(m => 
-          m.player1Id === participantId || m.player2Id === participantId
-        );
-        
-        if (match && match.result) {
-          if (!match.player2Id) {
-            // Bye - 1 point
-            score += 1;
-            wins += 1;
-          } else {
-            const isPlayer1 = match.player1Id === participantId;
-            if (match.result === 'draw') {
-              score += 0.5;
-              draws += 1;
-            } else if (
-              (match.result === 'win1' && isPlayer1) ||
-              (match.result === 'win2' && !isPlayer1)
-            ) {
-              score += 1;
+        // Only count Swiss rounds for points calculation
+        if (round.number <= tournament.swissRounds) {
+          const match = round.matches?.find(m => 
+            m.player1Id === participantId || m.player2Id === participantId
+          );
+          
+          if (match && match.result) {
+            if (!match.player2Id) {
+              // Bye - 3 points
+              score += 3;
               wins += 1;
+            } else {
+              const isPlayer1 = match.player1Id === participantId;
+              if (match.result === 'draw') {
+                score += 1;
+                draws += 1;
+              } else if (
+                (match.result === 'win1' && isPlayer1) ||
+                (match.result === 'win2' && !isPlayer1)
+              ) {
+                score += 3;
+                wins += 1;
+              }
             }
           }
         }
@@ -68,7 +128,13 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({ appState, 
     });
 
     // Sort by score (descending), then by tiebreakers
+    // Special sorting logic for tournaments with TOP rounds
     participantScores.sort((a, b) => {
+      if (tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds) {
+        return sortByTopResults(a, b, tournament);
+      }
+      
+      // Standard Swiss system sorting
       if (b.score !== a.score) return b.score - a.score;
       if (b.tiebreaker1 !== a.tiebreaker1) return b.tiebreaker1 - a.tiebreaker1;
       return b.tiebreaker2 - a.tiebreaker2;
