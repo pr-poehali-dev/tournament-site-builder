@@ -727,17 +727,13 @@ const Index = () => {
         )}
 
         {appState.currentPage === 'create-tournament' && (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Создание турнира</h1>
-            <p>Тестовая страница - если видите это, маршрутизация работает!</p>
-            <CreateTournamentPage
-              appState={appState}
-              tournamentForm={tournamentForm}
-              setTournamentForm={setTournamentForm}
-              navigateTo={navigateTo}
-              addTournament={addTournament}
-            />
-          </div>
+          <CreateTournamentPage
+            appState={appState}
+            tournamentForm={tournamentForm}
+            setTournamentForm={setTournamentForm}
+            navigateTo={navigateTo}
+            addTournament={addTournament}
+          />
         )}
 
         {appState.currentPage === 'tournamentEdit' && <TournamentEditPage />}

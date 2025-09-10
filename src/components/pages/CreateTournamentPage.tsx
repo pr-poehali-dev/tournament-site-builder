@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
+import { SimplePlayerSearch } from '@/components/ui/simple-player-search';
 import type { AppState, Tournament, Page } from '@/types';
 
 interface TournamentForm {
@@ -222,11 +223,14 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           {/* Участники */}
           <div className="space-y-4">
             <Label>Участники турнира</Label>
-            <div className="text-center py-6 text-muted-foreground bg-muted/30 rounded-lg">
-              <Icon name="Users" size={32} className="mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Компонент поиска игроков временно отключен</p>
-              <p className="text-xs mt-1">Выбрано участников: {tournamentForm.participants.length}</p>
-            </div>
+            <SimplePlayerSearch
+              players={appState.users}
+              cities={appState.cities}
+              selectedPlayerIds={tournamentForm.participants}
+              onPlayersChange={handleParticipantsChange}
+              placeholder="Найти и добавить участников..."
+              defaultCityFilter={tournamentForm.city}
+            />
           </div>
 
           {/* Кнопки */}
