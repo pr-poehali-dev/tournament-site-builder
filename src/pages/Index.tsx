@@ -96,16 +96,21 @@ const Index = () => {
   const [tempMatches, setTempMatches] = useState<any[]>([]);
 
   // Tournament creation form states and refs
-  const [tournamentForm, setTournamentForm] = useState({
-    name: '',
-    date: '',
-    city: 'ryazan',
-    format: 'sealed',
-    description: '',
-    isRated: true,
-    swissRounds: 3,
-    topRounds: 1,
-    participants: [] as string[]
+  const [tournamentForm, setTournamentForm] = useState(() => {
+    const today = new Date().toISOString().split('T')[0]; // Текущая дата в формате YYYY-MM-DD
+    const userCity = appState.currentUser?.city || ''; // Город текущего пользователя
+    
+    return {
+      name: '',
+      date: today,
+      city: userCity,
+      format: 'sealed',
+      description: '',
+      isRated: true,
+      swissRounds: 3,
+      topRounds: 1,
+      participants: [] as string[]
+    };
   });
   
   // Tournament refs removed - now using controlled components
@@ -240,8 +245,24 @@ const Index = () => {
   }, [navigateTo]);
 
   const goToCreateTournament = useCallback(() => {
+    // Сбрасываем форму при открытии страницы создания турнира
+    const today = new Date().toISOString().split('T')[0];
+    const userCity = appState.currentUser?.city || '';
+    
+    setTournamentForm({
+      name: '',
+      date: today,
+      city: userCity,
+      format: 'sealed',
+      description: '',
+      isRated: true,
+      swissRounds: 3,
+      topRounds: 1,
+      participants: []
+    });
+    
     navigateTo('create-tournament');
-  }, [navigateTo]);
+  }, [navigateTo, appState.currentUser?.city]);
 
   // Tournament Edit Page Component (kept inline due to complexity)
   const TournamentEditPage = () => {

@@ -78,11 +78,14 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
 
     addTournament(tournament);
     
-    // Очистить форму
+    // Очистить форму с сохранением города пользователя и текущей даты
+    const today = new Date().toISOString().split('T')[0];
+    const userCity = appState.currentUser?.city || '';
+    
     setTournamentForm({
       name: '',
-      date: '',
-      city: 'ryazan',
+      date: today,
+      city: userCity,
       format: 'sealed',
       description: '',
       isRated: true,
