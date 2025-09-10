@@ -159,6 +159,15 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
               </Badge>
             </div>
             <div>
+              <div className="text-muted-foreground">Судья</div>
+              <div className="font-medium">
+                {(() => {
+                  const judge = appState.users.find(u => u.id === tournament.judgeId);
+                  return judge ? judge.name : 'Не указан';
+                })()}
+              </div>
+            </div>
+            <div>
               <div className="text-muted-foreground">Туров проведено</div>
               <div className="font-medium">{tournament.rounds?.length || 0}</div>
             </div>
