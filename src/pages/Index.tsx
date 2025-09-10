@@ -31,6 +31,70 @@ import { FormatsPage } from '@/components/pages/FormatsPage';
 import { CreateTournamentPage } from '@/components/pages/CreateTournamentPage';
 import { TournamentViewPage } from '@/components/pages/TournamentViewPage';
 
+// Helper function to get player's TOP status
+const getTopStatus = (tournament: any, playerId: string): string => {
+  if (tournament.topRounds === 0 || tournament.currentRound <= tournament.swissRounds) {
+    return '';
+  }
+  
+  // Find the furthest TOP round the player reached
+  let furthestRound = 0;
+  let isStillActive = false;
+  let wonLastMatch = false;
+  
+  tournament.rounds?.forEach((round: any) => {
+    if (round.number > tournament.swissRounds) {
+      const match = round.matches?.find((m: any) => 
+        m.player1Id === playerId || m.player2Id === playerId
+      );
+      
+      if (match) {
+        furthestRound = round.number;
+        
+        if (match.result) {
+          const isPlayer1 = match.player1Id === playerId;
+          wonLastMatch = (match.result === 'win1' && isPlayer1) || 
+                        (match.result === 'win2' && !isPlayer1);
+          isStillActive = wonLastMatch;
+        } else {
+          isStillActive = true; // Match not played yet
+          wonLastMatch = false;
+        }
+      }
+    }
+  });
+  
+  if (furthestRound === 0) {
+    return 'Не прошёл в топ';
+  }
+  
+  // Determine status based on furthest round reached and current status
+  const topRoundNumber = furthestRound - tournament.swissRounds;
+  const totalTopRounds = tournament.topRounds;
+  
+  // If player won their last match or match not played yet, they're still active
+  if (isStillActive) {
+    if (totalTopRounds - topRoundNumber + 1 === 2) {
+      return '🏆 Финалист';
+    } else if (totalTopRounds - topRoundNumber + 1 === 4) {
+      return '🥉 Полуфиналист';
+    } else {
+      const playersInThisRound = Math.pow(2, totalTopRounds - topRoundNumber + 1);
+      return `ТОП-${playersInThisRound}`;
+    }
+  } else {
+    // Player lost their last match
+    const playersInPreviousRound = Math.pow(2, totalTopRounds - topRoundNumber + 2);
+    if (playersInPreviousRound === 4) {
+      return 'Вылет в полуфинале';
+    } else if (playersInPreviousRound === 2) {
+      return '🥈 Вице-чемпион';
+    } else {
+      return `Вылет в ТОП-${playersInPreviousRound}`;
+    }
+  }
+};
+
 // Helper function to sort players by TOP tournament results
 const sortByTopResults = (a: any, b: any, tournament: any, users: any[]) => {
   // Find the furthest TOP round each player reached (highest round number where they played)
@@ -614,6 +678,9 @@ const Index = () => {
                     <th className="text-left p-2 font-medium">Очки</th>
                     <th className="text-left p-2 font-medium">Коэффициент Бухгольца</th>
                     <th className="text-left p-2 font-medium">П-Н-П</th>
+                    {tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds && (
+                      <th className="text-left p-2 font-medium">Статус в топе</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -719,6 +786,13 @@ const Index = () => {
                         <td className="p-2 text-sm text-gray-600">
                           {participant!.wins}-{participant!.draws}-{participant!.losses}
                         </td>
+                        {tournament.topRounds > 0 && tournament.currentRound > tournament.swissRounds && (
+                          <td className="p-2 text-sm">
+                            <span className="font-medium">
+                              {getTopStatus(tournament, participant!.user.id)}
+                            </span>
+                          </td>
+                        )}
                       </tr>
                     ))}
                 </tbody>
