@@ -8,12 +8,15 @@ import type { AppState, City } from '@/types';
 
 interface CitiesPageProps {
   appState: AppState;
-  editingCity: { id: string; name: string } | null;
-  addCity: () => void;
+  editingCityId: string | null;
+  editingCityName: string;
+  newCityName: string;
   startEditCity: (city: City) => void;
   deleteCity: (cityId: string) => void;
   handleEditCityNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleEditCityKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleNewCityNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCityNameKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleAddCity: () => void;
   saveEditCity: () => void;
   cancelEditCity: () => void;
   cityNameInputRef: React.RefObject<HTMLInputElement>;
@@ -21,12 +24,15 @@ interface CitiesPageProps {
 
 export const CitiesPage: React.FC<CitiesPageProps> = ({
   appState,
-  editingCity,
-  addCity,
+  editingCityId,
+  editingCityName,
+  newCityName,
   startEditCity,
   deleteCity,
   handleEditCityNameChange,
-  handleEditCityKeyPress,
+  handleNewCityNameChange,
+  handleCityNameKeyPress,
+  handleAddCity,
   saveEditCity,
   cancelEditCity,
   cityNameInputRef
@@ -50,15 +56,12 @@ export const CitiesPage: React.FC<CitiesPageProps> = ({
               ref={cityNameInputRef}
               type="text"
               placeholder="Название нового города"
-              defaultValue=""
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  addCity();
-                }
-              }}
+              value={newCityName}
+              onChange={handleNewCityNameChange}
+              onKeyPress={handleCityNameKeyPress}
               className="flex-1 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
-            <Button onClick={addCity}>
+            <Button onClick={handleAddCity}>
               <Icon name="Plus" size={16} className="mr-2" />
               Добавить
             </Button>
@@ -85,7 +88,7 @@ export const CitiesPage: React.FC<CitiesPageProps> = ({
                       <div>
                         <div className="font-medium">{city.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {appState.players.filter(p => p.city === city.name).length} игроков
+                          {appState.users.filter(u => u.role === 'player' && u.city === city.name).length} игроков
                         </div>
                       </div>
                     </div>
@@ -123,16 +126,16 @@ export const CitiesPage: React.FC<CitiesPageProps> = ({
           </div>
 
           {/* Модальное окно редактирования */}
-          {editingCity && (
+          {editingCityId && (
             <Card className="border-primary/50 bg-primary/5">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="text-sm font-medium">Редактирование города</div>
                   <div className="flex gap-2">
                     <Input
-                      value={editingCity.name}
+                      value={editingCityName}
                       onChange={handleEditCityNameChange}
-                      onKeyPress={handleEditCityKeyPress}
+                      onKeyPress={handleCityNameKeyPress}
                       placeholder="Название города"
                       className="flex-1"
                     />
