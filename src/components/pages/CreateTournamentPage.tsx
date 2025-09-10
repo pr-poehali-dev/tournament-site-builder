@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { SimplePlayerSearch } from '@/components/ui/simple-player-search';
+import { SimpleJudgeSearch } from '@/components/ui/simple-judge-search';
 import type { AppState, Tournament, Page } from '@/types';
 
 interface TournamentForm {
@@ -108,6 +109,13 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     setTournamentForm(prev => ({
       ...prev,
       participants: playerIds
+    }));
+  };
+
+  const handleJudgeChange = (judgeId: string) => {
+    setTournamentForm(prev => ({
+      ...prev,
+      judgeId: judgeId
     }));
   };
 
