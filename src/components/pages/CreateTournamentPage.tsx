@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,58 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
   setTournamentForm,
   startEditTournament
 }) => {
+  const [dbUsers, setDbUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [usersError, setUsersError] = useState('');
+
+  // Загружаем пользователей из БД при монтировании компонента
+  useEffect(() => {
+    const loadUsersFromDatabase = async () => {
+      setLoadingUsers(true);
+      setUsersError('');
+      
+      try {
+        const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // Преобразуем пользователей из БД в формат, совместимый с appState.users
+        const usersFromDb = data.users.map(user => ({
+          id: user.id.toString(),
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          city: user.city,
+          isActive: user.is_active,
+          password: '***' // Пароли не передаём в frontend
+        }));
+
+        setDbUsers(usersFromDb);
+        console.log('✅ Загружено пользователей из БД:', usersFromDb.length);
+      } catch (error) {
+        console.error('❌ Ошибка загрузки пользователей из БД:', error);
+        setUsersError(`Ошибка загрузки: ${error.message}`);
+        // Fallback к локальным пользователям
+        setDbUsers(appState.users);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsersFromDatabase();
+  }, [appState.users]);
+
+  // Используем пользователей из БД, если они загружены, иначе fallback к локальным
+  const availableUsers = dbUsers.length > 0 ? dbUsers : appState.users;
   const handleTournamentSubmit = async () => {
     const { name, date, city, format, isRated, swissRounds, topRounds, participants } = tournamentForm;
     
@@ -161,9 +213,18 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           <CardTitle className="flex items-center gap-2">
             <Icon name="Plus" size={20} />
             Создание турнира
+            {dbUsers.length > 0 && (
+              <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                БД подключена
+              </span>
+            )}
           </CardTitle>
           <CardDescription>
-            Заполните данные для создания нового турнира
+            Заполните данные для создания нового турнира. 
+            {dbUsers.length > 0 
+              ? `Участники загружаются из базы данных (${dbUsers.length} доступно).`
+              : `Используются локальные данные (${appState.users.length} доступно).`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -282,12 +343,28 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           {/* Участники */}
           <div className="space-y-4">
             <Label>Участники турнира</Label>
+            {loadingUsers ? (
+              <div className="flex items-center justify-center p-4 border rounded-md">
+                <Icon name="Loader2" size={20} className="animate-spin mr-2" />
+                <span>Загрузка пользователей из базы данных...</span>
+              </div>
+            ) : usersError ? (
+              <div className="p-4 border rounded-md bg-yellow-50 border-yellow-200">
+                <div className="flex items-center gap-2 text-yellow-700 mb-2">
+                  <Icon name="AlertTriangle" size={16} />
+                  <span className="font-medium">Предупреждение</span>
+                </div>
+                <p className="text-sm text-yellow-600 mb-2">{usersError}</p>
+                <p className="text-sm text-yellow-600">Используются локальные данные как fallback.</p>
+              </div>
+            ) : null}
+            
             <SimplePlayerSearch
-              players={appState.users}
+              players={availableUsers}
               cities={appState.cities}
               selectedPlayerIds={tournamentForm.participants}
               onPlayersChange={handleParticipantsChange}
-              placeholder="Найти и добавить участников..."
+              placeholder={`Найти и добавить участников... (${availableUsers.length} доступно${dbUsers.length > 0 ? ' из БД' : ' локально'})`}
               defaultCityFilter={tournamentForm.city}
             />
           </div>
