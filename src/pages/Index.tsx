@@ -495,6 +495,8 @@ const Index = () => {
     const tournament =
       appState.tournaments.find((t) => t.id === editingTournament.id) ||
       editingTournament;
+
+
     const totalRounds = tournament.swissRounds + tournament.topRounds;
 
     return (

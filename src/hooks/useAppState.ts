@@ -22,6 +22,8 @@ export const useAppState = () => {
     return getInitialState();
   });
 
+
+
   // Auto-save to localStorage whenever appState changes
   useEffect(() => {
     saveStateToLocalStorage(appState);
@@ -158,9 +160,9 @@ export const useAppState = () => {
     }));
   };
 
-  // Sync database users to players
+  // Sync database users to both players and users
   const syncDbUsersToPlayers = useCallback((dbUsers: any[]) => {
-    console.log('🔄 Синхронизируем пользователей с appState.players:', dbUsers.length);
+    console.log('🔄 Синхронизируем пользователей из БД с appState:', dbUsers.length);
     
     // Преобразуем пользователей из БД в формат Player
     const playersFromDb = dbUsers.map(user => ({
@@ -174,20 +176,69 @@ export const useAppState = () => {
       draws: 0
     }));
 
+    // Преобразуем пользователей из БД в формат User
+    const usersFromDb = dbUsers.map(user => ({
+      id: user.id.toString(),
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      city: user.city || '',
+      password: '***' // Пароли не нужны в frontend
+    }));
+
     setAppState(prev => {
       // Объединяем существующих игроков с новыми из БД
       const existingPlayerIds = new Set(prev.players.map(p => p.id));
       const newPlayersFromDb = playersFromDb.filter(p => !existingPlayerIds.has(p.id));
+
+      // Объединяем существующих пользователей с новыми из БД
+      const existingUserIds = new Set(prev.users.map(u => u.id));
+      const newUsersFromDb = usersFromDb.filter(u => !existingUserIds.has(u.id));
       
       console.log('✅ Добавляем новых игроков из БД:', newPlayersFromDb.length);
+      console.log('✅ Добавляем новых пользователей из БД:', newUsersFromDb.length);
       console.log('📊 Общее количество игроков будет:', prev.players.length + newPlayersFromDb.length);
+      console.log('📊 Общее количество пользователей будет:', prev.users.length + newUsersFromDb.length);
       
       return {
         ...prev,
-        players: [...prev.players, ...newPlayersFromDb]
+        players: [...prev.players, ...newPlayersFromDb],
+        users: [...prev.users, ...newUsersFromDb]
       };
     });
   }, []);
+
+  // Global DB sync on app start
+  useEffect(() => {
+    const loadUsersFromDatabase = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const usersFromDb = data.users.map(user => ({
+            id: user.id.toString(),
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            city: user.city,
+            isActive: user.is_active,
+            password: '***'
+          }));
+          
+          console.log('🔄 Глобальная синхронизация пользователей из БД:', usersFromDb.length);
+          syncDbUsersToPlayers(usersFromDb);
+        }
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить пользователей из БД при инициализации:', error);
+      }
+    };
+
+    loadUsersFromDatabase();
+  }, [syncDbUsersToPlayers]); // Зависимость от функции синхронизации
 
   // City management functions
   const addCity = useCallback((city: City) => {
