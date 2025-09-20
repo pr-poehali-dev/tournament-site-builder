@@ -28,6 +28,7 @@ interface CreateTournamentPageProps {
   tournamentForm: TournamentForm;
   setTournamentForm: React.Dispatch<React.SetStateAction<TournamentForm>>;
   startEditTournament: (tournament: Tournament) => void;
+  syncDbUsersToPlayers: (dbUsers: any[]) => void;
 }
 
 export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.memo(({
@@ -36,7 +37,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
   addTournament,
   tournamentForm,
   setTournamentForm,
-  startEditTournament
+  startEditTournament,
+  syncDbUsersToPlayers
 }) => {
   const [dbUsers, setDbUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -86,7 +88,14 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     };
 
     loadUsersFromDatabase();
-  }, [appState.users]);
+  }, []);
+
+  // Синхронизируем пользователей с appState.players после загрузки
+  useEffect(() => {
+    if (dbUsers.length > 0) {
+      syncDbUsersToPlayers(dbUsers);
+    }
+  }, [dbUsers, syncDbUsersToPlayers]);
 
   // Используем пользователей из БД, если они загружены, иначе fallback к локальным
   const availableUsers = dbUsers.length > 0 ? dbUsers : appState.users;

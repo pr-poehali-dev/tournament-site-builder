@@ -158,6 +158,37 @@ export const useAppState = () => {
     }));
   };
 
+  // Sync database users to players
+  const syncDbUsersToPlayers = useCallback((dbUsers: any[]) => {
+    console.log('🔄 Синхронизируем пользователей с appState.players:', dbUsers.length);
+    
+    // Преобразуем пользователей из БД в формат Player
+    const playersFromDb = dbUsers.map(user => ({
+      id: user.id.toString(),
+      name: user.name,
+      city: user.city || '',
+      rating: 1200, // Начальный рейтинг для новых игроков
+      tournaments: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0
+    }));
+
+    setAppState(prev => {
+      // Объединяем существующих игроков с новыми из БД
+      const existingPlayerIds = new Set(prev.players.map(p => p.id));
+      const newPlayersFromDb = playersFromDb.filter(p => !existingPlayerIds.has(p.id));
+      
+      console.log('✅ Добавляем новых игроков из БД:', newPlayersFromDb.length);
+      console.log('📊 Общее количество игроков будет:', prev.players.length + newPlayersFromDb.length);
+      
+      return {
+        ...prev,
+        players: [...prev.players, ...newPlayersFromDb]
+      };
+    });
+  }, []);
+
   // City management functions
   const addCity = useCallback((city: City) => {
     setAppState(prev => ({
@@ -835,6 +866,7 @@ export const useAppState = () => {
     deletePlayer,
     updatePlayer,
     updatePlayersStats,
+    syncDbUsersToPlayers,
     
     // City management
     addCity,

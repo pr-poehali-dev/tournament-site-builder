@@ -238,6 +238,7 @@ const Index = () => {
     addPlayer,
     deletePlayer,
     updatePlayer,
+    syncDbUsersToPlayers,
     addCity,
     deleteCity,
     updateCity,
@@ -1242,6 +1243,7 @@ const Index = () => {
             navigateTo={navigateTo}
             addTournament={addTournament}
             startEditTournament={startEditTournament}
+            syncDbUsersToPlayers={syncDbUsersToPlayers}
           />
         )}
 
