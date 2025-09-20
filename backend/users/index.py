@@ -40,7 +40,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             # Get all users
             cursor.execute("""
                 SELECT id, username, name, role, city, is_active, created_at
-                FROM users
+                FROM t_p79348767_tournament_site_buil.users
                 ORDER BY created_at DESC
             """)
             
@@ -79,7 +79,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
             
             # Check if username exists
-            cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+            cursor.execute("SELECT id FROM t_p79348767_tournament_site_buil.users WHERE username = %s", (username,))
             if cursor.fetchone():
                 return {
                     'statusCode': 400,
@@ -88,7 +88,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
             
             cursor.execute("""
-                INSERT INTO users (username, password, name, role, city, is_active)
+                INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
                 VALUES (%s, %s, %s, %s, %s, true)
                 RETURNING id, username, name, role, city, is_active, created_at
             """, (username, password, name, role, city))
@@ -146,7 +146,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             values.append(user_id)
             
             cursor.execute(f"""
-                UPDATE users
+                UPDATE t_p79348767_tournament_site_buil.users
                 SET {', '.join(updates)}
                 WHERE id = %s
                 RETURNING id, username, name, role, city, is_active
@@ -189,7 +189,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User ID required'})
                 }
             
-            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            cursor.execute("DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = %s", (user_id,))
             
             if cursor.rowcount == 0:
                 return {

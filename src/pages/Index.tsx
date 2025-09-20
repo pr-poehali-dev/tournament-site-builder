@@ -53,6 +53,7 @@ import { CitiesPage } from "@/components/pages/CitiesPage";
 import { FormatsPage } from "@/components/pages/FormatsPage";
 import { CreateTournamentPage } from "@/components/pages/CreateTournamentPage";
 import { TournamentViewPage } from "@/components/pages/TournamentViewPage";
+import BackendApiTest from "@/components/debug/BackendApiTest";
 
 // Helper function to get player's TOP status
 const getTopStatus = (tournament: any, playerId: string): string => {

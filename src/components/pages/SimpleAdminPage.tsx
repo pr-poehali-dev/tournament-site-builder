@@ -30,6 +30,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
+import BackendApiTest from "@/components/debug/BackendApiTest";
 
 interface LocalUser {
   id: number;
@@ -130,36 +131,89 @@ export const SimpleAdminPage: React.FC = () => {
   const [newTournamentType, setNewTournamentType] = useState<'top' | 'swiss'>('top');
   const [newPlayerName, setNewPlayerName] = useState("");
 
-  const createUser = () => {
+  const createUser = async () => {
     if (!newUsername.trim() || !newPassword.trim() || !newName.trim()) {
       setError("Заполните все обязательные поля");
       return;
     }
 
     if (users.some(u => u.username === newUsername)) {
-      setError("Пользователь с таким логином уже существует");
+      setError("Пользователь с таким логином уже существует локально");
       return;
     }
 
-    const newUser: LocalUser = {
-      id: Math.max(...users.map(u => u.id), 0) + 1,
-      username: newUsername,
-      name: newName,
-      role: newRole,
-      city: newCity === "none" ? undefined : newCity,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
+    try {
+      // Сохраняем пользователя в БД через backend API
+      const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: newUsername,
+          password: newPassword,
+          name: newName,
+          role: newRole,
+          city: newCity === "none" ? undefined : newCity
+        })
+      });
 
-    setUsers([newUser, ...users]);
-    
-    // Clear form
-    setNewUsername("");
-    setNewPassword("");
-    setNewName("");
-    setNewRole('player');
-    setNewCity("none");
-    setError("");
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(`Ошибка API: ${errorData.error || 'Failed to create user'}`);
+        return;
+      }
+
+      const data = await response.json();
+      const createdUser = data.user;
+
+      // Добавляем пользователя в локальное состояние с данными из БД
+      const newUser: LocalUser = {
+        id: createdUser.id,
+        username: createdUser.username,
+        name: createdUser.name,
+        role: createdUser.role,
+        city: createdUser.city,
+        is_active: createdUser.is_active,
+        created_at: createdUser.created_at
+      };
+
+      setUsers([newUser, ...users]);
+      
+      // Clear form
+      setNewUsername("");
+      setNewPassword("");
+      setNewName("");
+      setNewRole('player');
+      setNewCity("none");
+      setError("");
+
+      console.log('✅ Пользователь успешно создан в БД:', createdUser);
+    } catch (error) {
+      console.error('❌ Ошибка создания пользователя:', error);
+      
+      // Fallback: сохраняем локально как раньше
+      const fallbackUser: LocalUser = {
+        id: Math.max(...users.map(u => u.id), 0) + 1,
+        username: newUsername,
+        name: newName,
+        role: newRole,
+        city: newCity === "none" ? undefined : newCity,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+
+      setUsers([fallbackUser, ...users]);
+      
+      // Clear form
+      setNewUsername("");
+      setNewPassword("");
+      setNewName("");
+      setNewRole('player');
+      setNewCity("none");
+      
+      setError(`Сетевая ошибка: ${error.message}. Пользователь создан только локально.`);
+    }
   };
 
   const toggleUserStatus = (userId: number) => {
@@ -562,7 +616,7 @@ export const SimpleAdminPage: React.FC = () => {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Icon name="Users" size={16} />
             Пользователи
@@ -570,6 +624,10 @@ export const SimpleAdminPage: React.FC = () => {
           <TabsTrigger value="tournaments" className="flex items-center gap-2">
             <Icon name="Trophy" size={16} />
             Турниры
+          </TabsTrigger>
+          <TabsTrigger value="debug" className="flex items-center gap-2">
+            <Icon name="Bug" size={16} />
+            API Тест
           </TabsTrigger>
         </TabsList>
         
@@ -579,6 +637,25 @@ export const SimpleAdminPage: React.FC = () => {
         
         <TabsContent value="tournaments" className="mt-6">
           <TournamentManagement />
+        </TabsContent>
+        
+        <TabsContent value="debug" className="mt-6">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Database" size={20} />
+                  Backend API Testing
+                </CardTitle>
+                <CardDescription>
+                  Тестирование подключения к базе данных PostgreSQL через Cloud Function
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BackendApiTest />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -69,11 +69,59 @@ export const useAppState = () => {
     }));
   };
 
-  const addUser = (user: User) => {
-    setAppState(prev => ({
-      ...prev,
-      users: [...prev.users, user]
-    }));
+  const addUser = async (user: User) => {
+    try {
+      // Сохраняем пользователя в БД через backend API
+      const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: user.username,
+          password: user.password,
+          name: user.name,
+          role: user.role,
+          city: user.city
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user');
+      }
+
+      const data = await response.json();
+      const createdUser = data.user;
+
+      // Обновляем локальное состояние с данными из БД
+      const userForState: User = {
+        id: createdUser.id.toString(),
+        username: createdUser.username,
+        password: user.password, // Сохраняем локально для UI
+        name: createdUser.name,
+        role: createdUser.role,
+        city: createdUser.city,
+        isActive: createdUser.is_active
+      };
+
+      setAppState(prev => ({
+        ...prev,
+        users: [...prev.users, userForState]
+      }));
+
+      return { success: true, user: userForState };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      
+      // В случае ошибки сохраняем локально как fallback
+      setAppState(prev => ({
+        ...prev,
+        users: [...prev.users, user]
+      }));
+
+      return { success: false, error: error.message };
+    }
   };
 
   const updateUser = (updatedUser: User) => {

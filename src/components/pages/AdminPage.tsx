@@ -34,7 +34,7 @@ interface AdminPageProps {
   appState: AppState;
   toggleUserStatus: (userId: string) => void;
   deleteUser: (userId: string) => void;
-  addUser: (user: User) => void;
+  addUser: (user: User) => Promise<{success: boolean, user?: User, error?: string}>;
   addPlayer: (player: Player) => void;
   resetToInitialState?: () => void;
 }
@@ -42,7 +42,7 @@ interface AdminPageProps {
 // User Creation Form Component
 const UserCreationForm: React.FC<{
   appState: AppState;
-  addUser: (user: User) => void;
+  addUser: (user: User) => Promise<{success: boolean, user?: User, error?: string}>;
   addPlayer: (player: Player) => void;
 }> = ({ appState, addUser, addPlayer }) => {
   const localUsernameRef = useRef<HTMLInputElement>(null);
@@ -55,7 +55,7 @@ const UserCreationForm: React.FC<{
     "player",
   );
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!appState.currentUser || appState.currentUser.role !== "admin") {
       alert("У вас нет прав для создания пользователей");
       return;
@@ -73,14 +73,14 @@ const UserCreationForm: React.FC<{
       return;
     }
 
-    // Проверка на уникальность логина
+    // Проверка на уникальность логина в локальном состоянии
     if (appState.users.some((u) => u.username === username)) {
       alert("Пользователь с таким логином уже существует");
       return;
     }
 
     const user: User = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // Временный ID, будет заменён на ID из БД
       username: username,
       password: password,
       name: name,
@@ -89,39 +89,46 @@ const UserCreationForm: React.FC<{
       isActive: true,
     };
 
-    // Создаем игрока для судей и игроков автоматически
-    let newPlayer: Player | null = null;
-    if (user.role === "judge" || user.role === "player") {
-      newPlayer = {
-        id: user.id,
-        name: user.name,
-        city: user.city,
-        rating: 1200,
-        tournaments: 0,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-      };
+    try {
+      // Сохраняем пользователя в БД
+      const result = await addUser(user);
+      
+      if (result.success) {
+        // Создаем игрока для судей и игроков автоматически с ID из БД
+        if (user.role === "judge" || user.role === "player") {
+          const newPlayer: Player = {
+            id: result.user.id, // Используем ID из БД
+            name: result.user.name,
+            city: result.user.city,
+            rating: 1200,
+            tournaments: 0,
+            wins: 0,
+            losses: 0,
+            draws: 0,
+          };
+          addPlayer(newPlayer);
+        }
+
+        // Очищаем локальные поля
+        if (localUsernameRef.current) localUsernameRef.current.value = "";
+        if (localPasswordRef.current) localPasswordRef.current.value = "";
+        if (localNameRef.current) localNameRef.current.value = "";
+
+        // Сбрасываем только роль, город сохраняем
+        setLocalRole("player");
+
+        const message =
+          user.role === "judge" || user.role === "player"
+            ? `Пользователь ${result.user.name} создан в базе данных! ${user.role === "judge" ? "Судья" : "Игрок"} также автоматически добавлен в список игроков.`
+            : `Пользователь ${result.user.name} успешно создан в базе данных!`;
+        alert(message);
+      } else {
+        // Показываем ошибку, но пользователь сохранился локально как fallback
+        alert(`Ошибка сохранения в БД: ${result.error}. Пользователь создан только локально.`);
+      }
+    } catch (error) {
+      alert(`Неожиданная ошибка: ${error.message}`);
     }
-
-    addUser(user);
-    if (newPlayer) {
-      addPlayer(newPlayer);
-    }
-
-    // Очищаем локальные поля
-    if (localUsernameRef.current) localUsernameRef.current.value = "";
-    if (localPasswordRef.current) localPasswordRef.current.value = "";
-    if (localNameRef.current) localNameRef.current.value = "";
-
-    // Сбрасываем только роль, город сохраняем
-    setLocalRole("player");
-
-    const message =
-      user.role === "judge" || user.role === "player"
-        ? `Пользователь ${user.name} создан! ${user.role === "judge" ? "Судья" : "Игрок"} также автоматически добавлен в список игроков.`
-        : `Пользователь ${user.name} успешно создан!`;
-    alert(message);
   };
 
   return (
