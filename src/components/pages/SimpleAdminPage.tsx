@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -55,32 +55,68 @@ const CITIES = [
   "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону"
 ];
 
-export const SimpleAdminPage: React.FC = () => {
-  const [users, setUsers] = useState<LocalUser[]>([
-    {
-      id: 1,
-      username: "admin",
-      name: "Администратор",
-      role: "admin",
-      city: "Москва",
-      is_active: true,
-      created_at: new Date().toISOString()
-    }
-  ]);
+// Utility functions for localStorage
+const saveToLocalStorage = (key: string, data: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to save to localStorage:', error);
+  }
+};
 
-  const [tournaments, setTournaments] = useState<LocalTournament[]>([
-    {
-      id: 1,
-      name: "Тестовый турнир",
-      type: "top",
-      status: "setup",
-      created_at: new Date().toISOString(),
-      players: []
-    }
-  ]);
+const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch (error) {
+    console.error('Failed to load from localStorage:', error);
+    return defaultValue;
+  }
+};
+
+const getDefaultUsers = (): LocalUser[] => [
+  {
+    id: 1,
+    username: "admin",
+    name: "Администратор",
+    role: "admin",
+    city: "Москва",
+    is_active: true,
+    created_at: new Date().toISOString()
+  }
+];
+
+const getDefaultTournaments = (): LocalTournament[] => [
+  {
+    id: 1,
+    name: "Тестовый турнир",
+    type: "top",
+    status: "setup",
+    created_at: new Date().toISOString(),
+    players: []
+  }
+];
+
+export const SimpleAdminPage: React.FC = () => {
+  const [users, setUsers] = useState<LocalUser[]>(() => 
+    loadFromLocalStorage('admin_users', getDefaultUsers())
+  );
+
+  const [tournaments, setTournaments] = useState<LocalTournament[]>(() => 
+    loadFromLocalStorage('admin_tournaments', getDefaultTournaments())
+  );
 
   const [selectedTournament, setSelectedTournament] = useState<LocalTournament | null>(null);
   const [error, setError] = useState<string>("");
+
+  // Auto-save to localStorage when data changes
+  useEffect(() => {
+    saveToLocalStorage('admin_users', users);
+  }, [users]);
+
+  useEffect(() => {
+    saveToLocalStorage('admin_tournaments', tournaments);
+  }, [tournaments]);
 
   // Form states для пользователей
   const [newUsername, setNewUsername] = useState("");
@@ -198,7 +234,7 @@ export const SimpleAdminPage: React.FC = () => {
             Создать пользователя
           </CardTitle>
           <CardDescription>
-            Создание новых пользователей в системе
+            Создание новых пользователей в системе. Данные сохраняются автоматически в браузер.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -372,6 +408,9 @@ export const SimpleAdminPage: React.FC = () => {
             <Icon name="Plus" size={20} />
             Создать турнир
           </CardTitle>
+          <CardDescription>
+            Все турниры и игроки сохраняются в localStorage браузера
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 items-end">
@@ -477,11 +516,49 @@ export const SimpleAdminPage: React.FC = () => {
     </div>
   );
 
+  const clearAllData = () => {
+    setUsers(getDefaultUsers());
+    setTournaments(getDefaultTournaments());
+    setSelectedTournament(null);
+    setError("");
+    localStorage.removeItem('admin_users');
+    localStorage.removeItem('admin_tournaments');
+  };
+
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Icon name="Settings" size={24} className="text-primary" />
-        <h1 className="text-3xl font-bold">Админ-панель</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Icon name="Settings" size={24} className="text-primary" />
+          <h1 className="text-3xl font-bold">Админ-панель</h1>
+          <Badge variant="secondary" className="text-xs">
+            <Icon name="Save" size={12} className="mr-1" />
+            Автосохранение
+          </Badge>
+        </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Icon name="RotateCcw" size={16} className="mr-2" />
+              Сбросить данные
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Сбросить все данные</AlertDialogTitle>
+              <AlertDialogDescription>
+                Вы уверены, что хотите удалить все пользователей и турниры? 
+                Останутся только тестовые данные. Это действие необратимо.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={clearAllData}>
+                Сбросить
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <Tabs defaultValue="users" className="w-full">
