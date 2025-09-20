@@ -23,7 +23,7 @@ interface TournamentForm {
 interface CreateTournamentPageProps {
   appState: AppState;
   navigateTo: (page: Page) => void;
-  addTournament: (tournament: Tournament) => void;
+  addTournament: (tournament: Tournament) => Promise<{ success: boolean; error?: string; tournament: Tournament }>;
   tournamentForm: TournamentForm;
   setTournamentForm: React.Dispatch<React.SetStateAction<TournamentForm>>;
   startEditTournament: (tournament: Tournament) => void;
@@ -37,7 +37,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
   setTournamentForm,
   startEditTournament
 }) => {
-  const handleTournamentSubmit = () => {
+  const handleTournamentSubmit = async () => {
     const { name, date, city, format, isRated, swissRounds, topRounds, participants } = tournamentForm;
     
     if (!name.trim()) {
@@ -80,27 +80,38 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       judgeId: appState.currentUser?.id || ''
     };
 
-    addTournament(tournament);
-    
-    // Очистить форму с сохранением города пользователя и текущей даты
-    const today = new Date().toISOString().split('T')[0];
-    const userCity = appState.currentUser?.city || '';
-    
-    setTournamentForm({
-      name: '',
-      date: today,
-      city: userCity,
-      format: 'sealed',
-      description: '',
-      isRated: true,
-      swissRounds: 3,
-      topRounds: 1,
-      participants: [],
-      judgeId: appState.currentUser?.id || ''
-    });
-    
-    // Переходим к странице управления созданным турниром
-    startEditTournament(tournament);
+    try {
+      const result = await addTournament(tournament);
+      
+      if (result.success) {
+        // Турнир успешно сохранён
+        alert('Турнир успешно создан и сохранён в базе данных!');
+      } else {
+        // Сохранён только локально
+        alert(`Турнир создан локально, но не удалось сохранить в БД: ${result.error}`);
+      }
+      
+      // Очистить форму с сохранением города пользователя и текущей даты
+      const today = new Date().toISOString().split('T')[0];
+      const userCity = appState.currentUser?.city || '';
+      
+      setTournamentForm({
+        name: '',
+        date: today,
+        city: userCity,
+        format: 'sealed',
+        description: '',
+        isRated: true,
+        swissRounds: 3,
+        topRounds: 1,
+        participants: []
+      });
+      
+      // Переходим к странице управления созданным турниром
+      startEditTournament(tournament);
+    } catch (error) {
+      alert(`Ошибка при создании турнира: ${error.message}`);
+    }
   };
 
   const handleInputChange = (field: keyof TournamentForm, value: string | boolean | number) => {

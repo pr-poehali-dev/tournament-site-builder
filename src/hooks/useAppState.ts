@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AppState, User, Player, City, TournamentFormat, Tournament, Page, Round, Match } from '@/types';
 import { saveStateToLocalStorage, loadStateFromLocalStorage } from '@/utils/storage';
 import { getInitialState } from '@/utils/initialState';
+import { api } from '@/utils/api';
 
 export const useAppState = () => {
   // Load initial state from localStorage or use default
@@ -171,11 +172,30 @@ export const useAppState = () => {
   };
 
   // Tournament management functions
-  const addTournament = (tournament: Tournament) => {
-    setAppState(prev => ({
-      ...prev,
-      tournaments: [...prev.tournaments, tournament]
-    }));
+  const addTournament = async (tournament: Tournament) => {
+    try {
+      // First save to backend database
+      const backendResponse = await api.tournaments.create(tournament);
+      console.log('Tournament saved to backend:', backendResponse);
+      
+      // Then save to local state
+      setAppState(prev => ({
+        ...prev,
+        tournaments: [...prev.tournaments, tournament]
+      }));
+      
+      return { success: true, tournament };
+    } catch (error) {
+      console.error('Failed to save tournament to backend:', error);
+      
+      // Still save locally if backend fails
+      setAppState(prev => ({
+        ...prev,
+        tournaments: [...prev.tournaments, tournament]
+      }));
+      
+      return { success: false, error: error.message, tournament };
+    }
   };
 
   const deleteTournament = (tournamentId: string) => {

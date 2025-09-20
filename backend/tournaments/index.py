@@ -1,23 +1,14 @@
 import json
-import os
-import psycopg2
 from typing import Dict, Any
 
-def get_db_connection():
-    """Get database connection using DATABASE_URL secret"""
-    database_url = os.environ.get('DATABASE_URL')
-    if not database_url:
-        raise ValueError('DATABASE_URL not found in environment')
-    return psycopg2.connect(database_url)
-
-def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
+def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: API for tournament management - create tournaments, add players, record games
-    Args: event - dict with httpMethod, body, queryStringParameters, pathParams
-          context - object with attributes: request_id, function_name
-    Returns: HTTP response dict with tournament data
+    Business: Tournament API - mock version for testing
+    Args: event - dict with httpMethod, body 
+          context - object with request_id
+    Returns: HTTP response dict
     '''
-    method: str = event.get('httpMethod', 'GET')
+    method = event.get('httpMethod', 'GET')
     
     # Handle CORS OPTIONS request
     if method == 'OPTIONS':
@@ -25,45 +16,40 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
+            'isBase64Encoded': False,
             'body': ''
         }
     
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        if method == 'GET':
-            # Get all tournaments
-            cursor.execute("""
-                SELECT id, name, type, status, current_round, max_rounds, created_at
-                FROM tournaments
-                ORDER BY created_at DESC
-            """)
-            
-            tournaments = []
-            for row in cursor.fetchall():
-                tournaments.append({
-                    'id': row[0],
-                    'name': row[1],
-                    'type': row[2],
-                    'status': row[3],
-                    'current_round': row[4],
-                    'max_rounds': row[5],
-                    'created_at': row[6].isoformat() if row[6] else None
-                })
-            
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'tournaments': tournaments})
+    if method == 'GET':
+        # Return mock tournaments
+        tournaments = [
+            {
+                'id': 1,
+                'name': 'Тестовый турнир',
+                'type': 'top',
+                'status': 'setup',
+                'current_round': 0,
+                'max_rounds': 4,
+                'created_at': '2025-09-20T18:50:00.000Z'
             }
+        ]
         
-        elif method == 'POST':
-            # Create new tournament
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'isBase64Encoded': False,
+            'body': json.dumps({'tournaments': tournaments})
+        }
+    
+    elif method == 'POST':
+        try:
             body_data = json.loads(event.get('body', '{}'))
             name = body_data.get('name', '').strip()
             tournament_type = body_data.get('type', 'top')
@@ -71,51 +57,52 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             if not name:
                 return {
                     'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
                     'body': json.dumps({'error': 'Tournament name is required'})
                 }
             
-            cursor.execute("""
-                INSERT INTO tournaments (name, type, status)
-                VALUES (%s, %s, 'setup')
-                RETURNING id, name, type, status, current_round, max_rounds, created_at
-            """, (name, tournament_type))
-            
-            row = cursor.fetchone()
-            conn.commit()
-            
+            # Mock tournament creation
             tournament = {
-                'id': row[0],
-                'name': row[1],
-                'type': row[2],
-                'status': row[3],
-                'current_round': row[4],
-                'max_rounds': row[5],
-                'created_at': row[6].isoformat() if row[6] else None
+                'id': 2,
+                'name': name,
+                'type': tournament_type,
+                'status': 'setup',
+                'current_round': 0,
+                'max_rounds': None,
+                'created_at': '2025-09-20T18:50:00.000Z'
             }
             
             return {
                 'statusCode': 201,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
                 'body': json.dumps({'tournament': tournament})
             }
-        
-        else:
+        except Exception as e:
             return {
-                'statusCode': 405,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'error': 'Method not allowed'})
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'JSON parse error: {str(e)}'})
             }
     
-    except Exception as e:
+    else:
         return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'statusCode': 405,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'isBase64Encoded': False,
+            'body': json.dumps({'error': 'Method not allowed'})
         }
-    
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
