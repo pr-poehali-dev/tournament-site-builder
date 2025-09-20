@@ -44,6 +44,7 @@ import { LoginForm } from "@/components/shared/LoginForm";
 // Page Components
 import { RatingPage } from "@/components/pages/RatingPage";
 import { AdminPage } from "@/components/pages/AdminPage";
+import { NewAdminPage } from "@/components/pages/NewAdminPage";
 import { ProfilePage } from "@/components/pages/ProfilePage";
 import { TournamentsPage } from "@/components/pages/TournamentsPage";
 import { MyTournamentsPage } from "@/components/pages/MyTournamentsPage";
@@ -1169,14 +1170,7 @@ const Index = () => {
         )}
 
         {appState.currentPage === "admin" && (
-          <AdminPage
-            appState={appState}
-            toggleUserStatus={toggleUserStatus}
-            deleteUser={deleteUser}
-            addUser={addUser}
-            addPlayer={addPlayer}
-            resetToInitialState={resetToInitialState}
-          />
+          <NewAdminPage />
         )}
 
         {appState.currentPage === "profile" && (

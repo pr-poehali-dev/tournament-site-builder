@@ -1,0 +1,32 @@
+{
+  "tests": [
+    {
+      "name": "Get all tournaments",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "tournaments": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new tournament",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Tournament",
+        "type": "top"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "tournament": {
+          "name": "Test Tournament",
+          "type": "top",
+          "status": "setup"
+        }
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
