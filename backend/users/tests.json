@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "Get all users",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "users": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new user",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "username": "testuser",
+        "password": "testpass",
+        "name": "Test User",
+        "role": "player",
+        "city": "Moscow"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "user": {
+          "username": "testuser",
+          "name": "Test User",
+          "role": "player"
+        }
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
