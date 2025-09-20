@@ -44,7 +44,7 @@ import { LoginForm } from "@/components/shared/LoginForm";
 // Page Components
 import { RatingPage } from "@/components/pages/RatingPage";
 import { AdminPage } from "@/components/pages/AdminPage";
-import { DatabaseAdminPage } from "@/components/pages/DatabaseAdminPage";
+import { SimpleAdminPage } from "@/components/pages/SimpleAdminPage";
 import { ProfilePage } from "@/components/pages/ProfilePage";
 import { TournamentsPage } from "@/components/pages/TournamentsPage";
 import { MyTournamentsPage } from "@/components/pages/MyTournamentsPage";
@@ -1170,7 +1170,7 @@ const Index = () => {
         )}
 
         {appState.currentPage === "admin" && (
-          <DatabaseAdminPage />
+          <SimpleAdminPage />
         )}
 
         {appState.currentPage === "profile" && (

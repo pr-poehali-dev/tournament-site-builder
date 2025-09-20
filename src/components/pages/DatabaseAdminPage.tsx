@@ -84,7 +84,7 @@ const UserManagement: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState<'admin' | 'judge' | 'player'>('player');
-  const [newCity, setNewCity] = useState("");
+  const [newCity, setNewCity] = useState("none");
 
   useEffect(() => {
     loadUsers();
@@ -125,7 +125,7 @@ const UserManagement: React.FC = () => {
           password: newPassword,
           name: newName,
           role: newRole,
-          city: newCity || undefined,
+          city: newCity === "none" ? undefined : newCity || undefined,
         }),
       });
 
@@ -142,7 +142,7 @@ const UserManagement: React.FC = () => {
       setNewPassword("");
       setNewName("");
       setNewRole('player');
-      setNewCity("");
+      setNewCity("none");
       setError("");
     } catch (err: any) {
       setError(`Ошибка создания пользователя: ${err.message}`);
@@ -263,7 +263,7 @@ const UserManagement: React.FC = () => {
                   <SelectValue placeholder="Выберите..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Не указан</SelectItem>
+                  <SelectItem value="none">Не указан</SelectItem>
                   {CITIES.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
