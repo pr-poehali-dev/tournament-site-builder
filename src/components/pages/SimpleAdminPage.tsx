@@ -64,7 +64,7 @@ const saveToLocalStorage = (key: string, data: any) => {
   }
 };
 
-const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
   try {
     const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : defaultValue;
