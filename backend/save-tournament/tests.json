@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Save tournament to database",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Tournament API",
+        "format": "sealed",
+        "city": "Москва",
+        "date": "2025-09-20"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "success": true,
+        "tournament": {
+          "name": "Test Tournament API",
+          "type": "sealed"
+        }
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
