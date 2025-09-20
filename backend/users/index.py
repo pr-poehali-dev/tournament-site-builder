@@ -32,6 +32,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'body': ''
         }
     
+    conn = None
+    cursor = None
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -78,8 +81,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Username, password and name are required'})
                 }
             
+            # Escape single quotes in strings
+            username_escaped = username.replace("'", "''")
+            password_escaped = password.replace("'", "''")
+            name_escaped = name.replace("'", "''")
+            city_escaped = city.replace("'", "''") if city else None
+            
             # Check if username exists
-            cursor.execute("SELECT id FROM t_p79348767_tournament_site_buil.users WHERE username = %s", (username,))
+            cursor.execute(f"SELECT id FROM t_p79348767_tournament_site_buil.users WHERE username = '{username_escaped}';")
             if cursor.fetchone():
                 return {
                     'statusCode': 400,
@@ -87,11 +96,18 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Username already exists'})
                 }
             
-            cursor.execute("""
-                INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
-                VALUES (%s, %s, %s, %s, %s, true)
-                RETURNING id, username, name, role, city, is_active, created_at
-            """, (username, password, name, role, city))
+            if city_escaped:
+                cursor.execute(f"""
+                    INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
+                    VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', '{city_escaped}', true)
+                    RETURNING id, username, name, role, city, is_active, created_at;
+                """)
+            else:
+                cursor.execute(f"""
+                    INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
+                    VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', NULL, true)
+                    RETURNING id, username, name, role, city, is_active, created_at;
+                """)
             
             row = cursor.fetchone()
             conn.commit()
@@ -145,12 +161,20 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             
             values.append(user_id)
             
+            # Build update query with proper escaping
+            update_clauses = []
+            for i, update in enumerate(updates):
+                if 'is_active' in update:
+                    update_clauses.append(f"is_active = {values[i]}")
+                elif 'role' in update:
+                    update_clauses.append(f"role = '{values[i]}'")
+            
             cursor.execute(f"""
                 UPDATE t_p79348767_tournament_site_buil.users
-                SET {', '.join(updates)}
-                WHERE id = %s
-                RETURNING id, username, name, role, city, is_active
-            """, values)
+                SET {', '.join(update_clauses)}
+                WHERE id = {user_id}
+                RETURNING id, username, name, role, city, is_active;
+            """)
             
             row = cursor.fetchone()
             if not row:
@@ -189,7 +213,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User ID required'})
                 }
             
-            cursor.execute("DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = %s", (user_id,))
+            cursor.execute(f"DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
             
             if cursor.rowcount == 0:
                 return {
@@ -214,6 +238,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
     
     except Exception as e:
+        # Rollback transaction if exists
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -221,7 +252,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         }
     
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals():
-            conn.close()
+        # Always close resources
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass

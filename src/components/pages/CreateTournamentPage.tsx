@@ -331,11 +331,14 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           <div className="space-y-4">
             <Label>Судья турнира</Label>
             <SimpleJudgeSearch
-              users={appState.users}
+              users={dbUsers.length > 0 ? dbUsers : appState.users}
               cities={appState.cities}
               selectedJudgeId={tournamentForm.judgeId}
               onJudgeChange={handleJudgeChange}
-              placeholder="Выберите судью турнира"
+              placeholder={dbUsers.length > 0 
+                ? `Выберите судью из БД (${dbUsers.filter(u => u.role === 'judge' || u.role === 'admin').length} доступно)`
+                : "Выберите судью турнира"
+              }
               defaultCityFilter={tournamentForm.city}
             />
           </div>
