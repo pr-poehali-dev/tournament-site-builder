@@ -1,0 +1,34 @@
+{
+  "tests": [
+    {
+      "name": "Get games for tournament",
+      "method": "GET",
+      "path": "/?tournament_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "games": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create pairings",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "tournament_id": 1,
+        "round_number": 1,
+        "pairings": [
+          {
+            "player1_id": 2,
+            "player2_id": 3
+          }
+        ]
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

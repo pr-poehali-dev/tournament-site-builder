@@ -395,7 +395,34 @@ export const useAppState = () => {
   };
 
   // Specific tournament operations
-  const addTournamentRound = useCallback((tournamentId: string, newRound: Round) => {
+  const addTournamentRound = useCallback(async (tournamentId: string, newRound: Round) => {
+    // Save pairings to database
+    try {
+      const pairings = newRound.matches.map(match => ({
+        player1_id: parseInt(match.player1Id),
+        player2_id: match.player2Id ? parseInt(match.player2Id) : null
+      }));
+      
+      const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tournament_id: parseInt(tournamentId),
+          round_number: newRound.number,
+          pairings
+        })
+      });
+      
+      if (response.ok) {
+        console.log('✅ Пары сохранены в БД');
+      } else {
+        console.error('❌ Ошибка сохранения пар в БД:', await response.text());
+      }
+    } catch (error) {
+      console.error('❌ Ошибка подключения к БД при сохранении пар:', error);
+    }
+    
+    // Update local state
     setAppState(prev => ({
       ...prev,
       tournaments: prev.tournaments.map(t =>
@@ -411,7 +438,7 @@ export const useAppState = () => {
     }));
   }, []);
 
-  const updateMatchResult = useCallback((tournamentId: string, roundId: string, matchId: string, result: 'win1' | 'win2' | 'draw') => {
+  const updateMatchResult = useCallback(async (tournamentId: string, roundId: string, matchId: string, result: 'win1' | 'win2' | 'draw') => {
     let points1 = 0, points2 = 0;
     
     switch (result) {
@@ -427,6 +454,47 @@ export const useAppState = () => {
         points1 = 1;
         points2 = 1;
         break;
+    }
+    
+    // Find match details to save result to database
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    const round = tournament?.rounds?.find(r => r.id === roundId);
+    const match = round?.matches?.find(m => m.id === matchId);
+    
+    if (tournament && round && match) {
+      try {
+        // Get games from database to find game_id
+        const gamesResponse = await fetch(`https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournamentId}`);
+        
+        if (gamesResponse.ok) {
+          const gamesData = await gamesResponse.json();
+          const game = gamesData.games.find((g: any) => 
+            g.round_number === round.number &&
+            g.player1_id === parseInt(match.player1Id) &&
+            (!match.player2Id || g.player2_id === parseInt(match.player2Id))
+          );
+          
+          if (game) {
+            // Update game result in database
+            const updateResponse = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                game_id: game.id,
+                result
+              })
+            });
+            
+            if (updateResponse.ok) {
+              console.log('✅ Результат матча сохранён в БД');
+            } else {
+              console.error('❌ Ошибка сохранения результата в БД:', await updateResponse.text());
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при обновлении результата:', error);
+      }
     }
 
     setAppState(prev => ({
@@ -461,7 +529,7 @@ export const useAppState = () => {
           : tournament
       )
     }));
-  }, []);
+  }, [appState.tournaments]);
 
   const togglePlayerDrop = useCallback((tournamentId: string, playerId: string) => {
     setAppState(prev => {
