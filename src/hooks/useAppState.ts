@@ -1310,18 +1310,19 @@ export const useAppState = () => {
 
     let matches: Match[] | null = null;
 
-    // For round 1: random shuffle
+    // ALWAYS shuffle players before pairing to randomize order
+    const shuffled = [...playerStandings];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // For round 1: use shuffled order
     if (tournament.currentRound === 0) {
-      // First round - random shuffle
-      const shuffled = [...playerStandings];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
       matches = tryPairing(shuffled, byePlayerId);
     } else {
-      // Strategy 1: Sort by points descending (standard Swiss)
-      const sortedByPoints = [...playerStandings].sort((a, b) => b.points - a.points);
+      // Strategy 1: Sort shuffled players by points descending (standard Swiss)
+      const sortedByPoints = [...shuffled].sort((a, b) => b.points - a.points);
       matches = tryPairing(sortedByPoints, byePlayerId);
 
       // Strategy 2: If failed, try optimized pairing (minimize point difference)
