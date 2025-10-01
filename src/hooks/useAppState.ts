@@ -123,7 +123,7 @@ export const useAppState = () => {
   const deleteUser = async (userId: string) => {
     try {
       // Удаляем пользователя из БД через backend API
-      const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792/${userId}`, {
+      const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

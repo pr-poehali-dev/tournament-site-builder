@@ -259,8 +259,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         
         elif method == 'DELETE':
             # Delete user
-            path_params = event.get('pathParams', {})
-            user_id = path_params.get('id')
+            query_params = event.get('queryStringParameters') or {}
+            user_id = query_params.get('id')
             
             if not user_id:
                 return {

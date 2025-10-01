@@ -31,6 +31,16 @@
         "success": true
       },
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Delete non-existent user returns 404",
+      "method": "DELETE",
+      "path": "/?id=99999",
+      "expectedStatus": 404,
+      "expectedBody": {
+        "error": "User not found"
+      },
+      "bodyMatcher": "partial"
     }
   ]
 }
