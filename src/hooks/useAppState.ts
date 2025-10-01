@@ -235,27 +235,18 @@ export const useAppState = () => {
       name: user.name,
       role: user.role,
       city: user.city || '',
+      isActive: user.isActive !== false,
       password: '***' // Пароли не нужны в frontend
     }));
 
     setAppState(prev => {
-      // Объединяем существующих игроков с новыми из БД
-      const existingPlayerIds = new Set(prev.players.map(p => p.id));
-      const newPlayersFromDb = playersFromDb.filter(p => !existingPlayerIds.has(p.id));
-
-      // Объединяем существующих пользователей с новыми из БД
-      const existingUserIds = new Set(prev.users.map(u => u.id));
-      const newUsersFromDb = usersFromDb.filter(u => !existingUserIds.has(u.id));
-      
-      console.log('✅ Добавляем новых игроков из БД:', newPlayersFromDb.length);
-      console.log('✅ Добавляем новых пользователей из БД:', newUsersFromDb.length);
-      console.log('📊 Общее количество игроков будет:', prev.players.length + newPlayersFromDb.length);
-      console.log('📊 Общее количество пользователей будет:', prev.users.length + newUsersFromDb.length);
+      console.log('✅ Заменяем игроков данными из БД:', playersFromDb.length);
+      console.log('✅ Заменяем пользователей данными из БД:', usersFromDb.length);
       
       return {
         ...prev,
-        players: [...prev.players, ...newPlayersFromDb],
-        users: [...prev.users, ...newUsersFromDb]
+        players: playersFromDb, // Полностью заменяем игроков данными из БД
+        users: usersFromDb // Полностью заменяем пользователей данными из БД
       };
     });
   }, []);
