@@ -18,7 +18,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -45,7 +45,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cursor.execute("""
                 SELECT id, name, format, status, swiss_rounds, top_rounds,
-                       created_at, updated_at, city, is_rated, judge_id, participants
+                       created_at, updated_at, city, is_rated, judge_id, participants, current_round
                 FROM t_p79348767_tournament_site_buil.tournaments
                 ORDER BY created_at DESC
             """)
@@ -66,7 +66,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'city': row[8],
                     'is_rated': row[9],
                     'judge_id': row[10],
-                    'participants': row[11] if row[11] else []
+                    'participants': row[11] if row[11] else [],
+                    'current_round': row[12] if len(row) > 12 else 0
                 })
             
             cursor.close()
@@ -149,6 +150,127 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 },
                 'isBase64Encoded': False,
                 'body': json.dumps({'error': f'JSON parse error: {str(e)}'})
+            }
+    
+    elif method == 'PUT':
+        try:
+            body_data = json.loads(event.get('body', '{}'))
+            tournament_id = body_data.get('id')
+            status = body_data.get('status')
+            current_round = body_data.get('current_round')
+            
+            if not tournament_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Tournament ID is required'})
+                }
+            
+            database_url = os.environ.get('DATABASE_URL')
+            if not database_url:
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Database connection not configured'})
+                }
+            
+            conn = psycopg2.connect(database_url)
+            cursor = conn.cursor()
+            
+            # Build UPDATE query dynamically based on provided fields
+            update_fields = []
+            if status is not None:
+                escaped_status = status.replace("'", "''")
+                update_fields.append(f"status = '{escaped_status}'")
+            if current_round is not None:
+                update_fields.append(f"current_round = {int(current_round)}")
+            
+            if not update_fields:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'No fields to update'})
+                }
+            
+            update_fields.append("updated_at = CURRENT_TIMESTAMP")
+            update_query = f"""
+                UPDATE t_p79348767_tournament_site_buil.tournaments
+                SET {', '.join(update_fields)}
+                WHERE id = {int(tournament_id)}
+                RETURNING id, status, current_round, updated_at
+            """
+            
+            cursor.execute(update_query)
+            row = cursor.fetchone()
+            conn.commit()
+            
+            if not row:
+                cursor.close()
+                conn.close()
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Tournament not found'})
+                }
+            
+            updated_tournament = {
+                'id': row[0],
+                'status': row[1],
+                'current_round': row[2],
+                'updated_at': row[3].isoformat() if row[3] else None
+            }
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({
+                    'success': True,
+                    'tournament': updated_tournament
+                })
+            }
+            
+        except psycopg2.Error as e:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Database error: {str(e)}'})
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Unexpected error: {str(e)}'})
             }
     
     else:
