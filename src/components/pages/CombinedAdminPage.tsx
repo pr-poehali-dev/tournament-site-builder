@@ -6,6 +6,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 interface CombinedAdminPageProps {
   appState: AppState;
   toggleUserStatus: (userId: string) => void;
+  updateUserRole: (userId: string, newRole: 'player' | 'judge' | 'admin') => void;
   deleteUser: (userId: string) => void;
   addUser: (user: User) => void;
   addPlayer: (player: Player) => void;

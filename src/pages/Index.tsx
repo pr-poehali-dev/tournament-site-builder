@@ -41,6 +41,7 @@ const Index = () => {
     addUser,
     deleteUser,
     toggleUserStatus,
+    updateUserRole,
     addPlayer,
     deletePlayer,
     updatePlayer,
@@ -369,6 +370,7 @@ const Index = () => {
           <CombinedAdminPage
             appState={appState}
             toggleUserStatus={toggleUserStatus}
+            updateUserRole={updateUserRole}
             deleteUser={deleteUser}
             addUser={addUser}
             addPlayer={addPlayer}

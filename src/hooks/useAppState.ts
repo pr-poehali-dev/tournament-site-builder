@@ -152,6 +152,42 @@ export const useAppState = () => {
     }
   };
 
+  const updateUserRole = async (userId: string, newRole: 'player' | 'judge' | 'admin') => {
+    console.log('🔄 Обновляем роль пользователя:', userId, 'на', newRole);
+
+    try {
+      // Обновляем роль в БД
+      const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: newRole
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user role');
+      }
+
+      const responseData = await response.json();
+      console.log('✅ Роль пользователя обновлена в БД:', responseData);
+
+      // Обновляем локальное состояние
+      setAppState(prev => ({
+        ...prev,
+        users: prev.users.map(user =>
+          user.id === userId ? { ...user, role: newRole } : user
+        )
+      }));
+    } catch (error: any) {
+      console.error('❌ Ошибка обновления роли пользователя:', error);
+      alert(`Ошибка обновления роли: ${error?.message || 'Неизвестная ошибка'}`);
+    }
+  };
+
   const deleteUser = async (userId: string) => {
     console.log('🗑️ Начинаем удаление пользователя:', userId);
     try {
@@ -1535,6 +1571,7 @@ export const useAppState = () => {
     
     // User management
     toggleUserStatus,
+    updateUserRole,
     deleteUser,
     addUser,
     updateUser,

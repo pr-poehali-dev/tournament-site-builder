@@ -3,6 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,12 +26,14 @@ import type { AppState } from "@/types";
 interface UsersListProps {
   appState: AppState;
   toggleUserStatus: (userId: string) => void;
+  updateUserRole: (userId: string, newRole: 'player' | 'judge' | 'admin') => void;
   deleteUser: (userId: string) => void;
 }
 
 export const UsersList: React.FC<UsersListProps> = ({
   appState,
   toggleUserStatus,
+  updateUserRole,
   deleteUser,
 }) => {
   return (
@@ -55,17 +64,25 @@ export const UsersList: React.FC<UsersListProps> = ({
                   <td className="p-2">{user.name}</td>
                   <td className="p-2">{user.city || "-"}</td>
                   <td className="p-2">
-                    <Badge
-                      variant={
-                        user.role === "admin"
-                          ? "default"
-                          : user.role === "judge"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {user.role}
-                    </Badge>
+                    {user.role === "admin" && appState.currentUser?.role === "admin" ? (
+                      <Badge variant="default">{user.role}</Badge>
+                    ) : (
+                      <Select
+                        value={user.role}
+                        onValueChange={(newRole: 'player' | 'judge' | 'admin') => 
+                          updateUserRole(user.id, newRole)
+                        }
+                      >
+                        <SelectTrigger className="w-[120px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="player">player</SelectItem>
+                          <SelectItem value="judge">judge</SelectItem>
+                          <SelectItem value="admin">admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </td>
                   <td className="p-2">
                     <Badge variant={user.isActive ? "default" : "destructive"}>

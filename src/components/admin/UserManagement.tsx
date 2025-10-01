@@ -6,6 +6,7 @@ import { UsersList } from "./UsersList";
 interface UserManagementProps {
   appState: AppState;
   toggleUserStatus: (userId: string) => void;
+  updateUserRole: (userId: string, newRole: 'player' | 'judge' | 'admin') => void;
   deleteUser: (userId: string) => void;
   addUser: (user: User) => void;
   addPlayer: (player: Player) => void;
@@ -15,6 +16,7 @@ interface UserManagementProps {
 export const UserManagement: React.FC<UserManagementProps> = ({
   appState,
   toggleUserStatus,
+  updateUserRole,
   deleteUser,
   addUser,
   addPlayer,
@@ -23,7 +25,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   return (
     <div className="space-y-6">
       <UserCreationForm appState={appState} addUser={addUser} addPlayer={addPlayer} />
-      <UsersList appState={appState} toggleUserStatus={toggleUserStatus} deleteUser={deleteUser} />
+      <UsersList appState={appState} toggleUserStatus={toggleUserStatus} updateUserRole={updateUserRole} deleteUser={deleteUser} />
     </div>
   );
 };
