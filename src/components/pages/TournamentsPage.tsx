@@ -27,10 +27,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
             <Icon name="Trophy" size={20} className="mr-2" />
             Управление турнирами ({appState.tournaments.length})
           </div>
-          <Button onClick={createTournament}>
-            <Icon name="Plus" size={16} className="mr-2" />
-            Создать турнир
-          </Button>
+          <Button onClick={createTournament}>Новый турнир</Button>
         </CardTitle>
         <CardDescription>Создание и управление турнирами</CardDescription>
       </CardHeader>
