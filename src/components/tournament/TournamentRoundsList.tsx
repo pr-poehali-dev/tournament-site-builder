@@ -58,7 +58,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                     className="flex items-center justify-between p-2 border rounded"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="font-medium">
+                      <div className="font-medium min-w-[60px]">
                         {match.player2Id ? `Стол ${match.tableNumber}` : "—"}
                       </div>
                       <div className="flex items-center gap-2">
