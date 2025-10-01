@@ -48,6 +48,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         date = tournament_data.get('date', '')
         swiss_rounds = tournament_data.get('swissRounds', 3)
         top_rounds = tournament_data.get('topRounds', 0)
+        is_rated = tournament_data.get('isRated', True)
+        judge_id = tournament_data.get('judgeId')
+        participants = tournament_data.get('participants', [])
         
         # Determine tournament type based on rounds structure
         # If has TOP rounds - type is 'top', otherwise 'swiss'
@@ -83,12 +86,29 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Insert tournament into database (using simple query protocol)
         escaped_name = name.replace("'", "''")
+        escaped_city = city.replace("'", "''") if city else ''
+        
+        # Convert participants list to PostgreSQL array format
+        participants_array = '{' + ','.join(str(p) for p in participants) + '}' if participants else '{}'
+        
+        # Build judge_id part
+        judge_id_value = str(judge_id) if judge_id else 'NULL'
         
         cursor.execute(f"""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, status, current_round, max_rounds) 
-            VALUES ('{escaped_name}', '{tournament_type}', 'setup', 0, NULL)
-            RETURNING id, name, type, status, current_round, max_rounds, created_at
+            (name, type, status, current_round, max_rounds, city, is_rated, judge_id, participants) 
+            VALUES (
+                '{escaped_name}', 
+                '{tournament_type}', 
+                'setup', 
+                0, 
+                NULL,
+                {'NULL' if not city else f"'{escaped_city}'"},
+                {str(is_rated).lower()},
+                {judge_id_value},
+                '{participants_array}'::integer[]
+            )
+            RETURNING id, name, type, status, current_round, max_rounds, created_at, city, is_rated, judge_id, participants
         """)
         
         row = cursor.fetchone()
@@ -103,6 +123,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'current_round': row[4],
             'max_rounds': row[5],
             'created_at': row[6].isoformat() if row[6] else None,
+            'city': row[7],
+            'is_rated': row[8],
+            'judge_id': row[9],
+            'participants': row[10] if row[10] else [],
             'db_saved': True
         }
         

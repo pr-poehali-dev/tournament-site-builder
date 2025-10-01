@@ -8,14 +8,20 @@
         "name": "Test Tournament API",
         "format": "sealed",
         "city": "Москва",
-        "date": "2025-09-20"
+        "date": "2025-09-20",
+        "swissRounds": 3,
+        "topRounds": 1,
+        "isRated": true,
+        "judgeId": "1",
+        "participants": ["1", "2", "3"]
       },
       "expectedStatus": 201,
       "expectedBody": {
         "success": true,
         "tournament": {
           "name": "Test Tournament API",
-          "type": "sealed"
+          "city": "Москва",
+          "is_rated": true
         }
       },
       "bodyMatcher": "partial"

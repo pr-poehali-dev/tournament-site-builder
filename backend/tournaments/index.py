@@ -1,12 +1,14 @@
 import json
+import os
+import psycopg2
 from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Tournament API - mock version for testing
+    Business: Get tournaments from database
     Args: event - dict with httpMethod, body 
           context - object with request_id
-    Returns: HTTP response dict
+    Returns: HTTP response dict with tournaments list
     '''
     method = event.get('httpMethod', 'GET')
     
@@ -25,28 +27,81 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     if method == 'GET':
-        # Return mock tournaments
-        tournaments = [
-            {
-                'id': 1,
-                'name': 'Тестовый турнир',
-                'type': 'top',
-                'status': 'setup',
-                'current_round': 0,
-                'max_rounds': 4,
-                'created_at': '2025-09-20T18:50:00.000Z'
+        try:
+            database_url = os.environ.get('DATABASE_URL')
+            if not database_url:
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Database connection not configured'})
+                }
+            
+            conn = psycopg2.connect(database_url)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, name, type, status, current_round, max_rounds, 
+                       created_at, updated_at, city, is_rated, judge_id, participants
+                FROM t_p79348767_tournament_site_buil.tournaments
+                ORDER BY created_at DESC
+            """)
+            
+            rows = cursor.fetchall()
+            
+            tournaments = []
+            for row in rows:
+                tournaments.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'type': row[2],
+                    'status': row[3],
+                    'current_round': row[4],
+                    'max_rounds': row[5],
+                    'created_at': row[6].isoformat() if row[6] else None,
+                    'updated_at': row[7].isoformat() if row[7] else None,
+                    'city': row[8],
+                    'is_rated': row[9],
+                    'judge_id': row[10],
+                    'participants': row[11] if row[11] else []
+                })
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'tournaments': tournaments})
             }
-        ]
-        
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'isBase64Encoded': False,
-            'body': json.dumps({'tournaments': tournaments})
-        }
+            
+        except psycopg2.Error as e:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Database error: {str(e)}'})
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Unexpected error: {str(e)}'})
+            }
     
     elif method == 'POST':
         try:
