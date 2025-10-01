@@ -129,8 +129,8 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {appState.cities.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
+                  <SelectItem key={city.id} value={city.name}>
+                    {city.name}
                   </SelectItem>
                 ))}
               </SelectContent>
