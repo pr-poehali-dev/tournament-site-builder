@@ -186,8 +186,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             
             else:
                 # Single user update (toggle status, change role, etc.)
-                path_params = event.get('pathParams', {})
-                user_id = path_params.get('id')
+                query_params = event.get('queryStringParameters') or {}
+                user_id = query_params.get('id')
                 body_data = json.loads(event.get('body', '{}'))
                 
                 if not user_id:

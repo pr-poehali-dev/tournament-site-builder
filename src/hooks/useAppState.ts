@@ -111,13 +111,45 @@ export const useAppState = () => {
   };
 
   // User management functions
-  const toggleUserStatus = (userId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      users: prev.users.map(user =>
-        user.id === userId ? { ...user, isActive: !user.isActive } : user
-      )
-    }));
+  const toggleUserStatus = async (userId: string) => {
+    // Находим текущего пользователя
+    const currentUser = appState.users.find(u => u.id === userId);
+    if (!currentUser) return;
+
+    const newStatus = !currentUser.isActive;
+    console.log('🔄 Переключаем статус пользователя:', userId, 'на', newStatus);
+
+    try {
+      // Обновляем статус в БД
+      const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_active: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user status');
+      }
+
+      const responseData = await response.json();
+      console.log('✅ Статус пользователя обновлён в БД:', responseData);
+
+      // Обновляем локальное состояние
+      setAppState(prev => ({
+        ...prev,
+        users: prev.users.map(user =>
+          user.id === userId ? { ...user, isActive: newStatus } : user
+        )
+      }));
+    } catch (error: any) {
+      console.error('❌ Ошибка обновления статуса пользователя:', error);
+      alert(`Ошибка обновления статуса: ${error?.message || 'Неизвестная ошибка'}`);
+    }
   };
 
   const deleteUser = async (userId: string) => {
