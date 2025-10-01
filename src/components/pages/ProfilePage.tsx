@@ -48,11 +48,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         <div className="p-4 border rounded-lg bg-muted/50">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="text-muted-foreground">Имя пользователя</div>
+              <div className="text-muted-foreground">Логин</div>
               <div className="font-medium">@{appState.currentUser?.username}</div>
             </div>
             <div>
-              <div className="text-muted-foreground">Полное имя</div>
+              <div className="text-muted-foreground">Имя</div>
               <div className="font-medium">{appState.currentUser?.name}</div>
             </div>
             <div>

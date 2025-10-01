@@ -185,7 +185,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
             
             else:
-                # Single user update (toggle status, change role, etc.)
+                # Single user update (toggle status, change role, profile edit, etc.)
                 query_params = event.get('queryStringParameters') or {}
                 user_id = query_params.get('id')
                 body_data = json.loads(event.get('body', '{}'))
@@ -197,33 +197,38 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'User ID required'})
                     }
                 
-                updates = []
-                values = []
+                # Build update query with proper escaping
+                update_clauses = []
                 
                 if 'is_active' in body_data:
-                    updates.append('is_active = %s')
-                    values.append(body_data['is_active'])
+                    update_clauses.append(f"is_active = {body_data['is_active']}")
                 
                 if 'role' in body_data:
-                    updates.append('role = %s')
-                    values.append(body_data['role'])
+                    role_escaped = body_data['role'].replace("'", "''")
+                    update_clauses.append(f"role = '{role_escaped}'")
                 
-                if not updates:
+                if 'name' in body_data:
+                    name_escaped = body_data['name'].replace("'", "''")
+                    update_clauses.append(f"name = '{name_escaped}'")
+                
+                if 'city' in body_data:
+                    city = body_data['city']
+                    if city:
+                        city_escaped = city.replace("'", "''")
+                        update_clauses.append(f"city = '{city_escaped}'")
+                    else:
+                        update_clauses.append("city = NULL")
+                
+                if 'password' in body_data and body_data['password']:
+                    password_escaped = body_data['password'].replace("'", "''")
+                    update_clauses.append(f"password = '{password_escaped}'")
+                
+                if not update_clauses:
                     return {
                         'statusCode': 400,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                         'body': json.dumps({'error': 'No updates provided'})
                     }
-                
-                values.append(user_id)
-                
-                # Build update query with proper escaping
-                update_clauses = []
-                for i, update in enumerate(updates):
-                    if 'is_active' in update:
-                        update_clauses.append(f"is_active = {values[i]}")
-                    elif 'role' in update:
-                        update_clauses.append(f"role = '{values[i]}'")
                 
                 cursor.execute(f"""
                     UPDATE t_p79348767_tournament_site_buil.users
