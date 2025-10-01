@@ -106,6 +106,7 @@ const Index = () => {
       swissRounds: 3,
       topRounds: 1,
       participants: [] as string[],
+      judgeId: "",
     };
   });
 
@@ -271,6 +272,7 @@ const Index = () => {
       swissRounds: 3,
       topRounds: 1,
       participants: [],
+      judgeId: "",
     });
 
     navigateTo("create-tournament");

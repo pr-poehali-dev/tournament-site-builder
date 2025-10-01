@@ -18,6 +18,7 @@ interface TournamentForm {
   swissRounds: number;
   topRounds: number;
   participants: string[];
+  judgeId?: string;
 }
 
 interface CreateTournamentPageProps {
@@ -348,7 +349,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
             <SimpleJudgeSearch
               users={dbUsers.length > 0 ? dbUsers : appState.users}
               cities={appState.cities}
-              selectedJudgeId={tournamentForm.judgeId}
+              selectedJudgeId={tournamentForm.judgeId || ""}
               onJudgeChange={handleJudgeChange}
               placeholder={dbUsers.length > 0 
                 ? `Выберите судью из БД (${dbUsers.filter(u => u.role === 'judge' || u.role === 'admin').length} доступно)`
