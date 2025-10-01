@@ -1291,31 +1291,36 @@ export const useAppState = () => {
       return matches;
     };
 
-    // Check if odd number of players - assign bye first
-    let byePlayerId: string | null = null;
-    if (playerStandings.length % 2 === 1) {
-      // Sort by points to find bye candidate (lowest points, no previous bye)
-      const sortedForBye = [...playerStandings].sort((a, b) => a.points - b.points);
-      
-      // Try to find player without bye
-      const byeCandidate = sortedForBye.find(p => !p.hasByeInTournament);
-      
-      if (byeCandidate) {
-        byePlayerId = byeCandidate.player.id;
-      } else {
-        // All had byes, give to lowest points
-        byePlayerId = sortedForBye[0].player.id;
-      }
-    }
-
-    let matches: Match[] | null = null;
-
     // ALWAYS shuffle players before pairing to randomize order
     const shuffled = [...playerStandings];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
+
+    // Check if odd number of players - assign bye
+    let byePlayerId: string | null = null;
+    if (shuffled.length % 2 === 1) {
+      if (tournament.currentRound === 0) {
+        // Round 1: random player gets bye (already shuffled, take first)
+        byePlayerId = shuffled[0].player.id;
+      } else {
+        // Later rounds: Sort by points to find bye candidate (lowest points, no previous bye)
+        const sortedForBye = [...shuffled].sort((a, b) => a.points - b.points);
+        
+        // Try to find player without bye
+        const byeCandidate = sortedForBye.find(p => !p.hasByeInTournament);
+        
+        if (byeCandidate) {
+          byePlayerId = byeCandidate.player.id;
+        } else {
+          // All had byes, give to lowest points
+          byePlayerId = sortedForBye[0].player.id;
+        }
+      }
+    }
+
+    let matches: Match[] | null = null;
 
     // For round 1: use shuffled order
     if (tournament.currentRound === 0) {
