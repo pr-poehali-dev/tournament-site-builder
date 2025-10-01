@@ -1,34 +1,39 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AppState, User, Player, City, TournamentFormat, Tournament, Page, Round, Match } from '@/types';
-import { saveStateToLocalStorage, loadStateFromLocalStorage } from '@/utils/storage';
+import type { AppState, UIState, User, Player, City, TournamentFormat, Tournament, Page, Round, Match } from '@/types';
+import { saveUIStateToLocalStorage, loadUIStateFromLocalStorage, clearOldLocalStorage } from '@/utils/storage';
 import { getInitialState } from '@/utils/initialState';
 import { api } from '@/utils/api';
 import { toast } from '@/hooks/use-toast';
 
 export const useAppState = () => {
-  // Load initial state from localStorage or use default
+  // Load only UI state from localStorage
   const [appState, setAppState] = useState<AppState>(() => {
-    const savedState = loadStateFromLocalStorage();
-    if (savedState) {
-      // Migrate old tournaments to include judgeId field
-      const migratedState = {
-        ...savedState,
-        tournaments: (savedState.tournaments || []).map((tournament: any) => ({
-          ...tournament,
-          judgeId: tournament.judgeId || 'admin' // Default to admin if missing
-        }))
+    const savedUIState = loadUIStateFromLocalStorage();
+    const initialState = getInitialState();
+    
+    // Clear old full state from localStorage
+    clearOldLocalStorage();
+    
+    if (savedUIState) {
+      return {
+        ...initialState,
+        currentUser: savedUIState.currentUser,
+        currentPage: savedUIState.currentPage,
+        showLogin: savedUIState.showLogin
       };
-      return migratedState;
     }
-    return getInitialState();
+    return initialState;
   });
 
-
-
-  // Auto-save to localStorage whenever appState changes
+  // Auto-save only UI state to localStorage
   useEffect(() => {
-    saveStateToLocalStorage(appState);
-  }, [appState]);
+    const uiState: UIState = {
+      currentUser: appState.currentUser,
+      currentPage: appState.currentPage,
+      showLogin: appState.showLogin
+    };
+    saveUIStateToLocalStorage(uiState);
+  }, [appState.currentUser, appState.currentPage, appState.showLogin]);
 
   // Load tournaments from database on app start
   useEffect(() => {

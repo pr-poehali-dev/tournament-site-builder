@@ -77,3 +77,9 @@ export interface AppState {
   tournaments: Tournament[];
   showLogin: boolean;
 }
+
+export interface UIState {
+  currentUser: User | null;
+  currentPage: Page;
+  showLogin: boolean;
+}

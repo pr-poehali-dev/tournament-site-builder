@@ -1,21 +1,29 @@
-import { AppState } from '@/types';
+import { UIState } from '@/types';
 
-export const saveStateToLocalStorage = (state: AppState) => {
+export const saveUIStateToLocalStorage = (uiState: UIState) => {
   try {
-    localStorage.setItem('tournamentAppState', JSON.stringify(state));
+    localStorage.setItem('tournamentUIState', JSON.stringify(uiState));
   } catch (error) {
-    console.error('Failed to save state to localStorage:', error);
+    console.error('Failed to save UI state to localStorage:', error);
   }
 };
 
-export const loadStateFromLocalStorage = (): AppState | null => {
+export const loadUIStateFromLocalStorage = (): UIState | null => {
   try {
-    const savedState = localStorage.getItem('tournamentAppState');
+    const savedState = localStorage.getItem('tournamentUIState');
     if (savedState) {
       return JSON.parse(savedState);
     }
   } catch (error) {
-    console.error('Failed to load state from localStorage:', error);
+    console.error('Failed to load UI state from localStorage:', error);
   }
   return null;
+};
+
+export const clearOldLocalStorage = () => {
+  try {
+    localStorage.removeItem('tournamentAppState');
+  } catch (error) {
+    console.error('Failed to clear old localStorage:', error);
+  }
 };
