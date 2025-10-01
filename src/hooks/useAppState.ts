@@ -1128,15 +1128,15 @@ export const useAppState = () => {
         return { success: false, error: 'Недостаточно победителей для следующего раунда' };
       }
       
-      // Olympic system pairing for next round:
-      // Classic Olympic system: pair winners based on bracket structure
+      // Classic Olympic bracket pairing:
+      // Winners from adjacent tables play each other (1-2, 3-4, 5-6, 7-8)
       const matches: Match[] = [];
       let tableNumber = 1;
       
-      // Olympic system: pair 1st table winner with last table winner, 2nd with 2nd-to-last, etc.
-      for (let i = 0; i < winners.length / 2; i++) {
+      // Pair consecutive winners: 1st with 2nd, 3rd with 4th, etc.
+      for (let i = 0; i < winners.length; i += 2) {
         const player1 = winners[i];
-        const player2 = winners[winners.length - 1 - i];
+        const player2 = winners[i + 1];
         
         matches.push({
           id: `match-${Date.now()}-${tableNumber}`,
