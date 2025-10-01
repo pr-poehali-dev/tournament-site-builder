@@ -36,6 +36,14 @@ export const UsersList: React.FC<UsersListProps> = ({
   updateUserRole,
   deleteUser,
 }) => {
+  const userHasTournaments = (userId: string) => {
+    return appState.tournaments.some(
+      (tournament) => 
+        tournament.participants.includes(userId) || 
+        tournament.judgeId === userId
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -58,7 +66,9 @@ export const UsersList: React.FC<UsersListProps> = ({
               </tr>
             </thead>
             <tbody>
-              {appState.users.map((user) => (
+              {appState.users.map((user) => {
+                const hasTournaments = userHasTournaments(user.id);
+                return (
                 <tr key={user.id} className="border-b hover:bg-gray-50">
                   <td className="p-2 font-mono">{user.username}</td>
                   <td className="p-2">{user.name}</td>
@@ -100,7 +110,7 @@ export const UsersList: React.FC<UsersListProps> = ({
                           {user.isActive ? "Заблокировать" : "Разблокировать"}
                         </Button>
                       )}
-                      {user.id !== appState.currentUser?.id && (
+                      {user.id !== appState.currentUser?.id && !hasTournaments && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="sm" variant="destructive">
@@ -126,7 +136,8 @@ export const UsersList: React.FC<UsersListProps> = ({
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
