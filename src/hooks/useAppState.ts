@@ -977,6 +977,69 @@ export const useAppState = () => {
       };
     });
 
+    // Helper function to try pairing with given strategy
+    const tryPairing = (standings: typeof playerStandings, byePlayer: string | null): Match[] | null => {
+      const matches: Match[] = [];
+      const paired = new Set<string>();
+      let tableNumber = 1;
+
+      // First, add bye match if needed
+      if (byePlayer) {
+        const byeMatch: Match = {
+          id: `match-${Date.now()}-bye`,
+          player1Id: byePlayer,
+          player2Id: undefined,
+          points1: 3,
+          points2: 0,
+          tableNumber: undefined,
+          result: 'win1'
+        };
+        matches.push(byeMatch);
+        paired.add(byePlayer);
+      }
+
+      // Pair remaining players
+      for (let i = 0; i < standings.length; i++) {
+        if (paired.has(standings[i].player.id)) continue;
+
+        const player1Standing = standings[i];
+        let foundOpponent = false;
+
+        // Look for an opponent who hasn't played against this player
+        for (let j = i + 1; j < standings.length; j++) {
+          if (paired.has(standings[j].player.id)) continue;
+
+          const player2Standing = standings[j];
+          
+          // Check if they haven't played against each other
+          if (!player1Standing.opponents.includes(player2Standing.player.id)) {
+            // Create match
+            const match: Match = {
+              id: `match-${Date.now()}-${tableNumber}`,
+              player1Id: player1Standing.player.id,
+              player2Id: player2Standing.player.id,
+              points1: 0,
+              points2: 0,
+              tableNumber: tableNumber++
+            };
+            
+            matches.push(match);
+            paired.add(player1Standing.player.id);
+            paired.add(player2Standing.player.id);
+            foundOpponent = true;
+            break;
+          }
+        }
+
+        // If no valid opponent found - pairing failed
+        if (!foundOpponent && !paired.has(player1Standing.player.id)) {
+          return null;
+        }
+      }
+
+      return matches;
+    };
+
     // Check if odd number of players - assign bye first
     let byePlayerId: string | null = null;
     if (playerStandings.length % 2 === 1) {
@@ -994,94 +1057,100 @@ export const useAppState = () => {
       }
     }
 
+    let matches: Match[] | null = null;
+
     // For round 1: random shuffle
-    // For other rounds: sort by points (descending) for Swiss pairing
     if (tournament.currentRound === 0) {
       // First round - random shuffle
-      for (let i = playerStandings.length - 1; i > 0; i--) {
+      const shuffled = [...playerStandings];
+      for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [playerStandings[i], playerStandings[j]] = [playerStandings[j], playerStandings[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+      matches = tryPairing(shuffled, byePlayerId);
     } else {
-      // Subsequent rounds - sort by points descending (Buchholz ignored)
-      playerStandings.sort((a, b) => b.points - a.points);
-    }
+      // Strategy 1: Sort by points descending (standard Swiss)
+      const sortedByPoints = [...playerStandings].sort((a, b) => b.points - a.points);
+      matches = tryPairing(sortedByPoints, byePlayerId);
 
-    const matches: Match[] = [];
-    const paired = new Set<string>();
-    let tableNumber = 1;
-
-    // First, add bye match if needed
-    if (byePlayerId) {
-      const byeMatch: Match = {
-        id: `match-${Date.now()}-bye`,
-        player1Id: byePlayerId,
-        player2Id: undefined,
-        points1: 3,
-        points2: 0,
-        tableNumber: undefined,
-        result: 'win1'
-      };
-      matches.push(byeMatch);
-      paired.add(byePlayerId);
-    }
-
-    // Pair remaining players
-    for (let i = 0; i < playerStandings.length; i++) {
-      if (paired.has(playerStandings[i].player.id)) continue;
-
-      const player1Standing = playerStandings[i];
-      let foundOpponent = false;
-
-      // Look for an opponent who hasn't played against this player
-      for (let j = i + 1; j < playerStandings.length; j++) {
-        if (paired.has(playerStandings[j].player.id)) continue;
-
-        const player2Standing = playerStandings[j];
+      // Strategy 2: If failed, try optimized pairing (minimize point difference)
+      if (!matches) {
+        // Create all possible pairings and find best one
+        const playersWithoutBye = playerStandings.filter(p => p.player.id !== byePlayerId);
         
-        // Check if they haven't played against each other
-        if (!player1Standing.opponents.includes(player2Standing.player.id)) {
-          // Create match
-          const match: Match = {
-            id: `match-${Date.now()}-${tableNumber}`,
-            player1Id: player1Standing.player.id,
-            player2Id: player2Standing.player.id,
-            points1: 0,
-            points2: 0,
-            tableNumber: tableNumber++
-          };
+        // Generate all possible valid pairings
+        const validPairings = generateAllValidPairings(playersWithoutBye);
+        
+        if (validPairings.length > 0) {
+          // Sort by total point difference (ascending)
+          validPairings.sort((a, b) => a.totalDiff - b.totalDiff);
           
-          matches.push(match);
-          paired.add(player1Standing.player.id);
-          paired.add(player2Standing.player.id);
-          foundOpponent = true;
-          break;
+          // Use best pairing
+          const bestPairing = validPairings[0];
+          matches = [];
+          
+          if (byePlayerId) {
+            matches.push({
+              id: `match-${Date.now()}-bye`,
+              player1Id: byePlayerId,
+              player2Id: undefined,
+              points1: 3,
+              points2: 0,
+              tableNumber: undefined,
+              result: 'win1'
+            });
+          }
+          
+          let tableNumber = 1;
+          for (const pair of bestPairing.pairs) {
+            matches.push({
+              id: `match-${Date.now()}-${tableNumber}`,
+              player1Id: pair.player1.player.id,
+              player2Id: pair.player2.player.id,
+              points1: 0,
+              points2: 0,
+              tableNumber: tableNumber++
+            });
+          }
         }
       }
+    }
 
-      // If no valid opponent found (all have played against this player)
-      if (!foundOpponent && !paired.has(player1Standing.player.id)) {
-        // Pair with anyone unpaired, even if they played before
-        for (let j = i + 1; j < playerStandings.length; j++) {
-          if (paired.has(playerStandings[j].player.id)) continue;
-
-          const player2Standing = playerStandings[j];
+    // Helper function to generate all valid pairings
+    function generateAllValidPairings(players: typeof playerStandings): Array<{pairs: Array<{player1: typeof playerStandings[0], player2: typeof playerStandings[0]}>, totalDiff: number}> {
+      const results: Array<{pairs: Array<{player1: typeof playerStandings[0], player2: typeof playerStandings[0]}>, totalDiff: number}> = [];
+      
+      function backtrack(remaining: typeof playerStandings, currentPairs: Array<{player1: typeof playerStandings[0], player2: typeof playerStandings[0]}>) {
+        if (remaining.length === 0) {
+          // Calculate total point difference
+          const totalDiff = currentPairs.reduce((sum, pair) => 
+            sum + Math.abs(pair.player1.points - pair.player2.points), 0
+          );
+          results.push({ pairs: [...currentPairs], totalDiff });
+          return;
+        }
+        
+        if (remaining.length === 1) return; // Invalid state
+        
+        const player1 = remaining[0];
+        
+        for (let i = 1; i < remaining.length; i++) {
+          const player2 = remaining[i];
           
-          const match: Match = {
-            id: `match-${Date.now()}-${tableNumber}`,
-            player1Id: player1Standing.player.id,
-            player2Id: player2Standing.player.id,
-            points1: 0,
-            points2: 0,
-            tableNumber: tableNumber++
-          };
-          
-          matches.push(match);
-          paired.add(player1Standing.player.id);
-          paired.add(player2Standing.player.id);
-          break;
+          // Check if valid pairing (haven't played before)
+          if (!player1.opponents.includes(player2.player.id)) {
+            const newRemaining = remaining.filter((_, idx) => idx !== 0 && idx !== i);
+            backtrack(newRemaining, [...currentPairs, { player1, player2 }]);
+          }
         }
       }
+      
+      backtrack(players, []);
+      return results;
+    }
+
+    if (!matches) {
+      return { success: false, error: 'Невозможно создать пары: все возможные комбинации приводят к повторным встречам' };
     }
 
     return { success: true, matches };
