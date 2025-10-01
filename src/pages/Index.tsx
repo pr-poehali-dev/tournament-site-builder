@@ -334,10 +334,6 @@ const Index = () => {
         {appState.currentPage === "my-tournaments" && (
           <MyTournamentsPage
             appState={appState}
-            startEditTournament={startEditTournament}
-            goToCreateTournament={goToCreateTournament}
-            deleteTournament={deleteTournament}
-            confirmTournament={confirmTournament}
             navigateTo={navigateTo}
           />
         )}

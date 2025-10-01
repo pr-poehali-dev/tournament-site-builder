@@ -8,14 +8,16 @@ import { canManageTournament } from '@/utils/permissions';
 
 interface TournamentsPageProps {
   appState: AppState;
-  createTournament: () => void;
+  goToCreateTournament: () => void;
   startEditTournament: (tournament: Tournament) => void;
   confirmTournament: (tournamentId: string) => void;
+  deleteTournament: (tournamentId: string) => void;
+  navigateTo: (page: any) => void;
 }
 
 export const TournamentsPage: React.FC<TournamentsPageProps> = ({
   appState,
-  createTournament,
+  goToCreateTournament,
   startEditTournament,
   confirmTournament
 }) => (
@@ -27,7 +29,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
             <Icon name="Trophy" size={20} className="mr-2" />
             Управление турнирами ({appState.tournaments.length})
           </div>
-          <Button onClick={createTournament}>Новый турнир</Button>
+          <Button onClick={goToCreateTournament}>Новый турнир</Button>
         </CardTitle>
         <CardDescription>Создание и управление турнирами</CardDescription>
       </CardHeader>
