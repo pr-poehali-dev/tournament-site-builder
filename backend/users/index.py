@@ -42,7 +42,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if method == 'GET':
             # Get all users
             cursor.execute("""
-                SELECT id, username, name, role, city, is_active, created_at, rating
+                SELECT id, username, name, role, city, is_active, created_at, rating, tournaments, wins, losses, draws
                 FROM t_p79348767_tournament_site_buil.users
                 ORDER BY created_at DESC
             """)
@@ -57,7 +57,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'city': row[4],
                     'is_active': row[5],
                     'created_at': row[6].isoformat() if row[6] else None,
-                    'rating': row[7]
+                    'rating': row[7],
+                    'tournaments': row[8],
+                    'wins': row[9],
+                    'losses': row[10],
+                    'draws': row[11]
                 })
             
             return {
@@ -131,77 +135,127 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
         
         elif method == 'PUT':
-            # Update user (toggle status, change role, etc.)
-            path_params = event.get('pathParams', {})
-            user_id = path_params.get('id')
-            body_data = json.loads(event.get('body', '{}'))
+            # Update user (single user or batch updates)
+            query_params = event.get('queryStringParameters') or {}
+            batch_mode = query_params.get('batch') == 'true'
             
-            if not user_id:
+            if batch_mode:
+                # Batch update multiple users (for tournament rating updates)
+                body_data = json.loads(event.get('body', '{}'))
+                updates = body_data.get('updates', [])
+                
+                if not updates:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'No updates provided'})
+                    }
+                
+                # Update each user individually
+                updated_count = 0
+                for update in updates:
+                    user_id = update.get('user_id')
+                    rating = update.get('rating')
+                    tournaments = update.get('tournaments')
+                    wins = update.get('wins')
+                    losses = update.get('losses')
+                    draws = update.get('draws')
+                    
+                    if user_id is not None:
+                        cursor.execute(f"""
+                            UPDATE t_p79348767_tournament_site_buil.users
+                            SET rating = {rating},
+                                tournaments = {tournaments},
+                                wins = {wins},
+                                losses = {losses},
+                                draws = {draws}
+                            WHERE id = {user_id};
+                        """)
+                        updated_count += cursor.rowcount
+                
+                conn.commit()
+                
                 return {
-                    'statusCode': 400,
+                    'statusCode': 200,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'User ID required'})
+                    'body': json.dumps({
+                        'success': True,
+                        'updated_count': updated_count
+                    })
                 }
             
-            updates = []
-            values = []
-            
-            if 'is_active' in body_data:
-                updates.append('is_active = %s')
-                values.append(body_data['is_active'])
-            
-            if 'role' in body_data:
-                updates.append('role = %s')
-                values.append(body_data['role'])
-            
-            if not updates:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'No updates provided'})
+            else:
+                # Single user update (toggle status, change role, etc.)
+                path_params = event.get('pathParams', {})
+                user_id = path_params.get('id')
+                body_data = json.loads(event.get('body', '{}'))
+                
+                if not user_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'User ID required'})
+                    }
+                
+                updates = []
+                values = []
+                
+                if 'is_active' in body_data:
+                    updates.append('is_active = %s')
+                    values.append(body_data['is_active'])
+                
+                if 'role' in body_data:
+                    updates.append('role = %s')
+                    values.append(body_data['role'])
+                
+                if not updates:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'No updates provided'})
+                    }
+                
+                values.append(user_id)
+                
+                # Build update query with proper escaping
+                update_clauses = []
+                for i, update in enumerate(updates):
+                    if 'is_active' in update:
+                        update_clauses.append(f"is_active = {values[i]}")
+                    elif 'role' in update:
+                        update_clauses.append(f"role = '{values[i]}'")
+                
+                cursor.execute(f"""
+                    UPDATE t_p79348767_tournament_site_buil.users
+                    SET {', '.join(update_clauses)}
+                    WHERE id = {user_id}
+                    RETURNING id, username, name, role, city, is_active;
+                """)
+                
+                row = cursor.fetchone()
+                if not row:
+                    return {
+                        'statusCode': 404,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'User not found'})
+                    }
+                
+                conn.commit()
+                
+                user = {
+                    'id': row[0],
+                    'username': row[1],
+                    'name': row[2],
+                    'role': row[3],
+                    'city': row[4],
+                    'is_active': row[5]
                 }
-            
-            values.append(user_id)
-            
-            # Build update query with proper escaping
-            update_clauses = []
-            for i, update in enumerate(updates):
-                if 'is_active' in update:
-                    update_clauses.append(f"is_active = {values[i]}")
-                elif 'role' in update:
-                    update_clauses.append(f"role = '{values[i]}'")
-            
-            cursor.execute(f"""
-                UPDATE t_p79348767_tournament_site_buil.users
-                SET {', '.join(update_clauses)}
-                WHERE id = {user_id}
-                RETURNING id, username, name, role, city, is_active;
-            """)
-            
-            row = cursor.fetchone()
-            if not row:
+                
                 return {
-                    'statusCode': 404,
+                    'statusCode': 200,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'User not found'})
+                    'body': json.dumps({'user': user})
                 }
-            
-            conn.commit()
-            
-            user = {
-                'id': row[0],
-                'username': row[1],
-                'name': row[2],
-                'role': row[3],
-                'city': row[4],
-                'is_active': row[5]
-            }
-            
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'user': user})
-            }
         
         elif method == 'DELETE':
             # Delete user

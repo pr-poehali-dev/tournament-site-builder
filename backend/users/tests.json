@@ -11,23 +11,24 @@
       "bodyMatcher": "partial"
     },
     {
-      "name": "Create new user",
-      "method": "POST",
-      "path": "/",
+      "name": "Batch update user ratings",
+      "method": "PUT",
+      "path": "/?batch=true",
       "body": {
-        "username": "testuser",
-        "password": "testpass",
-        "name": "Test User",
-        "role": "player",
-        "city": "Moscow"
+        "updates": [
+          {
+            "user_id": 1,
+            "rating": 1250,
+            "tournaments": 1,
+            "wins": 3,
+            "losses": 2,
+            "draws": 0
+          }
+        ]
       },
-      "expectedStatus": 201,
+      "expectedStatus": 200,
       "expectedBody": {
-        "user": {
-          "username": "testuser",
-          "name": "Test User",
-          "role": "player"
-        }
+        "success": true
       },
       "bodyMatcher": "partial"
     }

@@ -221,11 +221,11 @@ export const useAppState = () => {
       id: user.id.toString(),
       name: user.name,
       city: user.city || '',
-      rating: user.rating || 1200, // Используем рейтинг из БД или 1200 по умолчанию
-      tournaments: 0,
-      wins: 0,
-      losses: 0,
-      draws: 0
+      rating: user.rating || 1200,
+      tournaments: user.tournaments || 0,
+      wins: user.wins || 0,
+      losses: user.losses || 0,
+      draws: user.draws || 0
     }));
 
     // Преобразуем пользователей из БД в формат User
@@ -890,7 +890,41 @@ export const useAppState = () => {
       }
     });
 
-    // Update tournament and players
+    // Save rating updates to database
+    const updates = Array.from(ratingChanges.entries()).map(([userId, changes]) => ({
+      user_id: userId,
+      rating: changes.rating,
+      tournaments: changes.tournaments,
+      wins: changes.wins,
+      losses: changes.losses,
+      draws: changes.draws
+    }));
+
+    // Send batch update to backend
+    fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates })
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('✅ Рейтинги обновлены в БД:', data);
+        
+        // Reload users from DB to sync the latest ratings
+        return fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792');
+      })
+      .then(response => response?.json())
+      .then(data => {
+        if (data?.users) {
+          console.log('✅ Обновлены данные игроков из БД после подтверждения турнира');
+          syncDbUsersToPlayers(data.users);
+        }
+      })
+      .catch(error => {
+        console.error('❌ Ошибка обновления рейтингов в БД:', error);
+      });
+
+    // Update tournament and players in local state
     confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
   }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
 
