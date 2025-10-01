@@ -12,26 +12,28 @@ import type { AppState } from '@/types';
 interface ProfilePageProps {
   appState: AppState;
   profileEdit: {
+    isEditing: boolean;
+    name: string;
+    password: string;
     city: string;
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
   };
+  startEditProfile: () => void;
+  handleProfileNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleProfilePasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleProfileCityChange: (value: string) => void;
-  handleProfileCurrentPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleProfileNewPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleProfileConfirmPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  updateProfile: () => void;
+  saveProfile: () => void;
+  cancelEditProfile: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
   appState,
   profileEdit,
+  startEditProfile,
+  handleProfileNameChange,
+  handleProfilePasswordChange,
   handleProfileCityChange,
-  handleProfileCurrentPasswordChange,
-  handleProfileNewPasswordChange,
-  handleProfileConfirmPasswordChange,
-  updateProfile
+  saveProfile,
+  cancelEditProfile
 }) => (
   <div className="max-w-2xl mx-auto space-y-6">
     <Card>
@@ -71,65 +73,74 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
         <Separator />
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Редактирование профиля</h3>
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="city">Город</Label>
-              <Select value={profileEdit.city} onValueChange={handleProfileCityChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите город" />
-                </SelectTrigger>
-                <SelectContent>
-                  {appState.cities.map(city => (
-                    <SelectItem key={city.id} value={city.name}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {!profileEdit.isEditing ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Редактирование профиля</h3>
+              <Button onClick={startEditProfile}>
+                <Icon name="Edit" size={16} className="mr-2" />
+                Редактировать
+              </Button>
             </div>
-            
-            <div className="space-y-3">
-              <h4 className="font-medium">Изменить пароль</h4>
-              <div>
-                <Label htmlFor="current-password">Текущий пароль</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={profileEdit.currentPassword}
-                  onChange={handleProfileCurrentPasswordChange}
-                  placeholder="Введите текущий пароль"
-                />
-              </div>
-              <div>
-                <Label htmlFor="new-password">Новый пароль</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={profileEdit.newPassword}
-                  onChange={handleProfileNewPasswordChange}
-                  placeholder="Введите новый пароль"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirm-password">Подтвердите пароль</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={profileEdit.confirmPassword}
-                  onChange={handleProfileConfirmPasswordChange}
-                  placeholder="Повторите новый пароль"
-                />
-              </div>
-            </div>
-            
-            <Button onClick={updateProfile} className="w-fit">
-              <Icon name="Save" size={16} className="mr-2" />
-              Сохранить изменения
-            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Редактирование профиля</h3>
+            </div>
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="name">Имя</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={profileEdit.name}
+                  onChange={handleProfileNameChange}
+                  placeholder="Введите имя"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">Город</Label>
+                <Select value={profileEdit.city} onValueChange={handleProfileCityChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите город" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {appState.cities.map(city => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium">Изменить пароль</h4>
+                <div>
+                  <Label htmlFor="password">Новый пароль</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={profileEdit.password}
+                    onChange={handleProfilePasswordChange}
+                    placeholder="Оставьте пустым, чтобы не менять"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button onClick={saveProfile} className="w-fit">
+                  <Icon name="Save" size={16} className="mr-2" />
+                  Сохранить изменения
+                </Button>
+                <Button variant="outline" onClick={cancelEditProfile} className="w-fit">
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   </div>

@@ -18,83 +18,7 @@ import {
 import Icon from "@/components/ui/icon";
 import type { AppState, Page, Tournament } from "@/types";
 import { canManageTournament } from "@/utils/permissions";
-
-// Helper function to sort players by TOP tournament results (same as in Index.tsx)
-const sortByTopResults = (a: any, b: any, tournament: Tournament) => {
-  // Find the furthest TOP round each player reached and their status
-  const getTopPerformance = (playerId: string) => {
-    let furthestRound = 0;
-    let isStillActive = false;
-    let wonLastMatch = false;
-
-    // Find the furthest round the player participated in
-    tournament.rounds?.forEach((round: any) => {
-      if (round.number > tournament.swissRounds) {
-        const match = round.matches?.find(
-          (m: any) => m.player1Id === playerId || m.player2Id === playerId,
-        );
-
-        if (match) {
-          furthestRound = round.number;
-
-          if (match.result) {
-            const isPlayer1 = match.player1Id === playerId;
-            wonLastMatch =
-              (match.result === "win1" && isPlayer1) ||
-              (match.result === "win2" && !isPlayer1);
-            isStillActive = wonLastMatch;
-          } else {
-            isStillActive = true; // Match not played yet
-            wonLastMatch = false;
-          }
-        }
-      }
-    });
-
-    // If player never played in TOP rounds, they didn't make it to TOP
-    if (furthestRound === 0) {
-      return {
-        furthestRound: tournament.swissRounds, // Use Swiss rounds as baseline
-        isStillActive: false,
-        madeToTop: false,
-      };
-    }
-
-    return { furthestRound, isStillActive, madeToTop: true };
-  };
-
-  const playerA = getTopPerformance(a.participantId);
-  const playerB = getTopPerformance(b.participantId);
-
-  // 1. Players who made it to TOP rank higher than those who didn't
-  if (playerA.madeToTop !== playerB.madeToTop) {
-    return playerB.madeToTop ? 1 : -1;
-  }
-
-  // 2. If both made to TOP, player who went further ranks higher
-  if (playerA.madeToTop && playerB.madeToTop) {
-    if (playerA.furthestRound !== playerB.furthestRound) {
-      return playerB.furthestRound - playerA.furthestRound;
-    }
-
-    // 3. If same round reached, active player (still in tournament) ranks higher
-    if (playerA.isStillActive !== playerB.isStillActive) {
-      return playerB.isStillActive ? 1 : -1;
-    }
-  }
-
-  // 4. If same TOP performance (or both didn't make TOP), use Swiss standings
-  if (a.score !== b.score) {
-    return b.score - a.score;
-  }
-
-  // 5. If same points, use tiebreakers
-  if (a.tiebreaker1 !== b.tiebreaker1) {
-    return b.tiebreaker1 - a.tiebreaker1;
-  }
-
-  return b.tiebreaker2 - a.tiebreaker2;
-};
+import { sortByTopResults } from "@/utils/tournamentHelpers";
 
 interface MyTournamentsPageProps {
   appState: AppState;
@@ -172,7 +96,19 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
         tournament.topRounds > 0 &&
         tournament.currentRound > tournament.swissRounds
       ) {
-        return sortByTopResults(a, b, tournament);
+        const mappedA = {
+          user: { id: a.participantId },
+          points: a.score,
+          buchholz: a.tiebreaker1,
+          sumBuchholz: a.tiebreaker2,
+        };
+        const mappedB = {
+          user: { id: b.participantId },
+          points: b.score,
+          buchholz: b.tiebreaker1,
+          sumBuchholz: b.tiebreaker2,
+        };
+        return sortByTopResults(mappedA, mappedB, tournament, appState.users);
       }
 
       // Standard Swiss system sorting

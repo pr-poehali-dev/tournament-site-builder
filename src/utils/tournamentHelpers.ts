@@ -150,3 +150,149 @@ export const getRoundName = (tournament: any, roundNumber: number): string => {
     }
   }
 };
+
+export const calculateTournamentStandings = (
+  tournament: any,
+  users: any[],
+) => {
+  return tournament.participants
+    .map((participantId: string) => {
+      const user = users.find((u: any) => u.id === participantId);
+      if (!user) return null;
+
+      let points = 0;
+      let wins = 0;
+      let losses = 0;
+      let draws = 0;
+      const opponentIds: string[] = [];
+
+      tournament.rounds?.forEach((round: any) => {
+        if (round.number <= tournament.swissRounds) {
+          const match = round.matches?.find(
+            (m: any) =>
+              m.player1Id === participantId || m.player2Id === participantId,
+          );
+          if (match) {
+            if (!match.player2Id) {
+              points += 3;
+              wins += 1;
+            } else if (match.result) {
+              const isPlayer1 = match.player1Id === participantId;
+              const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+              opponentIds.push(opponentId);
+
+              if (match.result === "draw") {
+                points += 1;
+                draws += 1;
+              } else if (
+                (match.result === "win1" && isPlayer1) ||
+                (match.result === "win2" && !isPlayer1)
+              ) {
+                points += 3;
+                wins += 1;
+              } else {
+                losses += 1;
+              }
+            }
+          }
+        }
+      });
+
+      const buchholz = opponentIds.reduce((acc, opponentId) => {
+        let opponentPoints = 0;
+        tournament.rounds?.forEach((round: any) => {
+          if (round.number <= tournament.swissRounds) {
+            const opponentMatch = round.matches?.find(
+              (m: any) =>
+                m.player1Id === opponentId || m.player2Id === opponentId,
+            );
+            if (opponentMatch) {
+              if (!opponentMatch.player2Id) {
+                opponentPoints += 3;
+              } else if (opponentMatch.result) {
+                const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                if (opponentMatch.result === "draw") {
+                  opponentPoints += 1;
+                } else if (
+                  (opponentMatch.result === "win1" && isOpponentPlayer1) ||
+                  (opponentMatch.result === "win2" && !isOpponentPlayer1)
+                ) {
+                  opponentPoints += 3;
+                }
+              }
+            }
+          }
+        });
+        return acc + opponentPoints;
+      }, 0);
+
+      const sumBuchholz = opponentIds.reduce((acc, opponentId) => {
+        let opponentBuchholz = 0;
+
+        const opponentOpponentIds: string[] = [];
+        tournament.rounds?.forEach((round: any) => {
+          if (round.number <= tournament.swissRounds) {
+            const opponentMatch = round.matches?.find(
+              (m: any) =>
+                m.player1Id === opponentId || m.player2Id === opponentId,
+            );
+            if (opponentMatch && opponentMatch.result) {
+              if (!opponentMatch.player2Id) {
+              } else {
+                const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                const opponentOpponentId = isOpponentPlayer1
+                  ? opponentMatch.player2Id
+                  : opponentMatch.player1Id;
+                opponentOpponentIds.push(opponentOpponentId);
+              }
+            }
+          }
+        });
+
+        opponentBuchholz = opponentOpponentIds.reduce((oppAcc, oppOppId) => {
+          let oppOppPoints = 0;
+          tournament.rounds?.forEach((round: any) => {
+            if (round.number <= tournament.swissRounds) {
+              const oppOppMatch = round.matches?.find(
+                (m: any) =>
+                  m.player1Id === oppOppId || m.player2Id === oppOppId,
+              );
+              if (oppOppMatch) {
+                if (!oppOppMatch.player2Id) {
+                  oppOppPoints += 3;
+                } else if (oppOppMatch.result) {
+                  const isOppOppPlayer1 = oppOppMatch.player1Id === oppOppId;
+                  if (oppOppMatch.result === "draw") {
+                    oppOppPoints += 1;
+                  } else if (
+                    (oppOppMatch.result === "win1" && isOppOppPlayer1) ||
+                    (oppOppMatch.result === "win2" && !isOppOppPlayer1)
+                  ) {
+                    oppOppPoints += 3;
+                  }
+                }
+              }
+            }
+          });
+          return oppAcc + oppOppPoints;
+        }, 0);
+
+        return acc + opponentBuchholz;
+      }, 0);
+
+      const isDropped = tournament.droppedPlayers?.includes(participantId);
+
+      return {
+        user,
+        points,
+        wins,
+        losses,
+        draws,
+        buchholz,
+        sumBuchholz,
+        isDropped,
+      };
+    })
+    .filter((item: any) => item !== null)
+    .sort((a: any, b: any) => sortByTopResults(a, b, tournament, users));
+};
