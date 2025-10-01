@@ -34,7 +34,7 @@ export const SimplePlayerSearch: React.FC<SimplePlayerSearchProps> = ({
 
   const availablePlayers = useMemo(() => {
     let filtered = players.filter(p => 
-      (p.role === 'player' || p.role === 'judge') && 
+      (p.role === 'player' || p.role === 'judge' || p.role === 'admin') && 
       !selectedPlayerIds.includes(p.id)
     );
     
@@ -96,7 +96,7 @@ export const SimplePlayerSearch: React.FC<SimplePlayerSearchProps> = ({
           <option value="">Все города</option>
           {cities.map(city => {
             const playersInCity = players.filter(p => 
-              (p.role === 'player' || p.role === 'judge') && 
+              (p.role === 'player' || p.role === 'judge' || p.role === 'admin') && 
               p.city === city.name && 
               !selectedPlayerIds.includes(p.id)
             ).length;
@@ -135,10 +135,10 @@ export const SimplePlayerSearch: React.FC<SimplePlayerSearchProps> = ({
                         <span>•</span>
                         <span>{player.username}</span>
                         <Badge 
-                          variant={player.role === 'judge' ? 'secondary' : 'outline'} 
+                          variant={player.role === 'player' ? 'outline' : 'secondary'} 
                           className="text-xs px-1 py-0 ml-2"
                         >
-                          {player.role === 'judge' ? 'Судья' : 'Игрок'}
+                          {player.role === 'judge' ? 'Судья' : player.role === 'admin' ? 'Админ' : 'Игрок'}
                         </Badge>
                       </div>
                     </div>
@@ -169,10 +169,10 @@ export const SimplePlayerSearch: React.FC<SimplePlayerSearchProps> = ({
                   <span className="text-xs opacity-75">• {player.city}</span>
                 )}
                 <Badge 
-                  variant={player.role === 'judge' ? 'secondary' : 'outline'} 
+                  variant={player.role === 'player' ? 'outline' : 'secondary'} 
                   className="text-xs ml-1"
                 >
-                  {player.role === 'judge' ? 'Судья' : 'Игрок'}
+                  {player.role === 'judge' ? 'Судья' : player.role === 'admin' ? 'Админ' : 'Игрок'}
                 </Badge>
                 <Button
                   type="button"
