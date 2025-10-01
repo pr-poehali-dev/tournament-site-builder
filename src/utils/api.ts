@@ -9,8 +9,7 @@ const loadFunctionUrls = async () => {
   try {
     const response = await fetch('/backend/func2url.json');
     functionUrls = await response.json();
-  } catch (error) {
-    console.error('Failed to load function URLs:', error);
+  } catch {
     // Fallback URLs
     functionUrls = {
       users: 'https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792',

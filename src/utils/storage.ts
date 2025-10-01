@@ -3,8 +3,8 @@ import { UIState } from '@/types';
 export const saveUIStateToLocalStorage = (uiState: UIState) => {
   try {
     localStorage.setItem('tournamentUIState', JSON.stringify(uiState));
-  } catch (error) {
-    console.error('Failed to save UI state to localStorage:', error);
+  } catch {
+    // Silent fail - localStorage not available
   }
 };
 
@@ -14,8 +14,8 @@ export const loadUIStateFromLocalStorage = (): UIState | null => {
     if (savedState) {
       return JSON.parse(savedState);
     }
-  } catch (error) {
-    console.error('Failed to load UI state from localStorage:', error);
+  } catch {
+    // Silent fail - localStorage not available or invalid data
   }
   return null;
 };
@@ -23,7 +23,7 @@ export const loadUIStateFromLocalStorage = (): UIState | null => {
 export const clearOldLocalStorage = () => {
   try {
     localStorage.removeItem('tournamentAppState');
-  } catch (error) {
-    console.error('Failed to clear old localStorage:', error);
+  } catch {
+    // Silent fail - localStorage not available
   }
 };
