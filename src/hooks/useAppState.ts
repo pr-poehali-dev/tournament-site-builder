@@ -1025,11 +1025,12 @@ export const useAppState = () => {
 
   // Generate TOP elimination bracket pairings (Olympic system)
   const generateTopPairings = useCallback((tournament: Tournament, participants: Player[], nextRoundNumber: number) => {
-    // Calculate final Swiss standings
+    // Calculate final Swiss standings with tiebreakers
     const playerStandings = participants.map(player => {
       let points = 0;
+      const opponentIds: string[] = [];
 
-      // Go through all Swiss rounds to calculate points
+      // Go through all Swiss rounds to calculate points and track opponents
       tournament.rounds?.forEach(round => {
         if (round.number <= tournament.swissRounds) {
           const match = round.matches?.find(m => 
@@ -1042,6 +1043,8 @@ export const useAppState = () => {
               points += 3;
             } else if (match.result) {
               const isPlayer1 = match.player1Id === player.id;
+              const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+              opponentIds.push(opponentId);
               
               if (match.result === 'draw') {
                 points += 1;
@@ -1056,11 +1059,97 @@ export const useAppState = () => {
         }
       });
 
-      return { player, points };
+      // Calculate Buchholz (sum of opponents' points)
+      const buchholz = opponentIds.reduce((acc, opponentId) => {
+        let opponentPoints = 0;
+        tournament.rounds?.forEach(round => {
+          if (round.number <= tournament.swissRounds) {
+            const opponentMatch = round.matches?.find(m =>
+              m.player1Id === opponentId || m.player2Id === opponentId
+            );
+            if (opponentMatch) {
+              if (!opponentMatch.player2Id) {
+                opponentPoints += 3;
+              } else if (opponentMatch.result) {
+                const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                if (opponentMatch.result === 'draw') {
+                  opponentPoints += 1;
+                } else if (
+                  (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
+                  (opponentMatch.result === 'win2' && !isOpponentPlayer1)
+                ) {
+                  opponentPoints += 3;
+                }
+              }
+            }
+          }
+        });
+        return acc + opponentPoints;
+      }, 0);
+
+      // Calculate Buchholz-2 (sum of opponents' Buchholz)
+      const sumBuchholz = opponentIds.reduce((acc, opponentId) => {
+        let opponentBuchholz = 0;
+        const opponentOpponentIds: string[] = [];
+        
+        tournament.rounds?.forEach(round => {
+          if (round.number <= tournament.swissRounds) {
+            const opponentMatch = round.matches?.find(m =>
+              m.player1Id === opponentId || m.player2Id === opponentId
+            );
+            if (opponentMatch && opponentMatch.result) {
+              if (!opponentMatch.player2Id) {
+                // Skip bye matches
+              } else {
+                const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                const opponentOpponentId = isOpponentPlayer1
+                  ? opponentMatch.player2Id
+                  : opponentMatch.player1Id;
+                opponentOpponentIds.push(opponentOpponentId);
+              }
+            }
+          }
+        });
+
+        opponentBuchholz = opponentOpponentIds.reduce((oppAcc, oppOppId) => {
+          let oppOppPoints = 0;
+          tournament.rounds?.forEach(round => {
+            if (round.number <= tournament.swissRounds) {
+              const oppOppMatch = round.matches?.find(m =>
+                m.player1Id === oppOppId || m.player2Id === oppOppId
+              );
+              if (oppOppMatch) {
+                if (!oppOppMatch.player2Id) {
+                  oppOppPoints += 3;
+                } else if (oppOppMatch.result) {
+                  const isOppOppPlayer1 = oppOppMatch.player1Id === oppOppId;
+                  if (oppOppMatch.result === 'draw') {
+                    oppOppPoints += 1;
+                  } else if (
+                    (oppOppMatch.result === 'win1' && isOppOppPlayer1) ||
+                    (oppOppMatch.result === 'win2' && !isOppOppPlayer1)
+                  ) {
+                    oppOppPoints += 3;
+                  }
+                }
+              }
+            }
+          });
+          return oppAcc + oppOppPoints;
+        }, 0);
+
+        return acc + opponentBuchholz;
+      }, 0);
+
+      return { player, points, buchholz, sumBuchholz };
     });
 
-    // Sort by points (descending) to get final Swiss standings
-    playerStandings.sort((a, b) => b.points - a.points);
+    // Sort by points, then Buchholz, then Buchholz-2 (all descending)
+    playerStandings.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
+      return b.sumBuchholz - a.sumBuchholz;
+    });
 
     // Determine bracket size based on topRounds (Olympic system)
     const topRounds = tournament.topRounds;
