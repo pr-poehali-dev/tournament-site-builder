@@ -258,7 +258,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
         
         elif method == 'DELETE':
-            # Delete user with cascade delete of related records
+            # Delete user only if they never participated in any tournament
             query_params = event.get('queryStringParameters') or {}
             user_id = query_params.get('id')
             
@@ -278,20 +278,41 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User not found'})
                 }
             
-            # Delete related games where user is player1 or player2
+            # Check if user participated in any games
             cursor.execute(f"""
-                DELETE FROM t_p79348767_tournament_site_buil.games 
+                SELECT COUNT(*) FROM t_p79348767_tournament_site_buil.games 
                 WHERE player1_id = {user_id} OR player2_id = {user_id};
             """)
+            games_count = cursor.fetchone()[0]
             
-            # Remove user from tournament participants arrays
+            if games_count > 0:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({
+                        'error': 'Нельзя удалить пользователя, который участвовал в турнирах',
+                        'details': f'Пользователь сыграл {games_count} игр(ы)'
+                    })
+                }
+            
+            # Check if user is in any tournament participants
             cursor.execute(f"""
-                UPDATE t_p79348767_tournament_site_buil.tournaments
-                SET participants = array_remove(participants, {user_id})
+                SELECT COUNT(*) FROM t_p79348767_tournament_site_buil.tournaments
                 WHERE {user_id} = ANY(participants);
             """)
+            tournaments_count = cursor.fetchone()[0]
             
-            # Finally, delete the user
+            if tournaments_count > 0:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({
+                        'error': 'Нельзя удалить пользователя, который зарегистрирован в турнирах',
+                        'details': f'Пользователь участвует в {tournaments_count} турнире(ах)'
+                    })
+                }
+            
+            # Delete the user (no related records exist at this point)
             cursor.execute(f"DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
             
             conn.commit()
