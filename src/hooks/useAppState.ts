@@ -3,6 +3,7 @@ import type { AppState, User, Player, City, TournamentFormat, Tournament, Page, 
 import { saveStateToLocalStorage, loadStateFromLocalStorage } from '@/utils/storage';
 import { getInitialState } from '@/utils/initialState';
 import { api } from '@/utils/api';
+import { toast } from '@/hooks/use-toast';
 
 export const useAppState = () => {
   // Load initial state from localStorage or use default
@@ -901,6 +902,11 @@ export const useAppState = () => {
     }));
 
     // Send batch update to backend
+    toast({
+      title: "Сохранение рейтингов...",
+      description: "Обновляем данные игроков в базе данных",
+    });
+
     fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -909,6 +915,11 @@ export const useAppState = () => {
       .then(response => response.json())
       .then(data => {
         console.log('✅ Рейтинги обновлены в БД:', data);
+        
+        toast({
+          title: "✅ Рейтинги сохранены",
+          description: `Обновлено игроков: ${data.updated_count || updates.length}`,
+        });
         
         // Reload users from DB to sync the latest ratings
         return fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792');
@@ -922,11 +933,17 @@ export const useAppState = () => {
       })
       .catch(error => {
         console.error('❌ Ошибка обновления рейтингов в БД:', error);
+        
+        toast({
+          title: "❌ Ошибка сохранения",
+          description: "Не удалось сохранить рейтинги в базу данных",
+          variant: "destructive",
+        });
       });
 
     // Update tournament and players in local state
     confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
-  }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates]);
+  }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates, syncDbUsersToPlayers]);
 
   // Generate TOP elimination bracket pairings (Olympic system)
   const generateTopPairings = useCallback((tournament: Tournament, participants: Player[], nextRoundNumber: number) => {
