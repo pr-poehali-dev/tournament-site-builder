@@ -64,6 +64,7 @@ const Index = () => {
     confirmTournamentWithPlayerUpdates,
     resetToInitialState,
     generatePairings,
+    loadTournamentWithGames,
   } = useAppState();
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -251,11 +252,13 @@ const Index = () => {
   }, []);
 
   const startEditTournament = useCallback(
-    (tournament: Tournament) => {
+    async (tournament: Tournament) => {
       setEditingTournament(tournament);
+      // Load full tournament data from database
+      await loadTournamentWithGames(tournament.id);
       navigateTo("tournamentEdit");
     },
-    [navigateTo],
+    [navigateTo, loadTournamentWithGames],
   );
 
   const goToCreateTournament = useCallback(() => {

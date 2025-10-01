@@ -395,6 +395,87 @@ export const useAppState = () => {
     }));
   };
 
+  // Load full tournament data with games from database
+  const loadTournamentWithGames = useCallback(async (tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament || !tournament.dbId) {
+      console.warn('⚠️ Турнир не найден или не имеет dbId');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournament.dbId}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      if (!response.ok) {
+        console.error('❌ Ошибка загрузки игр из БД:', await response.text());
+        return;
+      }
+
+      const data = await response.json();
+      const games = data.games || [];
+
+      console.log('📥 Загружено игр из БД:', games.length);
+
+      // Group games by round_number
+      const gamesByRound = games.reduce((acc: any, game: any) => {
+        const roundNum = game.round_number;
+        if (!acc[roundNum]) {
+          acc[roundNum] = [];
+        }
+        acc[roundNum].push(game);
+        return acc;
+      }, {});
+
+      // Create rounds from games
+      const rounds: Round[] = Object.keys(gamesByRound)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .map((roundNum) => {
+          const roundGames = gamesByRound[roundNum];
+          const matches = roundGames.map((game: any, index: number) => ({
+            id: `match-${game.id}`,
+            player1Id: game.player1_id.toString(),
+            player2Id: game.player2_id ? game.player2_id.toString() : undefined,
+            points1: game.result === 'win1' ? 3 : game.result === 'draw' ? 1 : 0,
+            points2: game.result === 'win2' ? 3 : game.result === 'draw' ? 1 : 0,
+            result: game.result || undefined,
+            tableNumber: game.player2_id ? index + 1 : undefined
+          }));
+
+          const isCompleted = matches.every((m: any) => !m.player2Id || m.result);
+
+          return {
+            id: `round-${roundNum}`,
+            number: parseInt(roundNum),
+            matches,
+            isCompleted
+          };
+        });
+
+      // Calculate currentRound
+      const currentRound = rounds.length;
+
+      // Update tournament with loaded data
+      setAppState(prev => ({
+        ...prev,
+        tournaments: prev.tournaments.map(t =>
+          t.id === tournamentId
+            ? { ...t, rounds, currentRound }
+            : t
+        )
+      }));
+
+      console.log('✅ Турнир загружен с данными:', { tournamentId, rounds: rounds.length, currentRound });
+    } catch (error) {
+      console.error('❌ Ошибка загрузки турнира из БД:', error);
+    }
+  }, [appState.tournaments]);
+
   // Specific tournament operations
   const addTournamentRound = useCallback(async (tournamentId: string, newRound: Round) => {
     // Find tournament to get dbId
@@ -1162,6 +1243,9 @@ export const useAppState = () => {
     
     // Navigation
     navigateTo,
+    
+    // Tournament data loading
+    loadTournamentWithGames,
     
     // Auth
     showLoginForm,
