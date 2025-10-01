@@ -18,7 +18,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -264,6 +264,66 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'success': True,
                     'game': updated_game,
                     'message': 'Game result updated'
+                })
+            }
+            
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': f'Error: {str(e)}'})
+            }
+    
+    elif method == 'DELETE':
+        # Delete games for a specific round
+        try:
+            query_params = event.get('queryStringParameters', {}) or {}
+            tournament_id = query_params.get('tournament_id')
+            round_number = query_params.get('round_number')
+            
+            if not tournament_id or not round_number:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'tournament_id and round_number are required'})
+                }
+            
+            conn = psycopg2.connect(database_url)
+            cursor = conn.cursor()
+            
+            # Delete games for the round
+            cursor.execute(f"""
+                DELETE FROM t_p79348767_tournament_site_buil.games
+                WHERE tournament_id = {tournament_id} AND round_number = {round_number}
+                RETURNING id
+            """)
+            
+            deleted_ids = [row[0] for row in cursor.fetchall()]
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({
+                    'success': True,
+                    'deleted_count': len(deleted_ids),
+                    'deleted_ids': deleted_ids,
+                    'message': f'Deleted {len(deleted_ids)} games'
                 })
             }
             

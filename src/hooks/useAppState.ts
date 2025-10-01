@@ -569,20 +569,49 @@ export const useAppState = () => {
     });
   }, []);
 
-  const deleteLastRound = useCallback((tournamentId: string) => {
+  const deleteLastRound = useCallback(async (tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    
+    if (!tournament || tournament.rounds.length === 0) return;
+    
+    const lastRound = tournament.rounds[tournament.rounds.length - 1];
+    
+    // Delete games from database if tournament has dbId
+    if (tournament.dbId && lastRound) {
+      try {
+        const response = await fetch(
+          `https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournament.dbId}&round_number=${lastRound.number}`,
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`✅ Удалено ${data.deleted_count} игр из БД`);
+        } else {
+          console.error('❌ Ошибка удаления игр из БД:', await response.text());
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при удалении игр:', error);
+      }
+    }
+    
+    // Update local state
     setAppState(prev => ({
       ...prev,
-      tournaments: prev.tournaments.map(tournament =>
-        tournament.id === tournamentId && tournament.rounds.length > 0
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId && t.rounds.length > 0
           ? {
-              ...tournament,
-              rounds: tournament.rounds.slice(0, -1), // Удаляем последний тур
-              currentRound: tournament.currentRound - 1 // Уменьшаем счетчик туров
+              ...t,
+              rounds: t.rounds.slice(0, -1), // Удаляем последний тур
+              currentRound: t.currentRound - 1 // Уменьшаем счетчик туров
             }
-          : tournament
+          : t
       )
     }));
-  }, []);
+  }, [appState.tournaments]);
 
   const updateRoundMatches = useCallback((tournamentId: string, roundId: string, updatedMatches: Match[]) => {
     setAppState(prev => ({
