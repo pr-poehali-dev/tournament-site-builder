@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+import bcrypt
 from typing import Dict, Any
 
 def get_db_connection():
@@ -9,6 +10,13 @@ def get_db_connection():
     if not database_url:
         raise ValueError('DATABASE_URL not found in environment')
     return psycopg2.connect(database_url)
+
+def hash_password(password: str) -> str:
+    """Hash password using bcrypt"""
+    password_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     '''
@@ -86,9 +94,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Username, password and name are required'})
                 }
             
+            # Hash password with bcrypt
+            hashed_password = hash_password(password)
+            
             # Escape single quotes in strings
             username_escaped = username.replace("'", "''")
-            password_escaped = password.replace("'", "''")
+            password_escaped = hashed_password.replace("'", "''")
             name_escaped = name.replace("'", "''")
             city_escaped = city.replace("'", "''") if city else None
             
@@ -220,7 +231,9 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         update_clauses.append("city = NULL")
                 
                 if 'password' in body_data and body_data['password']:
-                    password_escaped = body_data['password'].replace("'", "''")
+                    # Hash password with bcrypt before storing
+                    hashed_password = hash_password(body_data['password'])
+                    password_escaped = hashed_password.replace("'", "''")
                     update_clauses.append(f"password = '{password_escaped}'")
                 
                 if not update_clauses:
