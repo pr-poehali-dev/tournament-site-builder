@@ -105,20 +105,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         cursor.execute(f"""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, format, status, current_round, max_rounds, city, is_rated, judge_id, participants) 
+            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants) 
             VALUES (
                 '{escaped_name}', 
                 '{tournament_type}',
                 '{escaped_format}',
                 'setup', 
-                0, 
-                NULL,
+                0,
+                {swiss_rounds},
+                {top_rounds},
                 {'NULL' if not city else f"'{escaped_city}'"},
                 {str(is_rated).lower()},
                 {judge_id_value},
                 '{participants_array}'::integer[]
             )
-            RETURNING id, name, type, format, status, current_round, max_rounds, created_at, city, is_rated, judge_id, participants
+            RETURNING id, name, type, format, status, current_round, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants
         """)
         
         row = cursor.fetchone()
@@ -132,12 +133,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'format': row[3],
             'status': row[4],
             'current_round': row[5],
-            'max_rounds': row[6],
-            'created_at': row[7].isoformat() if row[7] else None,
-            'city': row[8],
-            'is_rated': row[9],
-            'judge_id': row[10],
-            'participants': row[11] if row[11] else [],
+            'swiss_rounds': row[6],
+            'top_rounds': row[7],
+            'created_at': row[8].isoformat() if row[8] else None,
+            'city': row[9],
+            'is_rated': row[10],
+            'judge_id': row[11],
+            'participants': row[12] if row[12] else [],
             'db_saved': True
         }
         
