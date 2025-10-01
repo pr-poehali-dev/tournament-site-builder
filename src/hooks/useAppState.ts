@@ -1064,36 +1064,47 @@ export const useAppState = () => {
 
     // Determine bracket size based on topRounds (Olympic system)
     const topRounds = tournament.topRounds;
-    const bracketSize = Math.pow(2, topRounds); // 2^topRounds players in first TOP round
+    const bracketSize = Math.pow(2, topRounds); // 2^N players in first TOP round
     
     // Current TOP round number (1-based) - based on the round we're creating
     const topRoundNumber = nextRoundNumber - tournament.swissRounds;
     
     // If this is the first TOP round, create bracket from Swiss standings
     if (topRoundNumber === 1) {
-      // For Olympic system, take exact bracket size based on topRounds
-      // 3 topRounds = TOP-8 (8 players), 2 topRounds = TOP-4 (4 players), etc.
-      const finalBracketSize = Math.min(bracketSize, playerStandings.length);
+      // Number of tables in first TOP round: 2^(N-1) where N is topRounds
+      // For TOP-8 (N=3): 2^2 = 4 tables
+      // For TOP-4 (N=2): 2^1 = 2 tables
+      const numTables = Math.pow(2, topRounds - 1);
       
+      // Take top players for the bracket
+      const finalBracketSize = Math.min(bracketSize, playerStandings.length);
       const topPlayers = playerStandings.slice(0, finalBracketSize);
       
       if (topPlayers.length < 2) {
         return { success: false, error: 'Недостаточно игроков для создания топа' };
       }
 
-      // Olympic system pairing: 1 vs N, 2 vs N-1, 3 vs N-2, etc.
+      // Olympic system pairing formula:
+      // At table K, places K and (2^N - K + 1) play
+      // Example for TOP-8 (N=3):
+      //   Table 1: place 1 vs place 8 (2^3 - 1 + 1 = 8)
+      //   Table 2: place 2 vs place 7 (2^3 - 2 + 1 = 7)
+      //   Table 3: place 3 vs place 6 (2^3 - 3 + 1 = 6)
+      //   Table 4: place 4 vs place 5 (2^3 - 4 + 1 = 5)
       const matches: Match[] = [];
-      let tableNumber = 1;
       
-      for (let i = 0; i < topPlayers.length / 2; i++) {
-        const player1 = topPlayers[i];
-        const player2 = topPlayers[topPlayers.length - 1 - i];
+      for (let tableNum = 1; tableNum <= numTables; tableNum++) {
+        const player1Index = tableNum - 1; // 0-based index for place K
+        const player2Index = bracketSize - tableNum; // 0-based index for place (2^N - K + 1)
+        
+        const player1 = topPlayers[player1Index];
+        const player2 = topPlayers[player2Index];
         
         matches.push({
-          id: `match-${Date.now()}-${tableNumber}`,
+          id: `match-${Date.now()}-${tableNum}`,
           player1Id: player1.player.id,
           player2Id: player2.player.id,
-          tableNumber: tableNumber++,
+          tableNumber: tableNum,
           result: null
         });
       }
