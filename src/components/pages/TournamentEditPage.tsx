@@ -36,6 +36,7 @@ interface TournamentEditPageProps {
   addTournamentRound: (tournamentId: string, round: Round) => void;
   deleteLastRound: (tournamentId: string) => void;
   finishTournament: (tournamentId: string) => void;
+  confirmTournament: (tournamentId: string) => void;
 }
 
 export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
@@ -50,6 +51,7 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
   addTournamentRound,
   deleteLastRound,
   finishTournament,
+  confirmTournament,
 }) => {
   if (!editingTournament) return null;
 
@@ -449,6 +451,18 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
                     Завершить турнир
                   </Button>
                 )}
+              
+              {appState.currentUser?.role === 'admin' && 
+               tournament.status === 'completed' && 
+               !tournament.confirmed && (
+                <Button
+                  onClick={() => confirmTournament(tournament.id)}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Icon name="CheckCircle" size={16} />
+                  Подтвердить турнир
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
