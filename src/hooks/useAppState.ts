@@ -29,6 +29,49 @@ export const useAppState = () => {
     saveStateToLocalStorage(appState);
   }, [appState]);
 
+  // Load tournaments from database on app start
+  useEffect(() => {
+    const loadTournamentsFromDatabase = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const tournamentsFromDb = data.tournaments.map((t: any) => ({
+            id: t.id.toString(),
+            name: t.name,
+            format: t.format || 'sealed',
+            date: t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            city: t.city || '',
+            description: `Турнир по формату ${t.format || 'sealed'}`,
+            isRated: t.is_rated !== false,
+            swissRounds: t.swiss_rounds || 3,
+            topRounds: t.top_rounds || 0,
+            participants: (t.participants || []).map((id: number) => id.toString()),
+            status: t.status || 'draft',
+            currentRound: 0,
+            rounds: [],
+            judgeId: t.judge_id ? t.judge_id.toString() : ''
+          }));
+          
+          console.log('🔄 Загружено турниров из БД:', tournamentsFromDb.length);
+          
+          setAppState(prev => ({
+            ...prev,
+            tournaments: tournamentsFromDb
+          }));
+        }
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить турниры из БД:', error);
+      }
+    };
+
+    loadTournamentsFromDatabase();
+  }, []);
+
   // Navigation functions
   const navigateTo = (page: Page) => {
     console.log('Navigation to:', page);
@@ -784,7 +827,7 @@ export const useAppState = () => {
     // Calculate current standings for each player
     const playerStandings = participants.map(player => {
       let points = 0;
-      let opponents: string[] = [];
+      const opponents: string[] = [];
       let hasByeInTournament = false;
 
       // Go through all completed rounds to calculate points and track opponents
