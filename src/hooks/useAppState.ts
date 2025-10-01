@@ -1228,21 +1228,25 @@ export const useAppState = () => {
         return { success: false, error: 'Недостаточно победителей для следующего раунда' };
       }
       
-      // Classic Olympic bracket pairing:
-      // Winners from adjacent tables play each other (1-2, 3-4, 5-6, 7-8)
+      // Olympic bracket pairing formula for subsequent rounds:
+      // For round N: table K plays winner of pair K vs winner of pair (2^(topRounds - N + 1) - K + 1)
+      // Where pairs are numbered by their table numbers from previous round
       const matches: Match[] = [];
-      let tableNumber = 1;
+      const numTablesInCurrentRound = winners.length / 2;
       
-      // Pair consecutive winners: 1st with 2nd, 3rd with 4th, etc.
-      for (let i = 0; i < winners.length; i += 2) {
-        const player1 = winners[i];
-        const player2 = winners[i + 1];
+      for (let k = 1; k <= numTablesInCurrentRound; k++) {
+        // Calculate opponent pair number using Olympic system formula
+        const opponentPairNum = Math.pow(2, topRounds - topRoundNumber + 1) - k + 1;
+        
+        // Get winners from these pairs (table numbers from previous round)
+        const player1 = winners[k - 1]; // Winner from pair K (0-based index)
+        const player2 = winners[opponentPairNum - 1]; // Winner from opponent pair (0-based index)
         
         matches.push({
-          id: `match-${Date.now()}-${tableNumber}`,
+          id: `match-${Date.now()}-${k}`,
           player1Id: player1.playerId,
           player2Id: player2.playerId,
-          tableNumber: tableNumber++,
+          tableNumber: k,
           result: null
         });
       }
