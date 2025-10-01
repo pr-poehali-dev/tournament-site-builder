@@ -258,7 +258,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
         
         elif method == 'DELETE':
-            # Delete user
+            # Delete user with cascade delete of related records
             query_params = event.get('queryStringParameters') or {}
             user_id = query_params.get('id')
             
@@ -269,14 +269,30 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User ID required'})
                 }
             
-            cursor.execute(f"DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
-            
-            if cursor.rowcount == 0:
+            # First, check if user exists
+            cursor.execute(f"SELECT id FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
+            if not cursor.fetchone():
                 return {
                     'statusCode': 404,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                     'body': json.dumps({'error': 'User not found'})
                 }
+            
+            # Delete related games where user is player1 or player2
+            cursor.execute(f"""
+                DELETE FROM t_p79348767_tournament_site_buil.games 
+                WHERE player1_id = {user_id} OR player2_id = {user_id};
+            """)
+            
+            # Remove user from tournament participants arrays
+            cursor.execute(f"""
+                UPDATE t_p79348767_tournament_site_buil.tournaments
+                SET participants = array_remove(participants, {user_id})
+                WHERE {user_id} = ANY(participants);
+            """)
+            
+            # Finally, delete the user
+            cursor.execute(f"DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
             
             conn.commit()
             
