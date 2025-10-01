@@ -130,7 +130,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
               </Button>
             )}
 
-          {tournament.rounds && tournament.rounds.length > 0 && (
+          {tournament.rounds && tournament.rounds.length > 0 && !tournament.confirmed && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
