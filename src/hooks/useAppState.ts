@@ -42,6 +42,7 @@ export const useAppState = () => {
           const data = await response.json();
           const tournamentsFromDb = data.tournaments.map((t: any) => ({
             id: t.id.toString(),
+            dbId: t.id,
             name: t.name,
             format: t.format || 'sealed',
             date: t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -396,30 +397,43 @@ export const useAppState = () => {
 
   // Specific tournament operations
   const addTournamentRound = useCallback(async (tournamentId: string, newRound: Round) => {
+    // Find tournament to get dbId
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    
     // Save pairings to database
-    try {
-      const pairings = newRound.matches.map(match => ({
-        player1_id: parseInt(match.player1Id),
-        player2_id: match.player2Id ? parseInt(match.player2Id) : null
-      }));
-      
-      const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tournament_id: parseInt(tournamentId),
+    if (tournament?.dbId) {
+      try {
+        const pairings = newRound.matches.map(match => ({
+          player1_id: parseInt(match.player1Id),
+          player2_id: match.player2Id ? parseInt(match.player2Id) : null
+        }));
+        
+        console.log('📤 Сохранение пар в БД:', {
+          tournament_id: tournament.dbId,
           round_number: newRound.number,
           pairings
-        })
-      });
-      
-      if (response.ok) {
-        console.log('✅ Пары сохранены в БД');
-      } else {
-        console.error('❌ Ошибка сохранения пар в БД:', await response.text());
+        });
+        
+        const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournament_id: tournament.dbId,
+            round_number: newRound.number,
+            pairings
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Пары сохранены в БД');
+        } else {
+          console.error('❌ Ошибка сохранения пар в БД:', await response.text());
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при сохранении пар:', error);
       }
-    } catch (error) {
-      console.error('❌ Ошибка подключения к БД при сохранении пар:', error);
+    } else {
+      console.warn('⚠️ Турнир не имеет dbId, пары не сохранены в БД');
     }
     
     // Update local state
@@ -436,7 +450,7 @@ export const useAppState = () => {
           : t
       )
     }));
-  }, []);
+  }, [appState.tournaments]);
 
   const updateMatchResult = useCallback(async (tournamentId: string, roundId: string, matchId: string, result: 'win1' | 'win2' | 'draw') => {
     let points1 = 0, points2 = 0;
@@ -461,10 +475,10 @@ export const useAppState = () => {
     const round = tournament?.rounds?.find(r => r.id === roundId);
     const match = round?.matches?.find(m => m.id === matchId);
     
-    if (tournament && round && match) {
+    if (tournament?.dbId && round && match) {
       try {
         // Get games from database to find game_id
-        const gamesResponse = await fetch(`https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournamentId}`);
+        const gamesResponse = await fetch(`https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournament.dbId}`);
         
         if (gamesResponse.ok) {
           const gamesData = await gamesResponse.json();

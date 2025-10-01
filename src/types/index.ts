@@ -40,6 +40,7 @@ export interface Round {
 
 export interface Tournament {
   id: string;
+  dbId?: number; // ID из базы данных
   name: string;
   date: string;
   city: string;

@@ -173,6 +173,12 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Турнир сохранён в БД:', data);
+          
+          // Обновляем турнир с dbId из БД
+          if (data.tournament?.id) {
+            tournament.dbId = data.tournament.id;
+          }
+          
           alert('Турнир успешно создан и сохранён в базе данных!');
         } else {
           const errorData = await response.json();
