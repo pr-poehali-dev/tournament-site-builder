@@ -977,21 +977,63 @@ export const useAppState = () => {
       };
     });
 
-    // Sort by points (descending)
-    playerStandings.sort((a, b) => b.points - a.points);
+    // Check if odd number of players - assign bye first
+    let byePlayerId: string | null = null;
+    if (playerStandings.length % 2 === 1) {
+      // Sort by points to find bye candidate (lowest points, no previous bye)
+      const sortedForBye = [...playerStandings].sort((a, b) => a.points - b.points);
+      
+      // Try to find player without bye
+      const byeCandidate = sortedForBye.find(p => !p.hasByeInTournament);
+      
+      if (byeCandidate) {
+        byePlayerId = byeCandidate.player.id;
+      } else {
+        // All had byes, give to lowest points
+        byePlayerId = sortedForBye[0].player.id;
+      }
+    }
+
+    // For round 1: random shuffle
+    // For other rounds: sort by points (descending) for Swiss pairing
+    if (tournament.currentRound === 0) {
+      // First round - random shuffle
+      for (let i = playerStandings.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [playerStandings[i], playerStandings[j]] = [playerStandings[j], playerStandings[i]];
+      }
+    } else {
+      // Subsequent rounds - sort by points descending (Buchholz ignored)
+      playerStandings.sort((a, b) => b.points - a.points);
+    }
 
     const matches: Match[] = [];
     const paired = new Set<string>();
     let tableNumber = 1;
 
-    // Try to pair players starting from highest points
+    // First, add bye match if needed
+    if (byePlayerId) {
+      const byeMatch: Match = {
+        id: `match-${Date.now()}-bye`,
+        player1Id: byePlayerId,
+        player2Id: undefined,
+        points1: 3,
+        points2: 0,
+        tableNumber: undefined,
+        result: 'win1'
+      };
+      matches.push(byeMatch);
+      paired.add(byePlayerId);
+    }
+
+    // Pair remaining players
     for (let i = 0; i < playerStandings.length; i++) {
       if (paired.has(playerStandings[i].player.id)) continue;
 
       const player1Standing = playerStandings[i];
       let foundOpponent = false;
 
-      // Look for an opponent with similar points who hasn't played against this player
+      // Look for an opponent who hasn't played against this player
       for (let j = i + 1; j < playerStandings.length; j++) {
         if (paired.has(playerStandings[j].player.id)) continue;
 
@@ -1017,29 +1059,27 @@ export const useAppState = () => {
         }
       }
 
-      // If no opponent found and this player isn't paired, they might get a bye
+      // If no valid opponent found (all have played against this player)
       if (!foundOpponent && !paired.has(player1Standing.player.id)) {
-        // Check if there's exactly one unpaired player left (this one)
-        const unpairedCount = playerStandings.filter(p => !paired.has(p.player.id)).length;
-        if (unpairedCount === 1) {
-          // Give bye to the player with lowest points who hasn't had bye yet
-          const unpairedPlayers = playerStandings.filter(p => !paired.has(p.player.id));
-          const byeCandidate = unpairedPlayers
-            .filter(p => !p.hasByeInTournament)
-            .sort((a, b) => a.points - b.points)[0] || unpairedPlayers[0];
+        // Pair with anyone unpaired, even if they played before
+        for (let j = i + 1; j < playerStandings.length; j++) {
+          if (paired.has(playerStandings[j].player.id)) continue;
 
-          const byeMatch: Match = {
-            id: `match-${Date.now()}-bye`,
-            player1Id: byeCandidate.player.id,
-            player2Id: undefined,
-            points1: 3,
+          const player2Standing = playerStandings[j];
+          
+          const match: Match = {
+            id: `match-${Date.now()}-${tableNumber}`,
+            player1Id: player1Standing.player.id,
+            player2Id: player2Standing.player.id,
+            points1: 0,
             points2: 0,
-            tableNumber: undefined,
-            result: 'win1'
+            tableNumber: tableNumber++
           };
           
-          matches.push(byeMatch);
-          paired.add(byeCandidate.player.id);
+          matches.push(match);
+          paired.add(player1Standing.player.id);
+          paired.add(player2Standing.player.id);
+          break;
         }
       }
     }
