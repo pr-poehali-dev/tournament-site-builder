@@ -221,7 +221,7 @@ export const useAppState = () => {
       id: user.id.toString(),
       name: user.name,
       city: user.city || '',
-      rating: 1200, // Начальный рейтинг для новых игроков
+      rating: user.rating || 1200, // Используем рейтинг из БД или 1200 по умолчанию
       tournaments: 0,
       wins: 0,
       losses: 0,

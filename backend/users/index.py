@@ -42,7 +42,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         if method == 'GET':
             # Get all users
             cursor.execute("""
-                SELECT id, username, name, role, city, is_active, created_at
+                SELECT id, username, name, role, city, is_active, created_at, rating
                 FROM t_p79348767_tournament_site_buil.users
                 ORDER BY created_at DESC
             """)
@@ -56,7 +56,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'role': row[3],
                     'city': row[4],
                     'is_active': row[5],
-                    'created_at': row[6].isoformat() if row[6] else None
+                    'created_at': row[6].isoformat() if row[6] else None,
+                    'rating': row[7]
                 })
             
             return {
@@ -100,13 +101,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 cursor.execute(f"""
                     INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
                     VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', '{city_escaped}', true)
-                    RETURNING id, username, name, role, city, is_active, created_at;
+                    RETURNING id, username, name, role, city, is_active, created_at, rating;
                 """)
             else:
                 cursor.execute(f"""
                     INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
                     VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', NULL, true)
-                    RETURNING id, username, name, role, city, is_active, created_at;
+                    RETURNING id, username, name, role, city, is_active, created_at, rating;
                 """)
             
             row = cursor.fetchone()
@@ -119,7 +120,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'role': row[3],
                 'city': row[4],
                 'is_active': row[5],
-                'created_at': row[6].isoformat() if row[6] else None
+                'created_at': row[6].isoformat() if row[6] else None,
+                'rating': row[7]
             }
             
             return {

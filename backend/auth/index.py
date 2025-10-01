@@ -71,7 +71,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         cursor.execute(f"""
-            SELECT id, username, name, role, city, is_active, password
+            SELECT id, username, name, role, city, is_active, password, rating
             FROM t_p79348767_tournament_site_buil.users
             WHERE username = '{username}'
         """)
@@ -91,7 +91,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'error': 'Invalid credentials'})
             }
         
-        user_id, db_username, name, role, city, is_active, db_password = row
+        user_id, db_username, name, role, city, is_active, db_password, rating = row
         
         if not is_active:
             return {
@@ -131,7 +131,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'name': name,
                     'role': role,
                     'city': city,
-                    'isActive': is_active
+                    'isActive': is_active,
+                    'rating': rating
                 }
             })
         }
