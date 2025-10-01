@@ -27,10 +27,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Icon from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
-import BackendApiTest from "@/components/debug/BackendApiTest";
 
 interface LocalUser {
   id: number;
@@ -428,41 +426,7 @@ export const SimpleAdminPage: React.FC = () => {
         </AlertDialog>
       </div>
 
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Icon name="Users" size={16} />
-            Пользователи
-          </TabsTrigger>
-          <TabsTrigger value="debug" className="flex items-center gap-2">
-            <Icon name="Bug" size={16} />
-            API Тест
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="users" className="mt-6">
-          <UserManagement />
-        </TabsContent>
-        
-        <TabsContent value="debug" className="mt-6">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="Database" size={20} />
-                  Backend API Testing
-                </CardTitle>
-                <CardDescription>
-                  Тестирование подключения к базе данных PostgreSQL через Cloud Function
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BackendApiTest />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+      <UserManagement />
     </div>
   );
 };
