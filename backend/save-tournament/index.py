@@ -52,10 +52,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         judge_id = tournament_data.get('judgeId')
         participants = tournament_data.get('participants', [])
         
-        # Determine tournament type based on rounds structure
-        # If has TOP rounds - type is 'top', otherwise 'swiss'
-        tournament_type = 'top' if top_rounds > 0 else 'swiss'
-        
         if not name:
             return {
                 'statusCode': 400,
@@ -103,23 +99,26 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         else:
             judge_id_value = 'NULL'
         
+        # Temporary: set type based on top_rounds until column is removed
+        tournament_type = 'top' if top_rounds and top_rounds > 0 else 'swiss'
+        
         cursor.execute(f"""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
             (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants) 
             VALUES (
-                '{escaped_name}', 
+                '{escaped_name}',
                 '{tournament_type}',
                 '{escaped_format}',
-                'setup', 
+                'setup',
                 0,
                 {swiss_rounds},
-                {top_rounds},
+                {top_rounds if top_rounds else 'NULL'},
                 {'NULL' if not city else f"'{escaped_city}'"},
                 {str(is_rated).lower()},
                 {judge_id_value},
                 '{participants_array}'::integer[]
             )
-            RETURNING id, name, type, format, status, current_round, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants
+            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants
         """)
         
         row = cursor.fetchone()
@@ -129,17 +128,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         saved_tournament = {
             'id': row[0],
             'name': row[1],
-            'type': row[2],
-            'format': row[3],
-            'status': row[4],
-            'current_round': row[5],
-            'swiss_rounds': row[6],
-            'top_rounds': row[7],
-            'created_at': row[8].isoformat() if row[8] else None,
-            'city': row[9],
-            'is_rated': row[10],
-            'judge_id': row[11],
-            'participants': row[12] if row[12] else [],
+            'format': row[2],
+            'status': row[3],
+            'swiss_rounds': row[4],
+            'top_rounds': row[5],
+            'created_at': row[6].isoformat() if row[6] else None,
+            'city': row[7],
+            'is_rated': row[8],
+            'judge_id': row[9],
+            'participants': row[10] if row[10] else [],
             'db_saved': True
         }
         

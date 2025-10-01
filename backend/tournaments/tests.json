@@ -15,14 +15,12 @@
       "method": "POST",
       "path": "/",
       "body": {
-        "name": "Test Tournament",
-        "type": "top"
+        "name": "Test Tournament"
       },
       "expectedStatus": 201,
       "expectedBody": {
         "tournament": {
           "name": "Test Tournament",
-          "type": "top",
           "status": "setup"
         }
       },
