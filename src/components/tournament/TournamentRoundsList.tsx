@@ -38,7 +38,15 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
             </div>
 
             <div className="space-y-2">
-              {round.matches.map((match) => {
+              {round.matches
+                .sort((a, b) => {
+                  // БАЙ в конец
+                  if (!a.player2Id) return 1;
+                  if (!b.player2Id) return -1;
+                  // Остальные по номеру стола
+                  return (a.tableNumber || 0) - (b.tableNumber || 0);
+                })
+                .map((match) => {
                 const player1 = appState.users.find((u) => u.id === match.player1Id);
                 const player2 = match.player2Id
                   ? appState.users.find((u) => u.id === match.player2Id)
@@ -51,7 +59,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                   >
                     <div className="flex items-center gap-4">
                       <div className="font-medium">
-                        Стол {match.tableNumber || "БАЙ"}
+                        {match.player2Id ? `Стол ${match.tableNumber}` : "—"}
                       </div>
                       <div className="flex items-center gap-2">
                         <span>{player1?.name || "Неизвестный игрок"}</span>
