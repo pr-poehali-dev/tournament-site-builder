@@ -91,13 +91,15 @@ export const UsersList: React.FC<UsersListProps> = ({
                   </td>
                   <td className="p-2">
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleUserStatus(user.id)}
-                      >
-                        {user.isActive ? "Заблокировать" : "Разблокировать"}
-                      </Button>
+                      {!(user.role === "admin" && appState.currentUser?.role === "admin") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleUserStatus(user.id)}
+                        >
+                          {user.isActive ? "Заблокировать" : "Разблокировать"}
+                        </Button>
+                      )}
                       {user.id !== appState.currentUser?.id && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
