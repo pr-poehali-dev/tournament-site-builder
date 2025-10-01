@@ -42,14 +42,7 @@ interface LocalUser {
   created_at: string;
 }
 
-interface LocalTournament {
-  id: number;
-  name: string;
-  type: 'top' | 'swiss';
-  status: 'setup' | 'active' | 'completed';
-  created_at: string;
-  players: string[];
-}
+
 
 const CITIES = [
   "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
@@ -87,27 +80,13 @@ const getDefaultUsers = (): LocalUser[] => [
   }
 ];
 
-const getDefaultTournaments = (): LocalTournament[] => [
-  {
-    id: 1,
-    name: "Тестовый турнир",
-    type: "top",
-    status: "setup",
-    created_at: new Date().toISOString(),
-    players: []
-  }
-];
+
 
 export const SimpleAdminPage: React.FC = () => {
   const [users, setUsers] = useState<LocalUser[]>(() => 
     loadFromLocalStorage('admin_users', getDefaultUsers())
   );
 
-  const [tournaments, setTournaments] = useState<LocalTournament[]>(() => 
-    loadFromLocalStorage('admin_tournaments', getDefaultTournaments())
-  );
-
-  const [selectedTournament, setSelectedTournament] = useState<LocalTournament | null>(null);
   const [error, setError] = useState<string>("");
 
   // Auto-save to localStorage when data changes
@@ -115,21 +94,12 @@ export const SimpleAdminPage: React.FC = () => {
     saveToLocalStorage('admin_users', users);
   }, [users]);
 
-  useEffect(() => {
-    saveToLocalStorage('admin_tournaments', tournaments);
-  }, [tournaments]);
-
   // Form states для пользователей
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState<'admin' | 'judge' | 'player'>('player');
   const [newCity, setNewCity] = useState("none");
-
-  // Form states для турниров
-  const [newTournamentName, setNewTournamentName] = useState("");
-  const [newTournamentType, setNewTournamentType] = useState<'top' | 'swiss'>('top');
-  const [newPlayerName, setNewPlayerName] = useState("");
 
   const createUser = async () => {
     if (!newUsername.trim() || !newPassword.trim() || !newName.trim()) {
@@ -226,45 +196,6 @@ export const SimpleAdminPage: React.FC = () => {
 
   const deleteUser = (userId: number) => {
     setUsers(users.filter(user => user.id !== userId));
-  };
-
-  const createTournament = () => {
-    if (!newTournamentName.trim()) {
-      setError("Введите название турнира");
-      return;
-    }
-
-    const newTournament: LocalTournament = {
-      id: Math.max(...tournaments.map(t => t.id), 0) + 1,
-      name: newTournamentName,
-      type: newTournamentType,
-      status: 'setup',
-      created_at: new Date().toISOString(),
-      players: []
-    };
-
-    setTournaments([newTournament, ...tournaments]);
-    setNewTournamentName("");
-    setError("");
-  };
-
-  const addPlayer = () => {
-    if (!selectedTournament || !newPlayerName.trim()) {
-      setError("Выберите турнир и введите имя игрока");
-      return;
-    }
-
-    const updatedTournament = {
-      ...selectedTournament,
-      players: [...selectedTournament.players, newPlayerName]
-    };
-
-    setTournaments(tournaments.map(t => 
-      t.id === selectedTournament.id ? updatedTournament : t
-    ));
-    setSelectedTournament(updatedTournament);
-    setNewPlayerName("");
-    setError("");
   };
 
   const UserManagement = () => (
@@ -453,130 +384,12 @@ export const SimpleAdminPage: React.FC = () => {
     </div>
   );
 
-  const TournamentManagement = () => (
-    <div className="space-y-6">
-      {/* Create Tournament */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Icon name="Plus" size={20} />
-            Создать турнир
-          </CardTitle>
-          <CardDescription>
-            Все турниры и игроки сохраняются в localStorage браузера
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <Label>Название турнира</Label>
-              <Input
-                value={newTournamentName}
-                onChange={(e) => setNewTournamentName(e.target.value)}
-                placeholder="Введите название..."
-              />
-            </div>
-            <div>
-              <Label>Тип</Label>
-              <Select value={newTournamentType} onValueChange={(value: 'top' | 'swiss') => setNewTournamentType(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="top">TOP</SelectItem>
-                  <SelectItem value="swiss">Swiss</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={createTournament}>
-              Создать
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Tournament List & Management */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Турниры ({tournaments.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {tournaments.map((tournament) => (
-                <div 
-                  key={tournament.id}
-                  className={`border rounded p-3 cursor-pointer transition-colors ${
-                    selectedTournament?.id === tournament.id 
-                      ? 'border-primary bg-primary/5' 
-                      : 'hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedTournament(tournament)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium">{tournament.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {new Date(tournament.created_at).toLocaleDateString('ru-RU')}
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Badge variant={tournament.type === 'top' ? 'default' : 'secondary'}>
-                        {tournament.type.toUpperCase()}
-                      </Badge>
-                      <Badge variant="outline">{tournament.status}</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {selectedTournament && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Добавить игрока</CardTitle>
-              <CardDescription>В турнир "{selectedTournament.name}"</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-4">
-                <Input
-                  value={newPlayerName}
-                  onChange={(e) => setNewPlayerName(e.target.value)}
-                  placeholder="Имя игрока..."
-                  className="flex-1"
-                />
-                <Button onClick={addPlayer}>
-                  Добавить
-                </Button>
-              </div>
-              {selectedTournament.players.length > 0 && (
-                <div>
-                  <h5 className="font-medium mb-2">Игроки ({selectedTournament.players.length}):</h5>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {selectedTournament.players.map((player, idx) => (
-                      <div key={idx} className="flex justify-between text-sm p-1 hover:bg-gray-50 rounded">
-                        <span>{idx + 1}. {player}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
 
   const clearAllData = () => {
     setUsers(getDefaultUsers());
-    setTournaments(getDefaultTournaments());
-    setSelectedTournament(null);
     setError("");
     localStorage.removeItem('admin_users');
-    localStorage.removeItem('admin_tournaments');
   };
 
   return (
@@ -601,7 +414,7 @@ export const SimpleAdminPage: React.FC = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Сбросить все данные</AlertDialogTitle>
               <AlertDialogDescription>
-                Вы уверены, что хотите удалить все пользователей и турниры? 
+                Вы уверены, что хотите удалить всех пользователей? 
                 Останутся только тестовые данные. Это действие необратимо.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -616,14 +429,10 @@ export const SimpleAdminPage: React.FC = () => {
       </div>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Icon name="Users" size={16} />
             Пользователи
-          </TabsTrigger>
-          <TabsTrigger value="tournaments" className="flex items-center gap-2">
-            <Icon name="Trophy" size={16} />
-            Турниры
           </TabsTrigger>
           <TabsTrigger value="debug" className="flex items-center gap-2">
             <Icon name="Bug" size={16} />
@@ -633,10 +442,6 @@ export const SimpleAdminPage: React.FC = () => {
         
         <TabsContent value="users" className="mt-6">
           <UserManagement />
-        </TabsContent>
-        
-        <TabsContent value="tournaments" className="mt-6">
-          <TournamentManagement />
         </TabsContent>
         
         <TabsContent value="debug" className="mt-6">
