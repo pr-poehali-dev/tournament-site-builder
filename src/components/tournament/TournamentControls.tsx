@@ -109,7 +109,8 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
 
           {tournament.rounds &&
             tournament.rounds.length > 0 &&
-            !tournament.rounds[tournament.rounds.length - 1]?.isCompleted && (
+            !tournament.rounds[tournament.rounds.length - 1]?.isCompleted &&
+            !tournament.confirmed && (
               <Button
                 variant="outline"
                 onClick={() => {
