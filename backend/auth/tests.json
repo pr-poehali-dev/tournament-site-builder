@@ -5,7 +5,7 @@
       "method": "POST",
       "body": {
         "username": "admin",
-        "password": "admin"
+        "password": "1qaz@WSX3edc"
       },
       "expectedStatus": 200,
       "expectedBody": {

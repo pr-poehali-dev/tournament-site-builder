@@ -5,10 +5,10 @@ from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Save tournament to database
+    Business: Save tournament data to PostgreSQL database
     Args: event - dict with httpMethod, body containing tournament data
           context - execution context
-    Returns: HTTP response dict
+    Returns: HTTP response dict with created tournament
     '''
     method = event.get('httpMethod', 'POST')
     

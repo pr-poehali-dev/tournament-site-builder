@@ -1,11 +1,12 @@
 import json
 import os
 import psycopg2
+import bcrypt
 from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: User authentication endpoint
+    Business: User authentication with bcrypt hashing (v2)
     Args: event - dict with httpMethod, body containing username and password
           context - object with attributes: request_id, function_name
     Returns: HTTP response with user data if credentials are valid
@@ -104,7 +105,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'error': 'User is blocked'})
             }
         
-        if db_password != password:
+        # Verify password using bcrypt
+        password_bytes = password.encode('utf-8')
+        db_password_bytes = db_password.encode('utf-8')
+        
+        if not bcrypt.checkpw(password_bytes, db_password_bytes):
             return {
                 'statusCode': 401,
                 'headers': {
