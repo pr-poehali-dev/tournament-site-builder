@@ -120,13 +120,34 @@ export const useAppState = () => {
     }));
   };
 
-  const deleteUser = (userId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      users: prev.users.filter(user => user.id !== userId),
-      // Также удаляем связанного игрока, если он существует
-      players: prev.players.filter(player => player.id !== `player-${userId}`)
-    }));
+  const deleteUser = async (userId: string) => {
+    try {
+      // Удаляем пользователя из БД через backend API
+      const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      // Обновляем локальное состояние только после успешного удаления из БД
+      setAppState(prev => ({
+        ...prev,
+        users: prev.users.filter(user => user.id !== userId),
+        // Также удаляем связанного игрока, если он существует
+        players: prev.players.filter(player => player.id !== userId)
+      }));
+
+      console.log('✅ Пользователь успешно удалён из БД:', userId);
+    } catch (error) {
+      console.error('❌ Ошибка удаления пользователя из БД:', error);
+      alert(`Ошибка удаления пользователя: ${error.message}`);
+    }
   };
 
   const addUser = async (user: User) => {
