@@ -136,11 +136,20 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 if not player1_id:
                     continue
                 
+                # For BYE matches (player2_id is null), use player1_id as player2_id
+                # and set result to 'win1' to indicate BYE
+                if not player2_id:
+                    result_value = "'win1'"
+                    player2_value = player1_id
+                else:
+                    result_value = 'NULL'
+                    player2_value = player2_id
+                
                 # Insert game
                 cursor.execute(f"""
                     INSERT INTO t_p79348767_tournament_site_buil.games 
                     (tournament_id, round_number, player1_id, player2_id, result)
-                    VALUES ({tournament_id}, {round_number}, {player1_id}, {player2_id if player2_id else 'NULL'}, NULL)
+                    VALUES ({tournament_id}, {round_number}, {player1_id}, {player2_value}, {result_value})
                     RETURNING id, tournament_id, round_number, player1_id, player2_id, result, created_at
                 """)
                 
