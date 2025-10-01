@@ -20,7 +20,7 @@ import { useAppState } from "@/hooks/useAppState";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { LoginForm } from "@/components/shared/LoginForm";
 import { RatingPage } from "@/components/pages/RatingPage";
-import { SimpleAdminPage } from "@/components/pages/SimpleAdminPage";
+import { CombinedAdminPage } from "@/components/pages/CombinedAdminPage";
 import { ProfilePage } from "@/components/pages/ProfilePage";
 import { TournamentsPage } from "@/components/pages/TournamentsPage";
 import { MyTournamentsPage } from "@/components/pages/MyTournamentsPage";
@@ -328,7 +328,14 @@ const Index = () => {
         )}
 
         {appState.currentPage === "admin" && (
-          <SimpleAdminPage />
+          <CombinedAdminPage
+            appState={appState}
+            toggleUserStatus={toggleUserStatus}
+            deleteUser={deleteUser}
+            addUser={addUser}
+            addPlayer={addPlayer}
+            resetToInitialState={resetToInitialState}
+          />
         )}
 
         {appState.currentPage === "profile" && (
