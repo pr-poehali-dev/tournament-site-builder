@@ -7,7 +7,6 @@ import Icon from '@/components/ui/icon';
 import { SimplePlayerSearch } from '@/components/ui/simple-player-search';
 import { SimpleJudgeSearch } from '@/components/ui/simple-judge-search';
 import type { AppState, Tournament, Page } from '@/types';
-import { saveTournamentToDatabase } from '@/utils/database';
 
 interface TournamentForm {
   name: string;
@@ -146,16 +145,35 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       // Сначала сохраняем локально
       const result = await addTournament(tournament);
       
-      // Попробуем сохранить в БД напрямую
+      // Попробуем сохранить в БД через backend функцию
       try {
-        const dbSuccess = await saveTournamentToDatabase(tournament);
-        if (dbSuccess) {
+        const response = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: tournament.name,
+            format: tournament.format,
+            city: tournament.city,
+            date: tournament.date,
+            swissRounds: tournament.swissRounds,
+            topRounds: tournament.topRounds,
+            participants: tournament.participants
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Турнир сохранён в БД:', data);
           alert('Турнир успешно создан и сохранён в базе данных!');
         } else {
-          alert('Турнир создан локально. База данных временно недоступна.');
+          const errorData = await response.json();
+          console.error('❌ Ошибка сохранения в БД:', errorData);
+          alert('Турнир создан локально. Ошибка сохранения в БД: ' + (errorData.error || 'неизвестная ошибка'));
         }
       } catch (dbError) {
-        console.error('DB Error:', dbError);
+        console.error('❌ Ошибка подключения к БД:', dbError);
         alert('Турнир создан локально. База данных временно недоступна.');
       }
       
@@ -179,18 +197,6 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       startEditTournament(tournament);
     } catch (error) {
       alert(`Ошибка при создании турнира: ${error.message}`);
-    }
-    
-    async function saveTournamentToDatabase(tournament: Tournament) {
-      // Используем SQL миграцию для прямой записи в БД
-      const sql = `
-        INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-        (name, type, status, current_round, max_rounds) 
-        VALUES ('${tournament.name.replace(/'/g, "''")}', '${tournament.format}', 'setup', 0, NULL);
-      `;
-      
-      // Здесь могла бы быть интеграция с migrate_db tool, но пока оставим как mock
-      throw new Error('Database integration not available');
     }
   };
 

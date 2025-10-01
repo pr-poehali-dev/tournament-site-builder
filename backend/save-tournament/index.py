@@ -46,6 +46,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         tournament_format = tournament_data.get('format', 'sealed')
         city = tournament_data.get('city', '')
         date = tournament_data.get('date', '')
+        swiss_rounds = tournament_data.get('swissRounds', 3)
+        top_rounds = tournament_data.get('topRounds', 0)
+        
+        # Determine tournament type based on rounds structure
+        # If has TOP rounds - type is 'top', otherwise 'swiss'
+        tournament_type = 'top' if top_rounds > 0 else 'swiss'
         
         if not name:
             return {
@@ -75,13 +81,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
         
-        # Insert tournament into database
-        cursor.execute("""
+        # Insert tournament into database (using simple query protocol)
+        escaped_name = name.replace("'", "''")
+        
+        cursor.execute(f"""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
             (name, type, status, current_round, max_rounds) 
-            VALUES (%s, %s, 'setup', 0, NULL)
+            VALUES ('{escaped_name}', '{tournament_type}', 'setup', 0, NULL)
             RETURNING id, name, type, status, current_round, max_rounds, created_at
-        """, (name, tournament_format))
+        """)
         
         row = cursor.fetchone()
         conn.commit()
