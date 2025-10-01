@@ -148,20 +148,26 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       
       // Попробуем сохранить в БД через backend функцию
       try {
+        const requestBody = {
+          name: tournament.name,
+          format: tournament.format,
+          city: tournament.city,
+          date: tournament.date,
+          swissRounds: tournament.swissRounds,
+          topRounds: tournament.topRounds,
+          isRated: tournament.isRated,
+          judgeId: tournamentForm.judgeId || tournament.judgeId,
+          participants: tournament.participants
+        };
+        
+        console.log('📤 Отправка турнира в БД:', requestBody);
+        
         const response = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            name: tournament.name,
-            format: tournament.format,
-            city: tournament.city,
-            date: tournament.date,
-            swissRounds: tournament.swissRounds,
-            topRounds: tournament.topRounds,
-            participants: tournament.participants
-          })
+          body: JSON.stringify(requestBody)
         });
         
         if (response.ok) {
