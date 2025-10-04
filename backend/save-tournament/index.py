@@ -18,7 +18,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'POST, PUT, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -26,7 +26,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': ''
         }
     
-    if method != 'POST':
+    if method not in ['POST', 'PUT']:
         return {
             'statusCode': 405,
             'headers': {
@@ -34,7 +34,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Access-Control-Allow-Origin': '*'
             },
             'isBase64Encoded': False,
-            'body': json.dumps({'error': 'Only POST method allowed'})
+            'body': json.dumps({'error': 'Only POST and PUT methods allowed'})
         }
     
     try:
@@ -42,6 +42,80 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         body = event.get('body', '{}')
         tournament_data = json.loads(body)
         
+        # Handle PUT request for status update
+        if method == 'PUT':
+            tournament_id = tournament_data.get('id')
+            status = tournament_data.get('status')
+            
+            if not tournament_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Tournament ID is required'})
+                }
+            
+            # Get database connection
+            database_url = os.environ.get('DATABASE_URL')
+            if not database_url:
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Database connection not configured'})
+                }
+            
+            # Connect to database
+            conn = psycopg2.connect(database_url)
+            cursor = conn.cursor()
+            
+            # Update tournament status
+            cursor.execute(f"""
+                UPDATE t_p79348767_tournament_site_buil.tournaments 
+                SET status = '{status}'
+                WHERE id = {tournament_id}
+                RETURNING id, status
+            """)
+            
+            row = cursor.fetchone()
+            conn.commit()
+            
+            if not row:
+                cursor.close()
+                conn.close()
+                return {
+                    'statusCode': 404,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Tournament not found'})
+                }
+            
+            cursor.close()
+            conn.close()
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({
+                    'success': True,
+                    'tournament': {'id': row[0], 'status': row[1]}
+                })
+            }
+        
+        # Handle POST request for creating tournament
         name = tournament_data.get('name', '').strip()
         tournament_format = tournament_data.get('format', 'sealed')
         city = tournament_data.get('city', '')

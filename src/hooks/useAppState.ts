@@ -1018,7 +1018,7 @@ export const useAppState = () => {
     // Update tournament status to confirmed in database
     if (tournament.dbId) {
       try {
-        const confirmResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
+        const confirmResponse = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1029,6 +1029,15 @@ export const useAppState = () => {
         
         if (confirmResponse.ok) {
           console.log('✅ Турнир подтверждён в БД (status = confirmed)');
+          
+          // Reload tournaments from DB to sync status
+          const tournamentsResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45');
+          const tournamentsData = await tournamentsResponse.json();
+          
+          if (tournamentsData?.tournaments) {
+            syncDbTournaments(tournamentsData.tournaments);
+            console.log('✅ Турниры синхронизированы с БД после подтверждения');
+          }
         } else {
           console.error('❌ Ошибка подтверждения турнира в БД');
         }
