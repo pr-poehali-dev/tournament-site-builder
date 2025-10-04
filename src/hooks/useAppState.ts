@@ -389,41 +389,143 @@ export const useAppState = () => {
     loadUsersFromDatabase();
   }, [syncDbUsersToPlayers]); // Зависимость от функции синхронизации
 
-  // City management functions
-  const addCity = useCallback((city: City) => {
-    setAppState(prev => ({
-      ...prev,
-      cities: [...prev.cities, city]
-    }));
+  // Load cities from database on app start
+  useEffect(() => {
+    const loadCitiesFromDatabase = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const citiesFromDb = data.cities.map((c: any) => ({
+            id: c.id.toString(),
+            name: c.name
+          }));
+          
+          console.log('🔄 Загружено городов из БД:', citiesFromDb.length);
+          
+          setAppState(prev => ({
+            ...prev,
+            cities: citiesFromDb
+          }));
+        }
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить города из БД:', error);
+      }
+    };
+
+    loadCitiesFromDatabase();
   }, []);
 
-  const deleteCity = (cityId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      cities: prev.cities.filter(c => c.id !== cityId)
-    }));
+  // City management functions
+  const addCity = useCallback(async (city: City) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: city.name })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newCity: City = {
+          id: data.id.toString(),
+          name: data.name
+        };
+        
+        setAppState(prev => ({
+          ...prev,
+          cities: [...prev.cities, newCity]
+        }));
+        
+        toast({
+          title: "Город добавлен",
+          description: `Город "${newCity.name}" успешно добавлен`
+        });
+      }
+    } catch (error) {
+      console.error('Error adding city:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить город",
+        variant: "destructive"
+      });
+    }
+  }, []);
+
+  const deleteCity = async (cityId: string) => {
+    try {
+      const response = await fetch(`https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64?id=${cityId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        setAppState(prev => ({
+          ...prev,
+          cities: prev.cities.filter(c => c.id !== cityId)
+        }));
+        
+        toast({
+          title: "Город удалён",
+          description: "Город успешно удалён"
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить город",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updateCity = (cityId: string, updates: Partial<City>) => {
+  const updateCity = async (cityId: string, updates: Partial<City>) => {
     const oldCity = appState.cities.find(c => c.id === cityId);
     const oldName = oldCity?.name;
     const newName = updates.name;
 
-    setAppState(prev => ({
-      ...prev,
-      cities: prev.cities.map(city =>
-        city.id === cityId ? { ...city, ...updates } : city
-      ),
-      // Обновляем название города у всех игроков и пользователей
-      ...(oldName && newName && oldName !== newName ? {
-        players: prev.players.map(player =>
-          player.city === oldName ? { ...player, city: newName } : player
-        ),
-        users: prev.users.map(user =>
-          user.city === oldName ? { ...user, city: newName } : user
-        )
-      } : {})
-    }));
+    try {
+      const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: cityId, name: newName })
+      });
+
+      if (response.ok) {
+        setAppState(prev => ({
+          ...prev,
+          cities: prev.cities.map(city =>
+            city.id === cityId ? { ...city, ...updates } : city
+          ),
+          // Обновляем название города у всех игроков и пользователей
+          ...(oldName && newName && oldName !== newName ? {
+            players: prev.players.map(player =>
+              player.city === oldName ? { ...player, city: newName } : player
+            ),
+            users: prev.users.map(user =>
+              user.city === oldName ? { ...user, city: newName } : user
+            )
+          } : {})
+        }));
+        
+        toast({
+          title: "Город обновлён",
+          description: `Город переименован в "${newName}"`
+        });
+      }
+    } catch (error) {
+      console.error('Error updating city:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить город",
+        variant: "destructive"
+      });
+    }
   };
 
   // Tournament format management functions
