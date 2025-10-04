@@ -73,11 +73,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     if method == 'GET':
-        # Require authentication
-        is_valid, user_data, error_msg = verify_token(event)
-        if not is_valid:
-            return create_auth_error(error_msg or 'Unauthorized')
-        
+        # GET is public - no auth required (like tournaments)
         # Get games for a tournament
         try:
             query_params = event.get('queryStringParameters', {}) or {}

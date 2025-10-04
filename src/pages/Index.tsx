@@ -181,6 +181,11 @@ const Index = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Сохраняем токен
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token);
+        }
+        
         const authenticatedUser = {
           id: data.user.id.toString(),
           username: data.user.username,

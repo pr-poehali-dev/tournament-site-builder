@@ -81,11 +81,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         if method == 'GET':
-            # Require authentication
-            is_valid, user_data, error_msg = verify_token(event)
-            if not is_valid:
-                return create_auth_error(error_msg or 'Unauthorized')
-            
+            # GET is public - no auth required (like tournaments)
             # Get all users
             cursor.execute("""
                 SELECT id, username, name, role, city, is_active, created_at, rating, tournaments, wins, losses, draws

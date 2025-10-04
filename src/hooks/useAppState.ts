@@ -5,6 +5,18 @@ import { getInitialState } from '@/utils/initialState';
 import { api } from '@/utils/api';
 import { toast } from '@/hooks/use-toast';
 
+// Вспомогательная функция для получения заголовков с токеном
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['X-Auth-Token'] = token;
+  }
+  return headers;
+};
+
 export const useAppState = () => {
   // Load only UI state from localStorage
   const [appState, setAppState] = useState<AppState>(() => {
@@ -35,13 +47,13 @@ export const useAppState = () => {
     saveUIStateToLocalStorage(uiState);
   }, [appState.currentUser, appState.currentPage, appState.showLogin]);
 
-  // Load tournaments from database on app start
+  // Load tournaments from database on app start (GET is public)
   useEffect(() => {
     const loadTournamentsFromDatabase = async () => {
       try {
         const response = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -108,6 +120,7 @@ export const useAppState = () => {
   };
 
   const logout = () => {
+    localStorage.removeItem('auth_token');
     setAppState(prev => ({ ...prev, currentUser: null, showLogin: false, currentPage: 'rating' }));
   };
 
@@ -124,9 +137,7 @@ export const useAppState = () => {
       // Обновляем статус в БД
       const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${userId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           is_active: newStatus
         })
@@ -160,9 +171,7 @@ export const useAppState = () => {
       // Обновляем роль в БД
       const response = await fetch(`https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${userId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           role: newRole
         })
@@ -198,9 +207,7 @@ export const useAppState = () => {
       // Удаляем пользователя из БД через backend API
       const response = await fetch(url, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('📡 Получен ответ, статус:', response.status);
@@ -244,9 +251,7 @@ export const useAppState = () => {
       // Сохраняем пользователя в БД через backend API
       const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           username: user.username,
           password: user.password,
@@ -367,13 +372,13 @@ export const useAppState = () => {
     });
   }, []);
 
-  // Global DB sync on app start
+  // Global DB sync on app start (GET is public)
   useEffect(() => {
     const loadUsersFromDatabase = async () => {
       try {
         const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -387,7 +392,7 @@ export const useAppState = () => {
     };
 
     loadUsersFromDatabase();
-  }, [syncDbUsersToPlayers]); // Зависимость от функции синхронизации
+  }, [syncDbUsersToPlayers]);
 
   // Load cities from database on app start
   useEffect(() => {
@@ -395,7 +400,7 @@ export const useAppState = () => {
       try {
         const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -425,7 +430,7 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ name: city.name })
       });
 
@@ -460,7 +465,7 @@ export const useAppState = () => {
     try {
       const response = await fetch(`https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64?id=${cityId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
 
       if (response.ok) {
@@ -492,7 +497,7 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ id: cityId, name: newName })
       });
 
@@ -534,7 +539,7 @@ export const useAppState = () => {
       try {
         const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: getAuthHeaders()
         });
 
         if (response.ok) {
@@ -565,7 +570,7 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ name: format.name, coefficient: format.coefficient })
       });
 
@@ -601,7 +606,7 @@ export const useAppState = () => {
     try {
       const response = await fetch(`https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810?id=${formatId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
 
       if (response.ok) {
@@ -629,7 +634,7 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ id: formatId, name: updates.name, coefficient: updates.coefficient })
       });
 
@@ -719,7 +724,7 @@ export const useAppState = () => {
         `https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournament.dbId}`,
         {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: getAuthHeaders()
         }
       );
 
@@ -808,7 +813,7 @@ export const useAppState = () => {
         
         const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             tournament_id: tournament.dbId,
             round_number: newRound.number,
@@ -822,7 +827,7 @@ export const useAppState = () => {
           // Update tournament current_round and status in database
           const updateResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
               id: tournament.dbId,
               current_round: newRound.number,
@@ -901,7 +906,7 @@ export const useAppState = () => {
             // Update game result in database
             const updateResponse = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: getAuthHeaders(),
               body: JSON.stringify({
                 game_id: game.id,
                 result
@@ -992,7 +997,7 @@ export const useAppState = () => {
           `https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0?tournament_id=${tournament.dbId}&round_number=${lastRound.number}`,
           {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+            headers: getAuthHeaders()
           }
         );
         
@@ -1048,7 +1053,7 @@ export const useAppState = () => {
       try {
         const response = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             id: tournament.dbId,
             status: 'completed'
@@ -1217,7 +1222,7 @@ export const useAppState = () => {
       try {
         const confirmResponse = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             id: tournament.dbId,
             status: 'confirmed'
@@ -1230,7 +1235,7 @@ export const useAppState = () => {
           // Recalculate rating changes for all games in the tournament
           const recalcResponse = await fetch('https://functions.poehali.dev/b995ecfd-0dac-4af5-9359-0d111138afbd', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ tournament_id: tournament.dbId })
           });
           
@@ -1266,7 +1271,7 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ updates })
       });
       
