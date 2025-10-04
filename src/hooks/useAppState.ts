@@ -909,7 +909,7 @@ export const useAppState = () => {
   }, []);
 
   // Calculate Elo rating changes and confirm tournament
-  const confirmTournament = useCallback((tournamentId: string) => {
+  const confirmTournament = useCallback(async (tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament || tournament.status !== 'completed') return;
 
@@ -1015,45 +1015,66 @@ export const useAppState = () => {
       draws: changes.draws
     }));
 
+    // Update tournament status to confirmed in database
+    if (tournament.dbId) {
+      try {
+        const confirmResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: tournament.dbId,
+            confirmed: true
+          })
+        });
+        
+        if (confirmResponse.ok) {
+          console.log('✅ Турнир подтверждён в БД');
+        } else {
+          console.error('❌ Ошибка подтверждения турнира в БД');
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при подтверждении турнира:', error);
+      }
+    }
+
     // Send batch update to backend
     toast({
       title: "Сохранение рейтингов...",
       description: "Обновляем данные игроков в базе данных",
     });
 
-    fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates })
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log('✅ Рейтинги обновлены в БД:', data);
-        
-        toast({
-          title: "✅ Рейтинги сохранены",
-          description: `Обновлено игроков: ${data.updated_count || updates.length}`,
-        });
-        
-        // Reload users from DB to sync the latest ratings
-        return fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792');
-      })
-      .then(response => response?.json())
-      .then(data => {
-        if (data?.users) {
-          console.log('✅ Обновлены данные игроков из БД после подтверждения турнира');
-          syncDbUsersToPlayers(data.users);
-        }
-      })
-      .catch(error => {
-        console.error('❌ Ошибка обновления рейтингов в БД:', error);
-        
-        toast({
-          title: "❌ Ошибка сохранения",
-          description: "Не удалось сохранить рейтинги в базу данных",
-          variant: "destructive",
-        });
+    try {
+      const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates })
       });
+      
+      const data = await response.json();
+      console.log('✅ Рейтинги обновлены в БД:', data);
+      
+      toast({
+        title: "✅ Рейтинги сохранены",
+        description: `Обновлено игроков: ${data.updated_count || updates.length}`,
+      });
+      
+      // Reload users from DB to sync the latest ratings
+      const usersResponse = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792');
+      const usersData = await usersResponse.json();
+      
+      if (usersData?.users) {
+        console.log('✅ Обновлены данные игроков из БД после подтверждения турнира');
+        syncDbUsersToPlayers(usersData.users);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка обновления рейтингов в БД:', error);
+      
+      toast({
+        title: "❌ Ошибка сохранения",
+        description: "Не удалось сохранить рейтинги в базу данных",
+        variant: "destructive",
+      });
+    }
 
     // Update tournament and players in local state
     confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
