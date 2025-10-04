@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import Icon from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
 import type { AppState } from "@/types";
 
 interface UsersListProps {
@@ -36,6 +37,9 @@ export const UsersList: React.FC<UsersListProps> = ({
   updateUserRole,
   deleteUser,
 }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState<string>("all");
+
   const userHasTournaments = (userId: string) => {
     return appState.tournaments.some(
       (tournament) => 
@@ -44,15 +48,48 @@ export const UsersList: React.FC<UsersListProps> = ({
     );
   };
 
+  const filteredAndSortedUsers = useMemo(() => {
+    return appState.users
+      .filter(user => {
+        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            user.username.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCity = selectedCity === "all" || user.city === selectedCity;
+        return matchesSearch && matchesCity;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  }, [appState.users, searchQuery, selectedCity]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Icon name="Users" size={20} />
-          Пользователи ({appState.users.length})
+          Пользователи ({filteredAndSortedUsers.length} из {appState.users.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex gap-3">
+          <div className="flex-1">
+            <Input
+              placeholder="Поиск по имени или логину..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select value={selectedCity} onValueChange={setSelectedCity}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Все города" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все города</SelectItem>
+              {appState.cities.map(city => (
+                <SelectItem key={city.id} value={city.name}>
+                  {city.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -66,7 +103,7 @@ export const UsersList: React.FC<UsersListProps> = ({
               </tr>
             </thead>
             <tbody>
-              {appState.users.map((user) => {
+              {filteredAndSortedUsers.map((user) => {
                 const hasTournaments = userHasTournaments(user.id);
                 return (
                 <tr key={user.id} className="border-b hover:bg-gray-50">
