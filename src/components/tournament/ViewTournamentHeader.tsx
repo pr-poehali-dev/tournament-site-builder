@@ -67,11 +67,13 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
           <div>
             <div className="text-muted-foreground">Формат</div>
             <div className="font-medium">
-              {tournament.swissRounds > 0 && tournament.topRounds > 0
-                ? `Швейцарка ${tournament.swissRounds} + Топ ${tournament.topRounds}`
-                : tournament.swissRounds > 0
-                  ? `Швейцарка ${tournament.swissRounds} туров`
-                  : `Плей-офф ${tournament.topRounds} туров`}
+              {tournament.status === "confirmed" 
+                ? (appState.tournamentFormats.find(f => f.id === tournament.format)?.name || tournament.format)
+                : (tournament.swissRounds > 0 && tournament.topRounds > 0
+                    ? `Швейцарка ${tournament.swissRounds} + Топ ${tournament.topRounds}`
+                    : tournament.swissRounds > 0
+                      ? `Швейцарка ${tournament.swissRounds} туров`
+                      : `Плей-офф ${tournament.topRounds} туров`)}
             </div>
           </div>
           <div>
@@ -105,7 +107,13 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
           <div>
             <div className="text-muted-foreground">Туров проведено</div>
             <div className="font-medium">
-              {tournament.rounds?.length || 0}
+              {tournament.status === "confirmed"
+                ? (tournament.swissRounds > 0 && tournament.topRounds > 0
+                    ? `Швейцарка ${tournament.swissRounds} + Топ-${Math.pow(2, tournament.topRounds)}`
+                    : tournament.swissRounds > 0
+                      ? `Швейцарка ${tournament.swissRounds}`
+                      : `Топ-${Math.pow(2, tournament.topRounds)}`)
+                : (tournament.rounds?.length || 0)}
             </div>
           </div>
         </div>
