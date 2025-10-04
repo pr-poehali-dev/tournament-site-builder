@@ -337,11 +337,11 @@ export const useAppState = () => {
       id: user.id.toString(),
       name: user.name,
       city: user.city || '',
-      rating: user.rating || 1200,
-      tournaments: user.tournaments || 0,
-      wins: user.wins || 0,
-      losses: user.losses || 0,
-      draws: user.draws || 0
+      rating: user.rating ?? 1200,
+      tournaments: user.tournaments ?? 0,
+      wins: user.wins ?? 0,
+      losses: user.losses ?? 0,
+      draws: user.draws ?? 0
     }));
 
     // Преобразуем пользователей из БД в формат User
@@ -351,7 +351,7 @@ export const useAppState = () => {
       name: user.name,
       role: user.role,
       city: user.city || '',
-      isActive: user.isActive !== false,
+      isActive: user.is_active !== false,
       password: '***' // Пароли не нужны в frontend
     }));
 
@@ -378,18 +378,8 @@ export const useAppState = () => {
 
         if (response.ok) {
           const data = await response.json();
-          const usersFromDb = data.users.map(user => ({
-            id: user.id.toString(),
-            username: user.username,
-            name: user.name,
-            role: user.role,
-            city: user.city,
-            isActive: user.is_active,
-            password: '***'
-          }));
-          
-          console.log('🔄 Глобальная синхронизация пользователей из БД:', usersFromDb.length);
-          syncDbUsersToPlayers(usersFromDb);
+          console.log('🔄 Глобальная синхронизация пользователей из БД:', data.users.length);
+          syncDbUsersToPlayers(data.users);
         }
       } catch (error) {
         console.warn('⚠️ Не удалось загрузить пользователей из БД при инициализации:', error);
