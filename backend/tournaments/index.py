@@ -45,7 +45,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cursor.execute("""
                 SELECT id, name, format, status, swiss_rounds, top_rounds,
-                       created_at, updated_at, city, is_rated, judge_id, participants, current_round
+                       created_at, updated_at, city, is_rated, judge_id, participants, current_round, confirmed
                 FROM t_p79348767_tournament_site_buil.tournaments
                 ORDER BY created_at DESC
             """)
@@ -67,7 +67,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'is_rated': row[9],
                     'judge_id': row[10],
                     'participants': row[11] if row[11] else [],
-                    'current_round': row[12] if len(row) > 12 else 0
+                    'current_round': row[12] if len(row) > 12 else 0,
+                    'confirmed': row[13] if len(row) > 13 else False
                 })
             
             cursor.close()
