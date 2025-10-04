@@ -321,6 +321,15 @@ const Index = () => {
 
   const handleAddCity = useCallback(() => {
     if (newCityName.trim()) {
+      const isDuplicate = appState.cities.some(
+        city => city.name.toLowerCase() === newCityName.trim().toLowerCase()
+      );
+      
+      if (isDuplicate) {
+        alert("Город с таким названием уже существует");
+        return;
+      }
+      
       addCity({
         id: `city${Date.now()}`,
         name: newCityName.trim(),
@@ -330,15 +339,24 @@ const Index = () => {
         cityNameInputRef.current?.focus();
       }, 0);
     }
-  }, [newCityName, addCity]);
+  }, [newCityName, addCity, appState.cities]);
 
   const saveEditCity = useCallback(() => {
     if (editingCityId && editingCityName.trim()) {
+      const isDuplicate = appState.cities.some(
+        city => city.id !== editingCityId && city.name.toLowerCase() === editingCityName.trim().toLowerCase()
+      );
+      
+      if (isDuplicate) {
+        alert("Город с таким названием уже существует");
+        return;
+      }
+      
       updateCity(editingCityId, { name: editingCityName.trim() });
       setEditingCityId(null);
       setEditingCityName("");
     }
-  }, [editingCityId, editingCityName, updateCity]);
+  }, [editingCityId, editingCityName, updateCity, appState.cities]);
 
   const cancelEditCity = useCallback(() => {
     setEditingCityId(null);
