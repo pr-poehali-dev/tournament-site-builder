@@ -8,7 +8,7 @@ import type { AppState } from '@/types';
 interface Tournament {
   id: number;
   name: string;
-  date: string;
+  created_at: string;
   status: string;
 }
 
@@ -31,7 +31,8 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         'https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45'
       );
       const data = await response.json();
-      setTournaments(Array.isArray(data) ? data : []);
+      const tournamentsData = data.tournaments || [];
+      setTournaments(Array.isArray(tournamentsData) ? tournamentsData : []);
     } catch (error) {
       console.error('Load error:', error);
       toast({
@@ -118,7 +119,7 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
                       {tournament.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(tournament.date).toLocaleDateString('ru-RU')} • 
+                      {new Date(tournament.created_at).toLocaleDateString('ru-RU')} • 
                       Статус: {tournament.status === 'confirmed' ? 'Подтверждён' : tournament.status === 'completed' ? 'Завершён' : 'Черновик'}
                     </p>
                   </div>
