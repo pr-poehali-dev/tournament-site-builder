@@ -96,11 +96,11 @@ const Index = () => {
   useEffect(() => {
     if (tournamentId && appState.tournaments.length > 0) {
       const tournament = appState.tournaments.find(t => t.id === tournamentId);
-      if (tournament) {
+      if (tournament && (typeof appState.currentPage !== 'object' || appState.currentPage.page !== 'tournament-view')) {
         navigateToState({ page: "tournament-view", tournamentId });
       }
     }
-  }, [tournamentId, appState.tournaments, navigateToState]);
+  }, [tournamentId, appState.tournaments, appState.currentPage, navigateToState]);
   const [newCityName, setNewCityName] = useState("");
   const cityNameInputRef = useRef<HTMLInputElement>(null);
 
