@@ -31,7 +31,7 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         'https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45'
       );
       const data = await response.json();
-      setTournaments(data);
+      setTournaments(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Load error:', error);
       toast({
@@ -39,6 +39,7 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         description: 'Не удалось загрузить турниры',
         variant: 'destructive',
       });
+      setTournaments([]);
     } finally {
       setLoading(false);
     }
