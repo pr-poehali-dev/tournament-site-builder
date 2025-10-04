@@ -1,0 +1,40 @@
+{
+  "tests": [
+    {
+      "name": "DELETE - should reject non-admin users",
+      "method": "DELETE",
+      "path": "/",
+      "headers": {
+        "X-User-Id": "999"
+      },
+      "body": {
+        "tournament_id": 1
+      },
+      "expectedStatus": 403,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "DELETE - should require tournament_id",
+      "method": "DELETE",
+      "path": "/",
+      "headers": {
+        "X-User-Id": "1"
+      },
+      "body": {},
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OPTIONS - should handle CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
