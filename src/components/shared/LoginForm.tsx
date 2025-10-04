@@ -57,9 +57,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <Icon name="LogIn" size={16} className="mr-2" />
           Войти
         </Button>
-        <div className="text-xs text-muted-foreground text-center">
-          Для тестирования: admin / admin
-        </div>
+        <div className="text-xs text-muted-foreground text-center">https://vk.com/stalker_king</div>
       </CardContent>
     </Card>
   </div>
