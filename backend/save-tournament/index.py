@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+import psycopg2.extensions
 from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -76,12 +77,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cursor = conn.cursor()
             
             # Update tournament status
-            cursor.execute(f"""
+            cursor.execute("""
                 UPDATE t_p79348767_tournament_site_buil.tournaments 
-                SET status = '{status}'
-                WHERE id = {tournament_id}
+                SET status = %s
+                WHERE id = %s
                 RETURNING id, status
-            """)
+            """, (status, tournament_id))
             
             row = cursor.fetchone()
             conn.commit()
@@ -154,46 +155,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
         
-        # Insert tournament into database (using simple query protocol)
-        escaped_name = name.replace("'", "''")
-        escaped_city = city.replace("'", "''") if city else ''
-        escaped_format = tournament_format.replace("'", "''")
-        
-        # Convert participants list to PostgreSQL array format
-        participants_array = '{' + ','.join(str(p) for p in participants) + '}' if participants else '{}'
-        
-        # Build judge_id part - convert string ID to integer
-        if judge_id:
-            try:
-                # Remove any non-numeric characters and convert to int
-                judge_id_clean = ''.join(filter(str.isdigit, str(judge_id)))
-                judge_id_value = judge_id_clean if judge_id_clean else 'NULL'
-            except:
-                judge_id_value = 'NULL'
-        else:
-            judge_id_value = 'NULL'
-        
+        # Insert tournament into database using parameterized query
         # Temporary: set type based on top_rounds until column is removed
         tournament_type = 'top' if top_rounds and top_rounds > 0 else 'swiss'
         
-        cursor.execute(f"""
+        # Convert judge_id to integer if needed
+        judge_id_int = None
+        if judge_id:
+            try:
+                judge_id_int = int(judge_id)
+            except (ValueError, TypeError):
+                judge_id_int = None
+        
+        # Convert participants to integer array for PostgreSQL
+        # Build array manually as a string to avoid type conversion issues
+        if participants:
+            participants_str = '{' + ','.join(str(int(p)) for p in participants) + '}'
+        else:
+            participants_str = '{}'
+        
+        cursor.execute("""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
             (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants) 
-            VALUES (
-                '{escaped_name}',
-                '{tournament_type}',
-                '{escaped_format}',
-                'setup',
-                0,
-                {swiss_rounds},
-                {top_rounds if top_rounds else 'NULL'},
-                {'NULL' if not city else f"'{escaped_city}'"},
-                {str(is_rated).lower()},
-                {judge_id_value},
-                '{participants_array}'::integer[]
-            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[])
             RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants
-        """)
+        """, (name, tournament_type, tournament_format, 'setup', 0, swiss_rounds, 
+              top_rounds if top_rounds else None, city if city else None, 
+              is_rated, judge_id_int, participants_str))
         
         row = cursor.fetchone()
         conn.commit()

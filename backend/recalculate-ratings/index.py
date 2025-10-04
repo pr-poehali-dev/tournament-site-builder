@@ -73,12 +73,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         # Get all games for the tournament ordered by round
-        cursor.execute(f"""
+        cursor.execute("""
             SELECT id, round_number, player1_id, player2_id, result, is_bye
             FROM t_p79348767_tournament_site_buil.games
-            WHERE tournament_id = {tournament_id}
+            WHERE tournament_id = %s
             ORDER BY round_number, id
-        """)
+        """, (tournament_id,))
         
         games = cursor.fetchall()
         
@@ -102,12 +102,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if game[3]:  # player2_id
                 player_ids.add(game[3])
         
-        player_ids_str = ','.join(str(pid) for pid in player_ids)
-        cursor.execute(f"""
+        # Use parameterized query with ANY for IN clause
+        cursor.execute("""
             SELECT id, rating
             FROM t_p79348767_tournament_site_buil.users
-            WHERE id IN ({player_ids_str})
-        """)
+            WHERE id = ANY(%s)
+        """, (list(player_ids),))
         
         # Initialize ratings (use current rating as starting point, or 1200 default)
         current_ratings = {}
@@ -159,12 +159,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Update all games with rating changes
         for game_id, p1_change, p2_change in updates:
-            cursor.execute(f"""
+            cursor.execute("""
                 UPDATE t_p79348767_tournament_site_buil.games
-                SET player1_rating_change = {p1_change},
-                    player2_rating_change = {p2_change}
-                WHERE id = {game_id}
-            """)
+                SET player1_rating_change = %s,
+                    player2_rating_change = %s
+                WHERE id = %s
+            """, (p1_change, p2_change, game_id))
         
         conn.commit()
         cursor.close()

@@ -59,12 +59,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            cursor.execute(f"""
+            cursor.execute("""
                 SELECT id, tournament_id, round_number, player1_id, player2_id, result, created_at, updated_at
                 FROM t_p79348767_tournament_site_buil.games
-                WHERE tournament_id = {tournament_id}
+                WHERE tournament_id = %s
                 ORDER BY round_number, id
-            """)
+            """, (tournament_id,))
             
             rows = cursor.fetchall()
             games = []
@@ -139,19 +139,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 # For BYE matches (player2_id is null), use player1_id as player2_id
                 # and set result to 'win1' to indicate BYE
                 if not player2_id:
-                    result_value = "'win1'"
+                    result_value = 'win1'
                     player2_value = player1_id
                 else:
-                    result_value = 'NULL'
+                    result_value = None
                     player2_value = player2_id
                 
-                # Insert game
-                cursor.execute(f"""
+                # Insert game - using parameterized query
+                cursor.execute("""
                     INSERT INTO t_p79348767_tournament_site_buil.games 
                     (tournament_id, round_number, player1_id, player2_id, result)
-                    VALUES ({tournament_id}, {round_number}, {player1_id}, {player2_value}, {result_value})
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING id, tournament_id, round_number, player1_id, player2_id, result, created_at
-                """)
+                """, (tournament_id, round_number, player1_id, player2_value, result_value))
                 
                 row = cursor.fetchone()
                 created_games.append({
@@ -226,12 +226,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            cursor.execute(f"""
+            cursor.execute("""
                 UPDATE t_p79348767_tournament_site_buil.games
-                SET result = '{result}', updated_at = CURRENT_TIMESTAMP
-                WHERE id = {game_id}
+                SET result = %s, updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
                 RETURNING id, tournament_id, round_number, player1_id, player2_id, result, updated_at
-            """)
+            """, (result, game_id))
             
             row = cursor.fetchone()
             
@@ -308,12 +308,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            # Delete games for the round
-            cursor.execute(f"""
+            # Delete games for the round - parameterized query
+            cursor.execute("""
                 DELETE FROM t_p79348767_tournament_site_buil.games
-                WHERE tournament_id = {tournament_id} AND round_number = {round_number}
+                WHERE tournament_id = %s AND round_number = %s
                 RETURNING id
-            """)
+            """, (tournament_id, round_number))
             
             deleted_ids = [row[0] for row in cursor.fetchall()]
             

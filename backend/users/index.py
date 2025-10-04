@@ -97,14 +97,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             # Hash password with bcrypt
             hashed_password = hash_password(password)
             
-            # Escape single quotes in strings
-            username_escaped = username.replace("'", "''")
-            password_escaped = hashed_password.replace("'", "''")
-            name_escaped = name.replace("'", "''")
-            city_escaped = city.replace("'", "''") if city else None
+            # Check if username exists - using parameterized query
+            cursor.execute("""
+                SELECT id FROM t_p79348767_tournament_site_buil.users 
+                WHERE username = %s
+            """, (username,))
             
-            # Check if username exists
-            cursor.execute(f"SELECT id FROM t_p79348767_tournament_site_buil.users WHERE username = '{username_escaped}';")
             if cursor.fetchone():
                 return {
                     'statusCode': 400,
@@ -112,18 +110,13 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Username already exists'})
                 }
             
-            if city_escaped:
-                cursor.execute(f"""
-                    INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
-                    VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', '{city_escaped}', true)
-                    RETURNING id, username, name, role, city, is_active, created_at, rating;
-                """)
-            else:
-                cursor.execute(f"""
-                    INSERT INTO t_p79348767_tournament_site_buil.users (username, password, name, role, city, is_active)
-                    VALUES ('{username_escaped}', '{password_escaped}', '{name_escaped}', '{role}', NULL, true)
-                    RETURNING id, username, name, role, city, is_active, created_at, rating;
-                """)
+            # Insert new user - using parameterized query
+            cursor.execute("""
+                INSERT INTO t_p79348767_tournament_site_buil.users 
+                (username, password, name, role, city, is_active)
+                VALUES (%s, %s, %s, %s, %s, true)
+                RETURNING id, username, name, role, city, is_active, created_at, rating
+            """, (username, hashed_password, name, role, city))
             
             row = cursor.fetchone()
             conn.commit()
@@ -162,7 +155,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'No updates provided'})
                     }
                 
-                # Update each user individually
+                # Update each user individually with parameterized queries
                 updated_count = 0
                 for update in updates:
                     user_id = update.get('user_id')
@@ -173,15 +166,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     draws = update.get('draws')
                     
                     if user_id is not None:
-                        cursor.execute(f"""
+                        cursor.execute("""
                             UPDATE t_p79348767_tournament_site_buil.users
-                            SET rating = {rating},
-                                tournaments = {tournaments},
-                                wins = {wins},
-                                losses = {losses},
-                                draws = {draws}
-                            WHERE id = {user_id};
-                        """)
+                            SET rating = %s,
+                                tournaments = %s,
+                                wins = %s,
+                                losses = %s,
+                                draws = %s
+                            WHERE id = %s
+                        """, (rating, tournaments, wins, losses, draws, user_id))
                         updated_count += cursor.rowcount
                 
                 conn.commit()
@@ -208,47 +201,48 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                         'body': json.dumps({'error': 'User ID required'})
                     }
                 
-                # Build update query with proper escaping
-                update_clauses = []
+                # Build update query with parameterized values
+                update_parts = []
+                update_values = []
                 
                 if 'is_active' in body_data:
-                    update_clauses.append(f"is_active = {body_data['is_active']}")
+                    update_parts.append("is_active = %s")
+                    update_values.append(body_data['is_active'])
                 
                 if 'role' in body_data:
-                    role_escaped = body_data['role'].replace("'", "''")
-                    update_clauses.append(f"role = '{role_escaped}'")
+                    update_parts.append("role = %s")
+                    update_values.append(body_data['role'])
                 
                 if 'name' in body_data:
-                    name_escaped = body_data['name'].replace("'", "''")
-                    update_clauses.append(f"name = '{name_escaped}'")
+                    update_parts.append("name = %s")
+                    update_values.append(body_data['name'])
                 
                 if 'city' in body_data:
-                    city = body_data['city']
-                    if city:
-                        city_escaped = city.replace("'", "''")
-                        update_clauses.append(f"city = '{city_escaped}'")
-                    else:
-                        update_clauses.append("city = NULL")
+                    update_parts.append("city = %s")
+                    update_values.append(body_data['city'] if body_data['city'] else None)
                 
                 if 'password' in body_data and body_data['password']:
                     # Hash password with bcrypt before storing
                     hashed_password = hash_password(body_data['password'])
-                    password_escaped = hashed_password.replace("'", "''")
-                    update_clauses.append(f"password = '{password_escaped}'")
+                    update_parts.append("password = %s")
+                    update_values.append(hashed_password)
                 
-                if not update_clauses:
+                if not update_parts:
                     return {
                         'statusCode': 400,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                         'body': json.dumps({'error': 'No updates provided'})
                     }
                 
+                # Add user_id to values list
+                update_values.append(user_id)
+                
                 cursor.execute(f"""
                     UPDATE t_p79348767_tournament_site_buil.users
-                    SET {', '.join(update_clauses)}
-                    WHERE id = {user_id}
-                    RETURNING id, username, name, role, city, is_active;
-                """)
+                    SET {', '.join(update_parts)}
+                    WHERE id = %s
+                    RETURNING id, username, name, role, city, is_active
+                """, update_values)
                 
                 row = cursor.fetchone()
                 if not row:
@@ -287,8 +281,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User ID required'})
                 }
             
-            # First, check if user exists
-            cursor.execute(f"SELECT id FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
+            # First, check if user exists - parameterized query
+            cursor.execute("""
+                SELECT id FROM t_p79348767_tournament_site_buil.users 
+                WHERE id = %s
+            """, (user_id,))
+            
             if not cursor.fetchone():
                 return {
                     'statusCode': 404,
@@ -296,11 +294,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'User not found'})
                 }
             
-            # Check if user participated in any games
-            cursor.execute(f"""
+            # Check if user participated in any games - parameterized query
+            cursor.execute("""
                 SELECT COUNT(*) FROM t_p79348767_tournament_site_buil.games 
-                WHERE player1_id = {user_id} OR player2_id = {user_id};
-            """)
+                WHERE player1_id = %s OR player2_id = %s
+            """, (user_id, user_id))
+            
             games_count = cursor.fetchone()[0]
             
             if games_count > 0:
@@ -313,11 +312,12 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     })
                 }
             
-            # Check if user is in any tournament participants
-            cursor.execute(f"""
+            # Check if user is in any tournament participants - parameterized query
+            cursor.execute("""
                 SELECT COUNT(*) FROM t_p79348767_tournament_site_buil.tournaments
-                WHERE {user_id} = ANY(participants);
-            """)
+                WHERE %s = ANY(participants)
+            """, (user_id,))
+            
             tournaments_count = cursor.fetchone()[0]
             
             if tournaments_count > 0:
@@ -330,8 +330,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     })
                 }
             
-            # Delete the user (no related records exist at this point)
-            cursor.execute(f"DELETE FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id};")
+            # Delete the user - parameterized query
+            cursor.execute("""
+                DELETE FROM t_p79348767_tournament_site_buil.users 
+                WHERE id = %s
+            """, (user_id,))
             
             conn.commit()
             
@@ -349,28 +352,16 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
     
     except Exception as e:
-        # Rollback transaction if exists
         if conn:
-            try:
-                conn.rollback()
-            except:
-                pass
-        
+            conn.rollback()
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': f'Internal server error: {str(e)}'})
         }
     
     finally:
-        # Always close resources
         if cursor:
-            try:
-                cursor.close()
-            except:
-                pass
+            cursor.close()
         if conn:
-            try:
-                conn.close()
-            except:
-                pass
+            conn.close()

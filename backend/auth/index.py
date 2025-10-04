@@ -71,11 +71,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
         
-        cursor.execute(f"""
+        cursor.execute("""
             SELECT id, username, name, role, city, is_active, password, rating
             FROM t_p79348767_tournament_site_buil.users
-            WHERE username = '{username}'
-        """)
+            WHERE username = %s
+        """, (username,))
         
         row = cursor.fetchone()
         cursor.close()
