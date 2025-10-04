@@ -65,7 +65,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               </DropdownMenuItem>
             )}
             {appState.currentUser.role === 'admin' && (
-              <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <DropdownMenuItem onClick={() => navigateTo('tournament-management')}>
                 <Icon name="Shield" size={16} className="mr-2" />
                 Управление турнирами
               </DropdownMenuItem>

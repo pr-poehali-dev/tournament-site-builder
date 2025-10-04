@@ -29,6 +29,7 @@ import { FormatsPage } from "@/components/pages/FormatsPage";
 import { CreateTournamentPage } from "@/components/pages/CreateTournamentPage";
 import { TournamentViewPage } from "@/components/pages/TournamentViewPage";
 import { TournamentEditPage } from "@/components/pages/TournamentEditPage";
+import { TournamentManagementPage } from "@/components/pages/TournamentManagementPage";
 import BackendApiTest from "@/components/debug/BackendApiTest";
 
 const Index = () => {
@@ -480,6 +481,10 @@ const Index = () => {
               navigateTo={navigateTo}
             />
           )}
+
+        {appState.currentPage === "tournament-management" && (
+          <TournamentManagementPage appState={appState} />
+        )}
       </main>
 
       {isEditingPairings && (
