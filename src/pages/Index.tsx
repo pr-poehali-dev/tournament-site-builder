@@ -101,12 +101,18 @@ const Index = () => {
       const tournament = appState.tournaments.find(t => t.id === tournamentId);
       console.log('🔍 Found tournament:', tournament);
       
-      if (tournament && (typeof appState.currentPage !== 'object' || appState.currentPage.page !== 'tournament-view')) {
-        console.log('✅ Navigating to tournament view');
-        navigateToState({ page: "tournament-view", tournamentId });
+      if (tournament) {
+        if (typeof appState.currentPage !== 'object' || appState.currentPage.page !== 'tournament-view' || appState.currentPage.tournamentId !== tournamentId) {
+          console.log('✅ Navigating to tournament view');
+          navigateToState({ page: "tournament-view", tournamentId });
+        }
+      } else {
+        console.log('❌ Tournament not found, redirecting to home');
+        navigate('/');
+        navigateToState("rating");
       }
     }
-  }, [tournamentId, appState.tournaments, appState.currentPage, navigateToState]);
+  }, [tournamentId, appState.tournaments, appState.currentPage, navigateToState, navigate]);
   const [newCityName, setNewCityName] = useState("");
   const cityNameInputRef = useRef<HTMLInputElement>(null);
 
