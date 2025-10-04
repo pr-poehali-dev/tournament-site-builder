@@ -94,9 +94,15 @@ const Index = () => {
   }, [navigate, navigateToState, appState.currentPage]);
 
   useEffect(() => {
+    console.log('🔍 URL tournamentId:', tournamentId);
+    console.log('🔍 Tournaments:', appState.tournaments.map(t => ({ id: t.id, name: t.name })));
+    
     if (tournamentId && appState.tournaments.length > 0) {
       const tournament = appState.tournaments.find(t => t.id === tournamentId);
+      console.log('🔍 Found tournament:', tournament);
+      
       if (tournament && (typeof appState.currentPage !== 'object' || appState.currentPage.page !== 'tournament-view')) {
+        console.log('✅ Navigating to tournament view');
         navigateToState({ page: "tournament-view", tournamentId });
       }
     }
