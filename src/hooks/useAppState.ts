@@ -528,28 +528,132 @@ export const useAppState = () => {
     }
   };
 
+  // Load tournament formats from database on app start
+  useEffect(() => {
+    const loadFormatsFromDatabase = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const formatsFromDb = data.formats.map((f: any) => ({
+            id: f.id.toString(),
+            name: f.name,
+            coefficient: f.coefficient
+          }));
+          
+          console.log('🔄 Загружено форматов из БД:', formatsFromDb.length);
+          
+          setAppState(prev => ({
+            ...prev,
+            tournamentFormats: formatsFromDb
+          }));
+        }
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить форматы из БД:', error);
+      }
+    };
+
+    loadFormatsFromDatabase();
+  }, []);
+
   // Tournament format management functions
-  const addTournamentFormat = (format: TournamentFormat) => {
-    setAppState(prev => ({
-      ...prev,
-      tournamentFormats: [...prev.tournamentFormats, format]
-    }));
+  const addTournamentFormat = async (format: TournamentFormat) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: format.name, coefficient: format.coefficient })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newFormat: TournamentFormat = {
+          id: data.id.toString(),
+          name: data.name,
+          coefficient: data.coefficient
+        };
+        
+        setAppState(prev => ({
+          ...prev,
+          tournamentFormats: [...prev.tournamentFormats, newFormat]
+        }));
+        
+        toast({
+          title: "Формат добавлен",
+          description: `Формат "${newFormat.name}" успешно добавлен`
+        });
+      }
+    } catch (error) {
+      console.error('Error adding format:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось добавить формат",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteTournamentFormat = (formatId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      tournamentFormats: prev.tournamentFormats.filter(f => f.id !== formatId)
-    }));
+  const deleteTournamentFormat = async (formatId: string) => {
+    try {
+      const response = await fetch(`https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810?id=${formatId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        setAppState(prev => ({
+          ...prev,
+          tournamentFormats: prev.tournamentFormats.filter(f => f.id !== formatId)
+        }));
+        
+        toast({
+          title: "Формат удалён",
+          description: "Формат успешно удалён"
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting format:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить формат",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updateTournamentFormat = (formatId: string, updates: Partial<TournamentFormat>) => {
-    setAppState(prev => ({
-      ...prev,
-      tournamentFormats: prev.tournamentFormats.map(format =>
-        format.id === formatId ? { ...format, ...updates } : format
-      )
-    }));
+  const updateTournamentFormat = async (formatId: string, updates: Partial<TournamentFormat>) => {
+    try {
+      const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: formatId, name: updates.name, coefficient: updates.coefficient })
+      });
+
+      if (response.ok) {
+        setAppState(prev => ({
+          ...prev,
+          tournamentFormats: prev.tournamentFormats.map(format =>
+            format.id === formatId ? { ...format, ...updates } : format
+          )
+        }));
+        
+        toast({
+          title: "Формат обновлён",
+          description: `Формат "${updates.name}" успешно обновлён`
+        });
+      }
+    } catch (error) {
+      console.error('Error updating format:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить формат",
+        variant: "destructive"
+      });
+    }
   };
 
   // Tournament management functions
