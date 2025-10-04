@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,9 +34,11 @@ import { TournamentManagementPage } from "@/components/pages/TournamentManagemen
 import BackendApiTest from "@/components/debug/BackendApiTest";
 
 const Index = () => {
+  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const navigate = useNavigate();
   const {
     appState,
-    navigateTo,
+    navigateTo: navigateToState,
     logout,
     showLoginForm,
     hideLoginForm,
@@ -80,6 +83,24 @@ const Index = () => {
 
   const [editingCityId, setEditingCityId] = useState<string | null>(null);
   const [editingCityName, setEditingCityName] = useState("");
+
+  const navigateTo = useCallback((page: Page) => {
+    if (typeof page === 'object' && page.page === 'tournament-view') {
+      navigate(`/tournament/${page.tournamentId}`);
+    } else if (page !== appState.currentPage) {
+      navigate('/');
+    }
+    navigateToState(page);
+  }, [navigate, navigateToState, appState.currentPage]);
+
+  useEffect(() => {
+    if (tournamentId && appState.tournaments.length > 0) {
+      const tournament = appState.tournaments.find(t => t.id === tournamentId);
+      if (tournament) {
+        navigateToState({ page: "tournament-view", tournamentId });
+      }
+    }
+  }, [tournamentId, appState.tournaments, navigateToState]);
   const [newCityName, setNewCityName] = useState("");
   const cityNameInputRef = useRef<HTMLInputElement>(null);
 

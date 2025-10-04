@@ -24,6 +24,12 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
 }) => {
   const judge = appState.users.find((u) => u.id === tournament.judgeId);
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/tournament/${tournament.id}`;
+    navigator.clipboard.writeText(url);
+    alert("Ссылка скопирована в буфер обмена!");
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -38,13 +44,22 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
               {tournament.participants.length} участников
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigateTo("my-tournaments")}
-          >
-            <Icon name="ArrowLeft" size={16} className="mr-2" />
-            Назад
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleShare}
+            >
+              <Icon name="Share2" size={16} className="mr-2" />
+              Поделиться
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigateTo("my-tournaments")}
+            >
+              <Icon name="ArrowLeft" size={16} className="mr-2" />
+              Назад
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
