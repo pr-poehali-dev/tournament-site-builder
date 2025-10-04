@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -17,7 +18,10 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   navigateTo,
   logout,
   showLoginForm
-}) => (
+}) => {
+  const navigate = useNavigate();
+  
+  return (
   <div className="flex items-center justify-between mb-8 bg-card p-4 rounded-lg shadow-sm border">
     <div className="flex items-center gap-4">
       <Icon name="Trophy" size={24} className="text-primary" />
@@ -61,11 +65,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               </DropdownMenuItem>
             )}
             {appState.currentUser.role === 'admin' && (
-              <DropdownMenuItem onClick={() => {
-                const link = document.createElement('a');
-                link.href = '/admin';
-                link.click();
-              }}>
+              <DropdownMenuItem onClick={() => navigate('/admin')}>
                 <Icon name="Shield" size={16} className="mr-2" />
                 Управление турнирами
               </DropdownMenuItem>
@@ -100,4 +100,5 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
       )}
     </div>
   </div>
-);
+  );
+};
