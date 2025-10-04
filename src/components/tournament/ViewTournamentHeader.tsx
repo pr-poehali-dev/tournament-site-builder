@@ -24,6 +24,12 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
 }) => {
   const judge = appState.users.find((u) => u.id === tournament.judgeId);
 
+  const getRoundsLabel = (count: number): string => {
+    if (count === 1) return `${count} тур`;
+    if (count >= 2 && count <= 4) return `${count} тура`;
+    return `${count} туров`;
+  };
+
   const handleShare = () => {
     const url = `${window.location.origin}/tournament/${tournament.id}`;
     navigator.clipboard.writeText(url);
@@ -109,9 +115,9 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
             <div className="font-medium">
               {tournament.status === "confirmed"
                 ? (tournament.swissRounds > 0 && tournament.topRounds > 0
-                    ? `Швейцарка ${tournament.swissRounds} + Топ-${Math.pow(2, tournament.topRounds)}`
+                    ? `${getRoundsLabel(tournament.swissRounds)} + Топ-${Math.pow(2, tournament.topRounds)}`
                     : tournament.swissRounds > 0
-                      ? `Швейцарка ${tournament.swissRounds}`
+                      ? getRoundsLabel(tournament.swissRounds)
                       : `Топ-${Math.pow(2, tournament.topRounds)}`)
                 : (tournament.rounds?.length || 0)}
             </div>
