@@ -7,6 +7,7 @@ import type { AppState, Page } from "@/types";
 import { ViewTournamentHeader } from "@/components/tournament/ViewTournamentHeader";
 import { StandingsTab } from "@/components/tournament/StandingsTab";
 import { RoundsTab } from "@/components/tournament/RoundsTab";
+import { TournamentMetaTags } from "@/components/shared/TournamentMetaTags";
 
 interface TournamentViewPageProps {
   appState: AppState;
@@ -51,6 +52,7 @@ export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
 
   return (
     <div className="space-y-6">
+      <TournamentMetaTags tournament={tournament} />
       <ViewTournamentHeader
         tournament={tournament}
         appState={appState}
