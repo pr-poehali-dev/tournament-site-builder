@@ -8,31 +8,57 @@ import type { AppState, TournamentFormat } from '@/types';
 
 interface FormatsPageProps {
   appState: AppState;
-  editingFormat: { id: string; name: string; coefficient: number } | null;
-  addFormat: () => void;
-  startEditFormat: (format: TournamentFormat) => void;
-  deleteFormat: (formatId: string) => void;
-  handleEditFormatNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleEditFormatCoefficientChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  saveEditFormat: () => void;
-  cancelEditFormat: () => void;
+  editingFormatId: string | null;
+  editingFormat: { name: string; coefficient: number };
+  newFormat: { name: string; coefficient: number };
+  setEditingFormatId: (id: string | null) => void;
+  setEditingFormat: (format: { name: string; coefficient: number }) => void;
+  setNewFormat: (format: { name: string; coefficient: number }) => void;
+  addTournamentFormat: (format: { name: string; coefficient: number }) => void;
+  updateTournamentFormat: (id: string, format: { name: string; coefficient: number }) => void;
+  deleteTournamentFormat: (formatId: string) => void;
   formatNameInputRef: React.RefObject<HTMLInputElement>;
-  formatCoefficientInputRef: React.RefObject<HTMLInputElement>;
 }
 
 export const FormatsPage: React.FC<FormatsPageProps> = ({
   appState,
+  editingFormatId,
   editingFormat,
-  addFormat,
-  startEditFormat,
-  deleteFormat,
-  handleEditFormatNameChange,
-  handleEditFormatCoefficientChange,
-  saveEditFormat,
-  cancelEditFormat,
-  formatNameInputRef,
-  formatCoefficientInputRef
+  newFormat,
+  setEditingFormatId,
+  setEditingFormat,
+  setNewFormat,
+  addTournamentFormat,
+  updateTournamentFormat,
+  deleteTournamentFormat,
+  formatNameInputRef
 }) => {
+  const addFormat = () => {
+    if (!formatNameInputRef.current?.value.trim()) return;
+    const name = formatNameInputRef.current.value.trim();
+    const coefficient = parseInt((document.querySelector('input[type="number"]') as HTMLInputElement)?.value || '1');
+    addTournamentFormat({ name, coefficient });
+    formatNameInputRef.current.value = '';
+    (document.querySelector('input[type="number"]') as HTMLInputElement).value = '';
+  };
+
+  const startEditFormat = (format: TournamentFormat) => {
+    setEditingFormatId(format.id);
+    setEditingFormat({ name: format.name, coefficient: format.coefficient });
+  };
+
+  const saveEditFormat = () => {
+    if (editingFormatId && editingFormat.name.trim()) {
+      updateTournamentFormat(editingFormatId, editingFormat);
+      setEditingFormatId(null);
+      setEditingFormat({ name: '', coefficient: 1 });
+    }
+  };
+
+  const cancelEditFormat = () => {
+    setEditingFormatId(null);
+    setEditingFormat({ name: '', coefficient: 1 });
+  };
   return (
     <div className="space-y-6">
       <Card>
@@ -55,10 +81,10 @@ export const FormatsPage: React.FC<FormatsPageProps> = ({
               className="flex-1 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <input
-              ref={formatCoefficientInputRef}
               type="number"
               min="1"
               step="1"
+              defaultValue="1"
               placeholder="Коэффициент"
               className="w-32 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
@@ -113,7 +139,7 @@ export const FormatsPage: React.FC<FormatsPageProps> = ({
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Отмена</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteFormat(format.id)} className="bg-destructive hover:bg-destructive/90">
+                            <AlertDialogAction onClick={() => deleteTournamentFormat(format.id)} className="bg-destructive hover:bg-destructive/90">
                               Удалить
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -127,7 +153,7 @@ export const FormatsPage: React.FC<FormatsPageProps> = ({
           </div>
 
           {/* Модальное окно редактирования */}
-          {editingFormat && (
+          {editingFormatId && (
             <Card className="border-primary/50 bg-primary/5">
               <CardContent className="pt-6">
                 <div className="space-y-4">
@@ -135,7 +161,7 @@ export const FormatsPage: React.FC<FormatsPageProps> = ({
                   <div className="flex gap-2">
                     <Input
                       value={editingFormat.name}
-                      onChange={handleEditFormatNameChange}
+                      onChange={(e) => setEditingFormat({ ...editingFormat, name: e.target.value })}
                       placeholder="Название формата"
                       className="flex-1"
                     />
@@ -144,7 +170,7 @@ export const FormatsPage: React.FC<FormatsPageProps> = ({
                       min="1"
                       step="1"
                       value={editingFormat.coefficient}
-                      onChange={handleEditFormatCoefficientChange}
+                      onChange={(e) => setEditingFormat({ ...editingFormat, coefficient: parseInt(e.target.value) || 1 })}
                       placeholder="Коэффициент"
                       className="w-32"
                     />
