@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,15 +12,23 @@ interface TournamentViewPageProps {
   appState: AppState;
   tournamentId: string;
   navigateTo: (page: Page) => void;
+  loadTournamentWithGames: (tournamentId: string) => void;
 }
 
 export const TournamentViewPage: React.FC<TournamentViewPageProps> = ({
   appState,
   tournamentId,
   navigateTo,
+  loadTournamentWithGames,
 }) => {
   const currentUserId = appState.currentUser?.id || "";
   const tournament = appState.tournaments.find((t) => t.id === tournamentId);
+
+  useEffect(() => {
+    if (tournament && (!tournament.rounds || tournament.rounds.length === 0)) {
+      loadTournamentWithGames(tournamentId);
+    }
+  }, [tournamentId, tournament, loadTournamentWithGames]);
 
   if (!tournament) {
     return (

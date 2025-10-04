@@ -479,6 +479,7 @@ const Index = () => {
               appState={appState}
               tournamentId={appState.currentPage.tournamentId}
               navigateTo={navigateTo}
+              loadTournamentWithGames={loadTournamentWithGames}
             />
           )}
 
