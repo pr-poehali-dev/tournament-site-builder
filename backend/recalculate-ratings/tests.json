@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "Recalculate ratings for tournament",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "tournament_id": 26
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

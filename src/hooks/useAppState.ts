@@ -1031,6 +1031,20 @@ export const useAppState = () => {
         if (confirmResponse.ok) {
           console.log('✅ Турнир подтверждён в БД (status = confirmed)');
           
+          // Recalculate rating changes for all games in the tournament
+          const recalcResponse = await fetch('https://functions.poehali.dev/b995ecfd-0dac-4af5-9359-0d111138afbd', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tournament_id: tournament.dbId })
+          });
+          
+          if (recalcResponse.ok) {
+            const recalcData = await recalcResponse.json();
+            console.log('✅ Рейтинги пересчитаны для игр турнира:', recalcData);
+          } else {
+            console.error('❌ Ошибка пересчёта рейтингов для игр');
+          }
+          
           // Reload tournaments from DB to sync status
           const tournamentsResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45');
           const tournamentsData = await tournamentsResponse.json();
