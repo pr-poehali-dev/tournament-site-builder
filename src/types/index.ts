@@ -50,10 +50,10 @@ export interface Tournament {
   swissRounds: number;
   topRounds: number;
   participants: string[];
-  status: 'draft' | 'active' | 'completed';
+  status: 'draft' | 'active' | 'completed' | 'confirmed';
   rounds: Round[];
   currentRound: number;
-  confirmed?: boolean; // Подтверждён администратором
+  judgeId?: string; // ID судьи турнира
 }
 
 export interface Player {

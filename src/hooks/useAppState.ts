@@ -48,9 +48,10 @@ export const useAppState = () => {
           const data = await response.json();
           const tournamentsFromDb = data.tournaments.map((t: any) => {
             // Map database status to frontend status
-            let frontendStatus: 'draft' | 'active' | 'completed' = 'draft';
+            let frontendStatus: 'draft' | 'active' | 'completed' | 'confirmed' = 'draft';
             if (t.status === 'active') frontendStatus = 'active';
             else if (t.status === 'completed') frontendStatus = 'completed';
+            else if (t.status === 'confirmed') frontendStatus = 'confirmed';
             else frontendStatus = 'draft'; // 'setup' or any other value maps to 'draft'
             
             return {

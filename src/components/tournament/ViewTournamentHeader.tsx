@@ -32,9 +32,6 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Icon name="Trophy" size={20} />
               {tournament.name}
-              {tournament.status === 'confirmed' && (
-                <Badge variant="secondary">Подтверждён</Badge>
-              )}
             </CardTitle>
             <CardDescription>
               {tournament.date} • {tournament.city} •{" "}
@@ -72,14 +69,16 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
             <div className="text-muted-foreground">Статус</div>
             <Badge
               variant={
-                tournament.status === "completed" ? "secondary" : "default"
+                tournament.status === "completed" || tournament.status === "confirmed" ? "secondary" : "default"
               }
             >
-              {tournament.status === "completed"
-                ? "Завершён"
-                : tournament.status === "active"
-                  ? "Активный"
-                  : "Черновик"}
+              {tournament.status === "confirmed"
+                ? "Подтверждён"
+                : tournament.status === "completed"
+                  ? "Завершён"
+                  : tournament.status === "active"
+                    ? "Активный"
+                    : "Черновик"}
             </Badge>
           </div>
           <div>
