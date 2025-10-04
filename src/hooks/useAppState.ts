@@ -1023,12 +1023,12 @@ export const useAppState = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: tournament.dbId,
-            confirmed: true
+            status: 'confirmed'
           })
         });
         
         if (confirmResponse.ok) {
-          console.log('✅ Турнир подтверждён в БД');
+          console.log('✅ Турнир подтверждён в БД (status = confirmed)');
         } else {
           console.error('❌ Ошибка подтверждения турнира в БД');
         }
@@ -1077,7 +1077,7 @@ export const useAppState = () => {
     }
 
     // Update tournament and players in local state
-    confirmTournamentWithPlayerUpdates(tournamentId, { confirmed: true }, ratingChanges);
+    confirmTournamentWithPlayerUpdates(tournamentId, { status: 'confirmed' as const }, ratingChanges);
   }, [appState.tournaments, appState.players, confirmTournamentWithPlayerUpdates, syncDbUsersToPlayers]);
 
   // Generate TOP elimination bracket pairings (Olympic system)

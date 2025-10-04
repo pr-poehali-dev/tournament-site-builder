@@ -34,12 +34,12 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
   // Filter only confirmed tournaments where current user participated
   const myConfirmedTournaments = appState.tournaments.filter(
     (tournament) =>
-      tournament.participants.includes(currentUserId) && tournament.confirmed,
+      tournament.participants.includes(currentUserId) && tournament.status === 'confirmed',
   );
 
   // Function to calculate player's place in tournament
   const getPlayerPlace = (tournament: Tournament, playerId: string): number => {
-    if (!tournament.confirmed) return 0;
+    if (tournament.status !== 'confirmed') return 0;
 
     // Calculate final scores for all participants
     const participantScores = tournament.participants.map((participantId) => {

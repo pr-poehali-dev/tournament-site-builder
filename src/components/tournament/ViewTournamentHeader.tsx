@@ -32,7 +32,7 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Icon name="Trophy" size={20} />
               {tournament.name}
-              {tournament.confirmed && (
+              {tournament.status === 'confirmed' && (
                 <Badge variant="secondary">Подтверждён</Badge>
               )}
             </CardTitle>

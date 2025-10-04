@@ -48,7 +48,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                   <Badge variant={tournament.status === 'draft' ? 'outline' : tournament.status === 'active' ? 'default' : 'secondary'}>
                     {tournament.status === 'draft' ? 'Черновик' : tournament.status === 'active' ? 'Активен' : 'Завершён'}
                   </Badge>
-                  {tournament.status === 'completed' && tournament.confirmed && (
+                  {tournament.status === 'confirmed' && (
                     <Badge variant="default" className="bg-green-600">
                       <Icon name="CheckCircle" size={12} className="mr-1" />
                       Подтверждён
@@ -83,8 +83,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     </Button>
                   )}
                   {appState.currentUser?.role === 'admin' && 
-                   tournament.status === 'completed' && 
-                   !tournament.confirmed && (
+                   tournament.status === 'completed' && (
                     <Button variant="default" size="sm" onClick={() => confirmTournament(tournament.id)}>
                       <Icon name="CheckCircle" size={14} className="mr-1" />
                       Подтвердить турнир

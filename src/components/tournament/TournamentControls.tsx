@@ -176,8 +176,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
             )}
 
           {appState.currentUser?.role === "admin" &&
-            tournament.status === "completed" &&
-            !tournament.confirmed && (
+            tournament.status === "completed" && (
               <Button
                 onClick={() => confirmTournament(tournament.id)}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
