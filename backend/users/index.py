@@ -2,7 +2,40 @@ import json
 import os
 import psycopg2
 import bcrypt
-from typing import Dict, Any
+import jwt
+from typing import Dict, Any, Optional, Tuple
+
+def verify_token(event: Dict[str, Any]) -> Tuple[bool, Optional[Dict], Optional[str]]:
+    '''Verify JWT token from request headers'''
+    headers = event.get('headers', {})
+    token = headers.get('x-auth-token') or headers.get('X-Auth-Token')
+    
+    if not token:
+        return False, None, 'Missing authentication token'
+    
+    jwt_secret = os.environ.get('JWT_SECRET')
+    if not jwt_secret:
+        return False, None, 'Server configuration error'
+    
+    try:
+        payload = jwt.decode(token, jwt_secret, algorithms=['HS256'])
+        return True, payload, None
+    except jwt.ExpiredSignatureError:
+        return False, None, 'Token expired'
+    except jwt.InvalidTokenError:
+        return False, None, 'Invalid token'
+
+def create_auth_error(message: str, status_code: int = 401) -> Dict[str, Any]:
+    '''Create authentication error response'''
+    return {
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
+        'isBase64Encoded': False,
+        'body': json.dumps({'error': message, 'success': False})
+    }
 
 def get_db_connection():
     """Get database connection using DATABASE_URL secret"""
@@ -34,7 +67,7 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token',
                 'Access-Control-Max-Age': '86400'
             },
             'body': ''
@@ -48,6 +81,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         cursor = conn.cursor()
         
         if method == 'GET':
+            # Require authentication
+            is_valid, user_data, error_msg = verify_token(event)
+            if not is_valid:
+                return create_auth_error(error_msg or 'Unauthorized')
+            
             # Get all users
             cursor.execute("""
                 SELECT id, username, name, role, city, is_active, created_at, rating, tournaments, wins, losses, draws
@@ -79,6 +117,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
         
         elif method == 'POST':
+            # Require admin role for creating users
+            is_valid, user_data, error_msg = verify_token(event)
+            if not is_valid:
+                return create_auth_error(error_msg or 'Unauthorized')
+            
+            if user_data.get('role') not in ['admin', 'judge']:
+                return create_auth_error('Insufficient permissions', 403)
+            
             # Create new user
             body_data = json.loads(event.get('body', '{}'))
             username = body_data.get('username', '').strip()
@@ -139,6 +185,11 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             }
         
         elif method == 'PUT':
+            # Require authentication
+            is_valid, user_data, error_msg = verify_token(event)
+            if not is_valid:
+                return create_auth_error(error_msg or 'Unauthorized')
+            
             # Update user (single user or batch updates)
             query_params = event.get('queryStringParameters') or {}
             batch_mode = query_params.get('batch') == 'true'
@@ -270,6 +321,14 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 }
         
         elif method == 'DELETE':
+            # Require admin authentication
+            is_valid, user_data, error_msg = verify_token(event)
+            if not is_valid:
+                return create_auth_error(error_msg or 'Unauthorized')
+            
+            if user_data.get('role') != 'admin':
+                return create_auth_error('Insufficient permissions', 403)
+            
             # Delete user only if they never participated in any tournament
             query_params = event.get('queryStringParameters') or {}
             user_id = query_params.get('id')

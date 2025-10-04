@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Reject request without token",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401,
+      "expectedBody": {
+        "success": false,
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
