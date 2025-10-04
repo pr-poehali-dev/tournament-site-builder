@@ -158,6 +158,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             tournament_id = body_data.get('id')
             status = body_data.get('status')
             current_round = body_data.get('current_round')
+            confirmed = body_data.get('confirmed')
             
             if not tournament_id:
                 return {
@@ -192,6 +193,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 update_fields.append(f"status = '{escaped_status}'")
             if current_round is not None:
                 update_fields.append(f"current_round = {int(current_round)}")
+            if confirmed is not None:
+                update_fields.append(f"confirmed = {str(bool(confirmed)).upper()}")
             
             if not update_fields:
                 return {
