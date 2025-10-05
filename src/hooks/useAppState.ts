@@ -2025,7 +2025,7 @@ export const useAppState = () => {
     return { success: true, matches };
   }, [appState.tournaments, appState.players]);
 
-  const createSeatingRound = useCallback((tournamentId: string) => {
+  const createSeatingRound = useCallback(async (tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament) return;
     
@@ -2091,6 +2091,43 @@ export const useAppState = () => {
       isCompleted: true
     };
     
+    // Save to database first
+    if (tournament.dbId) {
+      try {
+        const pairings = seatingRound.matches.map(match => ({
+          player1_id: match.player1Id,
+          player2_id: match.player2Id || null
+        }));
+        
+        console.log('📤 Сохранение рассадки в БД:', {
+          tournament_id: tournament.dbId,
+          round_number: 0,
+          pairings
+        });
+        
+        const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            tournament_id: tournament.dbId,
+            round_number: 0,
+            pairings
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Рассадка сохранена в БД');
+        } else {
+          console.error('❌ Ошибка сохранения рассадки в БД:', await response.text());
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при сохранении рассадки:', error);
+      }
+    } else {
+      console.warn('⚠️ Турнир не имеет dbId, рассадка не сохранена в БД');
+    }
+    
+    // Update local state
     setAppState(prev => ({
       ...prev,
       tournaments: prev.tournaments.map(t =>
