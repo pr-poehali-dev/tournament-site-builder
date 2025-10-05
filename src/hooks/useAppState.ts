@@ -882,8 +882,11 @@ export const useAppState = () => {
           };
         });
 
-      // Calculate currentRound
-      const currentRound = rounds.length;
+      // Calculate currentRound based on real rounds (excluding seating round with number 0)
+      const realRounds = rounds.filter(r => r.number > 0);
+      const currentRound = realRounds.length > 0 
+        ? Math.max(...realRounds.map(r => r.number)) 
+        : 0;
 
       // Update tournament with loaded data
       setAppState(prev => ({
