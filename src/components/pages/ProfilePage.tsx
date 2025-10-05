@@ -56,6 +56,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
               <div className="font-medium">{appState.currentUser?.name}</div>
             </div>
             <div>
+              <div className="text-muted-foreground">Город</div>
+              <div className="font-medium">{appState.currentUser?.city || '—'}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Рейтинг</div>
+              <div className="font-medium">
+                {appState.players.find(p => p.id === appState.currentUser?.id)?.rating || 1200}
+              </div>
+            </div>
+            <div>
               <div className="text-muted-foreground">Роль</div>
               <Badge variant="outline">
                 {appState.currentUser?.role === 'admin' ? 'Администратор' : 
