@@ -18,6 +18,7 @@ interface TournamentEditPageProps {
   deleteLastRound: (tournamentId: string) => void;
   finishTournament: (tournamentId: string) => void;
   confirmTournament: (tournamentId: string) => void;
+  updateTournament: (tournamentId: string, updates: Partial<Tournament>) => void;
 }
 
 export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
@@ -33,6 +34,7 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
   deleteLastRound,
   finishTournament,
   confirmTournament,
+  updateTournament,
 }) => {
   if (!editingTournament) return null;
 
@@ -42,7 +44,11 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
 
   return (
     <div className="space-y-6">
-      <TournamentHeader tournament={tournament} />
+      <TournamentHeader 
+        tournament={tournament} 
+        appState={appState}
+        updateTournament={updateTournament}
+      />
 
       <TournamentRoundsList
         tournament={tournament}

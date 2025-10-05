@@ -527,6 +527,7 @@ const Index = () => {
             deleteLastRound={deleteLastRound}
             finishTournament={finishTournament}
             confirmTournament={confirmTournament}
+            updateTournament={updateTournament}
           />
         )}
 
