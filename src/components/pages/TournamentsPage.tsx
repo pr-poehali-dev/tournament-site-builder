@@ -20,29 +20,42 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
   goToCreateTournament,
   startEditTournament,
   confirmTournament
-}) => (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Icon name="Trophy" size={20} className="mr-2" />
-            Управление турнирами ({appState.tournaments.length})
-          </div>
-          <Button onClick={goToCreateTournament}>Новый турнир</Button>
-        </CardTitle>
-        <CardDescription>Создание и управление турнирами</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {appState.tournaments.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Icon name="Trophy" size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Пока нет турниров</p>
-            <p className="text-sm mt-2">Создайте первый турнир, чтобы начать</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {appState.tournaments.map(tournament => (
+}) => {
+  const currentUserId = appState.currentUser?.id || '';
+  const isAdmin = appState.currentUser?.role === 'admin';
+  
+  const visibleTournaments = appState.tournaments.filter(tournament => {
+    if (isAdmin) return true;
+    return tournament.judgeId === currentUserId;
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Icon name="Trophy" size={20} className="mr-2" />
+              Управление турнирами ({visibleTournaments.length})
+            </div>
+            <Button onClick={goToCreateTournament}>Новый турнир</Button>
+          </CardTitle>
+          <CardDescription>Создание и управление турнирами</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {visibleTournaments.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Icon name="Trophy" size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Пока нет турниров</p>
+              <p className="text-sm mt-2">
+                {isAdmin 
+                  ? 'Создайте первый турнир, чтобы начать' 
+                  : 'Вы пока не назначены судьей ни на один турнир'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visibleTournaments.map(tournament => (
               <div key={tournament.id} className="flex items-center justify-between p-4 rounded border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-4">
                   <Badge variant={tournament.status === 'draft' ? 'outline' : tournament.status === 'active' ? 'default' : 'secondary'}>
@@ -97,4 +110,5 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
       </CardContent>
     </Card>
   </div>
-);
+  );
+};
