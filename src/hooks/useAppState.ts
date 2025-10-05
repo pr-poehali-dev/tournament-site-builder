@@ -1869,18 +1869,8 @@ export const useAppState = () => {
       const paired = new Set<string>();
       let tableNumber = 1;
 
-      // First, add bye match if needed
+      // Mark bye player as paired but don't add match yet
       if (byePlayer) {
-        const byeMatch: Match = {
-          id: `match-${Date.now()}-bye`,
-          player1Id: byePlayer,
-          player2Id: undefined,
-          points1: 3,
-          points2: 0,
-          tableNumber: undefined,
-          result: 'win1'
-        };
-        matches.push(byeMatch);
         paired.add(byePlayer);
       }
 
@@ -1921,6 +1911,20 @@ export const useAppState = () => {
         if (!foundOpponent && !paired.has(player1Standing.player.id)) {
           return null;
         }
+      }
+
+      // Add bye match at the end (after all regular matches)
+      if (byePlayer) {
+        const byeMatch: Match = {
+          id: `match-${Date.now()}-bye`,
+          player1Id: byePlayer,
+          player2Id: undefined,
+          points1: 3,
+          points2: 0,
+          tableNumber: undefined,
+          result: 'win1'
+        };
+        matches.push(byeMatch);
       }
 
       return matches;
@@ -1981,18 +1985,6 @@ export const useAppState = () => {
           const bestPairing = validPairings[0];
           matches = [];
           
-          if (byePlayerId) {
-            matches.push({
-              id: `match-${Date.now()}-bye`,
-              player1Id: byePlayerId,
-              player2Id: undefined,
-              points1: 3,
-              points2: 0,
-              tableNumber: undefined,
-              result: 'win1'
-            });
-          }
-          
           let tableNumber = 1;
           for (const pair of bestPairing.pairs) {
             matches.push({
@@ -2002,6 +1994,19 @@ export const useAppState = () => {
               points1: 0,
               points2: 0,
               tableNumber: tableNumber++
+            });
+          }
+          
+          // Add bye match at the end
+          if (byePlayerId) {
+            matches.push({
+              id: `match-${Date.now()}-bye`,
+              player1Id: byePlayerId,
+              player2Id: undefined,
+              points1: 3,
+              points2: 0,
+              tableNumber: undefined,
+              result: 'win1'
             });
           }
         }
