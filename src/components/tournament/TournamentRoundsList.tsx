@@ -129,103 +129,49 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                     ) : !match.player2Id ? (
                       <Badge variant="secondary">БАЙ</Badge>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="flex gap-1 flex-wrap">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              updateMatchResult(
-                                tournament.id,
-                                round.id,
-                                match.id,
-                                "win1",
-                              )
-                            }
-                          >
-                            3-0
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              updateMatchResult(
-                                tournament.id,
-                                round.id,
-                                match.id,
-                                "draw",
-                              )
-                            }
-                          >
-                            1-1
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              updateMatchResult(
-                                tournament.id,
-                                round.id,
-                                match.id,
-                                "win2",
-                              )
-                            }
-                          >
-                            0-3
-                          </Button>
-                        </div>
-                        <div className="flex gap-3 items-center text-sm">
-                          <div className="flex items-center gap-1">
-                            <Checkbox
-                              id={`drop-${match.id}-1`}
-                              checked={
-                                tournament.droppedPlayerIds?.includes(
-                                  match.player1Id,
-                                ) || false
-                              }
-                              onCheckedChange={() =>
-                                togglePlayerDrop(tournament.id, match.player1Id)
-                              }
-                            />
-                            <label
-                              htmlFor={`drop-${match.id}-1`}
-                              className="text-red-600 cursor-pointer"
-                            >
-                              Дроп{" "}
-                              {
-                                appState.players.find(
-                                  (p) => p.id === match.player1Id,
-                                )?.username
-                              }
-                            </label>
-                          </div>
-                          {match.player2Id && (
-                            <div className="flex items-center gap-1">
-                              <Checkbox
-                                id={`drop-${match.id}-2`}
-                                checked={
-                                  tournament.droppedPlayerIds?.includes(
-                                    match.player2Id,
-                                  ) || false
-                                }
-                                onCheckedChange={() =>
-                                  togglePlayerDrop(tournament.id, match.player2Id)
-                                }
-                              />
-                              <label
-                                htmlFor={`drop-${match.id}-2`}
-                                className="text-red-600 cursor-pointer"
-                              >
-                                Дроп{" "}
-                                {
-                                  appState.players.find(
-                                    (p) => p.id === match.player2Id,
-                                  )?.username
-                                }
-                              </label>
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex gap-1 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            updateMatchResult(
+                              tournament.id,
+                              round.id,
+                              match.id,
+                              "win1",
+                            )
+                          }
+                        >
+                          3-0
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            updateMatchResult(
+                              tournament.id,
+                              round.id,
+                              match.id,
+                              "draw",
+                            )
+                          }
+                        >
+                          1-1
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            updateMatchResult(
+                              tournament.id,
+                              round.id,
+                              match.id,
+                              "win2",
+                            )
+                          }
+                        >
+                          0-3
+                        </Button>
                       </div>
                     )}
                   </div>

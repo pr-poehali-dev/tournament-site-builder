@@ -70,7 +70,11 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
         confirmTournament={confirmTournament}
       />
 
-      <TournamentStandings tournament={tournament} appState={appState} />
+      <TournamentStandings 
+        tournament={tournament} 
+        appState={appState}
+        togglePlayerDrop={togglePlayerDrop}
+      />
     </div>
   );
 };

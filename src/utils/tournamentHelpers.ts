@@ -155,6 +155,8 @@ export const calculateTournamentStandings = (
   tournament: any,
   users: any[],
 ) => {
+  const droppedPlayerIds = new Set(tournament.droppedPlayerIds || []);
+  
   return tournament.participants
     .map((participantId: string) => {
       const user = users.find((u: any) => u.id === participantId);
@@ -165,9 +167,28 @@ export const calculateTournamentStandings = (
       let losses = 0;
       let draws = 0;
       const opponentIds: string[] = [];
+      let dropRoundNumber: number | null = null;
+
+      // Determine when player was dropped (if at all)
+      if (droppedPlayerIds.has(participantId)) {
+        tournament.rounds?.forEach((round: any, index: number) => {
+          const match = round.matches?.find(
+            (m: any) => m.player1Id === participantId || m.player2Id === participantId
+          );
+          // If player is not in matches of this round, they dropped before/during it
+          if (!match && dropRoundNumber === null) {
+            dropRoundNumber = round.number;
+          }
+        });
+      }
 
       tournament.rounds?.forEach((round: any) => {
         if (round.number <= tournament.swissRounds) {
+          // Skip rounds after player dropped
+          if (dropRoundNumber !== null && round.number >= dropRoundNumber) {
+            return;
+          }
+          
           const match = round.matches?.find(
             (m: any) =>
               m.player1Id === participantId || m.player2Id === participantId,
@@ -280,7 +301,7 @@ export const calculateTournamentStandings = (
         return acc + opponentBuchholz;
       }, 0);
 
-      const isDropped = tournament.droppedPlayers?.includes(participantId);
+      const isDropped = droppedPlayerIds.has(participantId);
 
       return {
         user,
