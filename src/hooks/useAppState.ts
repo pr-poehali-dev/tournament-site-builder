@@ -81,7 +81,8 @@ export const useAppState = () => {
               status: frontendStatus,
               currentRound: t.current_round || 0,
               rounds: [],
-              judgeId: t.judge_id ? t.judge_id.toString() : ''
+              judgeId: t.judge_id ? t.judge_id.toString() : '',
+              droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString())
             };
           });
           
@@ -404,6 +405,42 @@ export const useAppState = () => {
 
     loadUsersFromDatabase();
   }, [syncDbUsersToPlayers]);
+
+  // Sync tournaments from database
+  const syncDbTournaments = useCallback((tournamentsFromDb: any[]) => {
+    const mappedTournaments = tournamentsFromDb.map((t: any) => {
+      // Map database status to frontend status
+      let frontendStatus: 'draft' | 'active' | 'completed' | 'confirmed' = 'draft';
+      if (t.status === 'active') frontendStatus = 'active';
+      else if (t.status === 'completed') frontendStatus = 'completed';
+      else if (t.status === 'confirmed') frontendStatus = 'confirmed';
+      else frontendStatus = 'draft';
+      
+      return {
+        id: t.id.toString(),
+        dbId: t.id,
+        name: t.name,
+        format: t.format || 'sealed',
+        date: t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        city: t.city || '',
+        description: `Турнир по формату ${t.format || 'sealed'}`,
+        isRated: t.is_rated !== false,
+        swissRounds: t.swiss_rounds || 3,
+        topRounds: t.top_rounds || 0,
+        participants: (t.participants || []).map((id: number) => id.toString()),
+        status: frontendStatus,
+        currentRound: t.current_round || 0,
+        rounds: [],
+        judgeId: t.judge_id ? t.judge_id.toString() : '',
+        droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString())
+      };
+    });
+    
+    setAppState(prev => ({
+      ...prev,
+      tournaments: mappedTournaments
+    }));
+  }, []);
 
   // Load cities from database on app start
   useEffect(() => {
@@ -968,29 +1005,52 @@ export const useAppState = () => {
     }));
   }, [appState.tournaments]);
 
-  const togglePlayerDrop = useCallback((tournamentId: string, playerId: string) => {
-    setAppState(prev => {
-      const tournament = prev.tournaments.find(t => t.id === tournamentId);
-      if (!tournament) return prev;
+  const togglePlayerDrop = useCallback(async (tournamentId: string, playerId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return;
 
-      const droppedPlayers = new Set(tournament.droppedPlayerIds || []);
-      
-      if (droppedPlayers.has(playerId)) {
-        droppedPlayers.delete(playerId);
-      } else {
-        droppedPlayers.add(playerId);
+    const droppedPlayers = new Set(tournament.droppedPlayerIds || []);
+    
+    if (droppedPlayers.has(playerId)) {
+      droppedPlayers.delete(playerId);
+    } else {
+      droppedPlayers.add(playerId);
+    }
+    
+    const updatedDroppedPlayers = Array.from(droppedPlayers);
+
+    // Update in database if tournament has dbId
+    if (tournament.dbId) {
+      try {
+        const response = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            id: tournament.dbId,
+            droppedPlayers: updatedDroppedPlayers
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Дропы синхронизированы с БД');
+        } else {
+          console.error('❌ Ошибка синхронизации дропов с БД:', await response.text());
+        }
+      } catch (error) {
+        console.error('❌ Ошибка подключения к БД при обновлении дропов:', error);
       }
+    }
 
-      return {
-        ...prev,
-        tournaments: prev.tournaments.map(t =>
-          t.id === tournamentId
-            ? { ...t, droppedPlayerIds: Array.from(droppedPlayers) }
-            : t
-        )
-      };
-    });
-  }, []);
+    // Update local state
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId
+          ? { ...t, droppedPlayerIds: updatedDroppedPlayers }
+          : t
+      )
+    }));
+  }, [appState.tournaments]);
 
   const deleteLastRound = useCallback(async (tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);

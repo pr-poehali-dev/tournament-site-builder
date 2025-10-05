@@ -43,10 +43,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         body = event.get('body', '{}')
         tournament_data = json.loads(body)
         
-        # Handle PUT request for status update
+        # Handle PUT request for status or dropped_players update
         if method == 'PUT':
             tournament_id = tournament_data.get('id')
             status = tournament_data.get('status')
+            dropped_players = tournament_data.get('droppedPlayers')
             
             if not tournament_id:
                 return {
@@ -76,14 +77,45 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            # Update tournament status
-            cursor.execute("""
-                UPDATE t_p79348767_tournament_site_buil.tournaments 
-                SET status = %s
-                WHERE id = %s
-                RETURNING id, status
-            """, (status, tournament_id))
+            # Build dynamic UPDATE query based on provided fields
+            update_fields = []
+            update_values = []
             
+            if status is not None:
+                update_fields.append('status = %s')
+                update_values.append(status)
+            
+            if dropped_players is not None:
+                # Convert to PostgreSQL array format
+                if dropped_players:
+                    dropped_str = '{' + ','.join(str(int(p)) for p in dropped_players) + '}'
+                else:
+                    dropped_str = '{}'
+                update_fields.append('dropped_players = %s::integer[]')
+                update_values.append(dropped_str)
+            
+            if not update_fields:
+                cursor.close()
+                conn.close()
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'No fields to update'})
+                }
+            
+            update_values.append(tournament_id)
+            query = f"""
+                UPDATE t_p79348767_tournament_site_buil.tournaments 
+                SET {', '.join(update_fields)}
+                WHERE id = %s
+                RETURNING id, status, dropped_players
+            """
+            
+            cursor.execute(query, tuple(update_values))
             row = cursor.fetchone()
             conn.commit()
             
@@ -112,7 +144,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False,
                 'body': json.dumps({
                     'success': True,
-                    'tournament': {'id': row[0], 'status': row[1]}
+                    'tournament': {
+                        'id': row[0], 
+                        'status': row[1],
+                        'droppedPlayers': row[2] if row[2] else []
+                    }
                 })
             }
         
@@ -177,12 +213,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         cursor.execute("""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants, t_seating) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s)
-            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants, t_seating
+            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants, t_seating, dropped_players) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s, %s::integer[])
+            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants, t_seating, dropped_players
         """, (name, tournament_type, tournament_format, 'setup', 0, swiss_rounds, 
               top_rounds if top_rounds else None, city if city else None, 
-              is_rated, judge_id_int, participants_str, t_seating))
+              is_rated, judge_id_int, participants_str, t_seating, '{}'))
         
         row = cursor.fetchone()
         conn.commit()
@@ -201,6 +237,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'judge_id': row[9],
             'participants': row[10] if row[10] else [],
             't_seating': row[11],
+            'droppedPlayers': row[12] if row[12] else [],
             'db_saved': True
         }
         
