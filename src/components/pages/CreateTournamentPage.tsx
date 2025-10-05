@@ -140,7 +140,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       status: 'draft',
       currentRound: 0,
       rounds: [],
-      judgeId: appState.currentUser?.id || ''
+      judgeId: appState.currentUser?.id || '',
+      hasSeating: tournamentForm.tSeating
     };
 
     try {

@@ -54,6 +54,8 @@ export interface Tournament {
   rounds: Round[];
   currentRound: number;
   judgeId?: string; // ID судьи турнира
+  hasSeating?: boolean; // Признак необходимости рассадки
+  droppedPlayerIds?: string[];
 }
 
 export interface Player {

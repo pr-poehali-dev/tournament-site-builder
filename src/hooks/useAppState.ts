@@ -432,7 +432,8 @@ export const useAppState = () => {
         currentRound: t.current_round || 0,
         rounds: [],
         judgeId: t.judge_id ? t.judge_id.toString() : '',
-        droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString())
+        droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString()),
+        hasSeating: t.hasSeating || false
       };
     });
     
@@ -1868,6 +1869,82 @@ export const useAppState = () => {
     return { success: true, matches };
   }, [appState.tournaments, appState.players]);
 
+  const createSeatingRound = useCallback((tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return;
+    
+    if (!tournament.hasSeating) {
+      alert('У этого турнира нет признака рассадки');
+      return;
+    }
+    
+    if (tournament.currentRound !== 0 || tournament.rounds?.length > 0) {
+      alert('Рассадку можно создать только до первого тура');
+      return;
+    }
+    
+    const participants = tournament.participants
+      .map(playerId => appState.players.find(p => p.id === playerId))
+      .filter(Boolean) as Player[];
+    
+    if (participants.length < 2) {
+      alert('Недостаточно участников для рассадки');
+      return;
+    }
+    
+    const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
+    
+    const matches: Match[] = [];
+    let tableNumber = 1;
+    
+    for (let i = 0; i < shuffledParticipants.length; i += 2) {
+      const player1 = shuffledParticipants[i];
+      const player2 = shuffledParticipants[i + 1];
+      
+      if (player2) {
+        matches.push({
+          id: `seating-match-${Date.now()}-${tableNumber}`,
+          player1Id: player1.id,
+          player2Id: player2.id,
+          tableNumber,
+          points1: 0,
+          points2: 0,
+          result: undefined
+        });
+        tableNumber++;
+      } else {
+        matches.push({
+          id: `seating-match-${Date.now()}-bye`,
+          player1Id: player1.id,
+          player2Id: undefined,
+          tableNumber: undefined,
+          points1: 0,
+          points2: 0,
+          result: undefined
+        });
+      }
+    }
+    
+    const seatingRound: Round = {
+      id: `round-seating-${Date.now()}`,
+      number: 0,
+      matches,
+      isCompleted: true
+    };
+    
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.map(t =>
+        t.id === tournamentId
+          ? {
+              ...t,
+              rounds: [seatingRound]
+            }
+          : t
+      )
+    }));
+  }, [appState.tournaments, appState.players]);
+
   return {
     // State
     appState,
@@ -1922,6 +1999,7 @@ export const useAppState = () => {
     confirmTournament,
     confirmTournamentWithPlayerUpdates,
     generatePairings,
+    createSeatingRound,
     
     // Raw state setter (for complex updates)
     setAppState,

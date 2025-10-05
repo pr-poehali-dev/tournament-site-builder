@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { AppState, Tournament } from '@/types';
+import { SeatingTable } from './SeatingTable';
 
 interface TournamentRoundsListProps {
   tournament: Tournament;
@@ -28,7 +29,12 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
         <CardTitle>Туры турнира</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {tournament.rounds?.map((round) => (
+        {tournament.rounds?.map((round) => {
+          if (round.number === 0) {
+            return <SeatingTable key={round.id} round={round} users={appState.users} />;
+          }
+          
+          return (
           <div key={round.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Тур {round.number}</h3>
@@ -179,7 +185,8 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );

@@ -70,6 +70,7 @@ const Index = () => {
     resetToInitialState,
     generatePairings,
     loadTournamentWithGames,
+    createSeatingRound,
   } = useAppState();
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -528,6 +529,7 @@ const Index = () => {
             finishTournament={finishTournament}
             confirmTournament={confirmTournament}
             updateTournament={updateTournament}
+            createSeatingRound={createSeatingRound}
           />
         )}
 

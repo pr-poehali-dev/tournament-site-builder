@@ -27,6 +27,7 @@ interface TournamentControlsProps {
   deleteLastRound: (tournamentId: string) => void;
   finishTournament: (tournamentId: string) => void;
   confirmTournament: (tournamentId: string) => void;
+  createSeatingRound?: (tournamentId: string) => void;
 }
 
 export const TournamentControls: React.FC<TournamentControlsProps> = ({
@@ -40,6 +41,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
   deleteLastRound,
   finishTournament,
   confirmTournament,
+  createSeatingRound,
 }) => {
   if (
     appState.currentUser?.role !== "admin" &&
@@ -68,6 +70,16 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2 justify-center">
+          {tournament.hasSeating && tournament.currentRound === 0 && tournament.rounds?.length === 0 && createSeatingRound && (
+            <Button
+              onClick={() => createSeatingRound(tournament.id)}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+            >
+              <Icon name="Users" size={16} />
+              Рассадить игроков
+            </Button>
+          )}
+
           {canCreateNextRound &&
             (tournament.rounds?.length === 0 ||
               !tournament.rounds?.length ||
