@@ -364,10 +364,21 @@ export const useAppState = () => {
       console.log('✅ Заменяем игроков данными из БД:', playersFromDb.length);
       console.log('✅ Заменяем пользователей данными из БД:', usersFromDb.length);
       
+      // Если есть текущий пользователь, обновляем его данные из БД
+      let updatedCurrentUser = prev.currentUser;
+      if (prev.currentUser) {
+        const userFromDb = usersFromDb.find(u => u.id === prev.currentUser?.id);
+        if (userFromDb) {
+          updatedCurrentUser = userFromDb;
+          console.log('✅ Обновили currentUser из БД:', userFromDb);
+        }
+      }
+      
       return {
         ...prev,
-        players: playersFromDb, // Полностью заменяем игроков данными из БД
-        users: usersFromDb // Полностью заменяем пользователей данными из БД
+        players: playersFromDb,
+        users: usersFromDb,
+        currentUser: updatedCurrentUser
       };
     });
   }, []);
@@ -399,8 +410,7 @@ export const useAppState = () => {
     const loadCitiesFromDatabase = async () => {
       try {
         const response = await fetch('https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64', {
-          method: 'GET',
-          headers: getAuthHeaders()
+          method: 'GET'
         });
 
         if (response.ok) {
@@ -538,8 +548,7 @@ export const useAppState = () => {
     const loadFormatsFromDatabase = async () => {
       try {
         const response = await fetch('https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810', {
-          method: 'GET',
-          headers: getAuthHeaders()
+          method: 'GET'
         });
 
         if (response.ok) {
