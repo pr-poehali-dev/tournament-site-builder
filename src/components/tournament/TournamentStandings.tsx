@@ -92,7 +92,7 @@ export const TournamentStandings: React.FC<TournamentStandingsProps> = ({
                     )}
                   </tr>
                 );
-              })
+              })}
             </tbody>
           </table>
         </div>
