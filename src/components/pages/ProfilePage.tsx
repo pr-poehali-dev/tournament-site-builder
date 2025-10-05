@@ -100,16 +100,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
             <div className="grid gap-4">
               <div>
-                <Label htmlFor="name">Имя</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={profileEdit.name}
-                  onChange={handleProfileNameChange}
-                  placeholder="Введите имя"
-                />
-              </div>
-              <div>
                 <Label htmlFor="city">Город</Label>
                 <Select value={profileEdit.city} onValueChange={handleProfileCityChange}>
                   <SelectTrigger>

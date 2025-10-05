@@ -242,7 +242,6 @@ const Index = () => {
     try {
       // Prepare update data
       const updateData: any = {
-        name: profileEdit.name,
         city: profileEdit.city || null,
       };
 
@@ -276,7 +275,6 @@ const Index = () => {
       // Update local state
       const updatedUser = {
         ...appState.currentUser,
-        name: profileEdit.name,
         city: profileEdit.city,
         ...(profileEdit.password && { password: profileEdit.password }),
       };
