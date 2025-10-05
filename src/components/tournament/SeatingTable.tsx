@@ -62,16 +62,22 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
             h1 {
               text-align: center;
               font-size: 20px;
-              margin-bottom: 8px;
+              margin-bottom: 3px;
+              font-weight: bold;
             }
             .info {
               text-align: center;
               margin-bottom: 12px;
               font-size: 12px;
-              color: #666;
             }
             .info p {
               margin: 3px 0;
+            }
+            .seating-title {
+              text-align: center;
+              font-size: 12px;
+              margin-bottom: 12px;
+              text-indent: 1em;
             }
             .columns {
               display: flex;
@@ -109,13 +115,13 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
           </style>
         </head>
         <body>
-          <h1>Рассадка игроков</h1>
           ${tournament ? `
+            <h1>${tournament.name}</h1>
             <div class="info">
-              <p><strong>Турнир:</strong> ${tournament.name}</p>
-              <p><strong>Дата:</strong> ${tournament.date}</p>
+              <p>${tournament.date}</p>
             </div>
-          ` : ''}
+            <div class="seating-title">Рассадка игроков</div>
+          ` : '<h1>Рассадка игроков</h1>'}
           <div class="columns">
             <div class="column">
               <table>
