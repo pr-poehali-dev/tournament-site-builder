@@ -134,6 +134,11 @@ export const sortByTopResults = (a: any, b: any, tournament: any, users: any[]) 
 };
 
 export const getRoundName = (tournament: any, roundNumber: number): string => {
+  // Рассадочный тур имеет номер 0
+  if (roundNumber === 0) {
+    return "Рассадка";
+  }
+  
   if (roundNumber <= tournament.swissRounds) {
     return `${roundNumber} тур`;
   } else {
@@ -183,6 +188,11 @@ export const calculateTournamentStandings = (
       }
 
       tournament.rounds?.forEach((round: any) => {
+        // Пропускаем рассадочный тур (не учитывается в подсчёте очков)
+        if (round.number === 0) {
+          return;
+        }
+        
         if (round.number <= tournament.swissRounds) {
           // Skip rounds after player dropped
           if (dropRoundNumber !== null && round.number >= dropRoundNumber) {
@@ -222,6 +232,11 @@ export const calculateTournamentStandings = (
       const buchholz = opponentIds.reduce((acc, opponentId) => {
         let opponentPoints = 0;
         tournament.rounds?.forEach((round: any) => {
+          // Пропускаем рассадочный тур
+          if (round.number === 0) {
+            return;
+          }
+          
           if (round.number <= tournament.swissRounds) {
             const opponentMatch = round.matches?.find(
               (m: any) =>
@@ -252,6 +267,11 @@ export const calculateTournamentStandings = (
 
         const opponentOpponentIds: string[] = [];
         tournament.rounds?.forEach((round: any) => {
+          // Пропускаем рассадочный тур
+          if (round.number === 0) {
+            return;
+          }
+          
           if (round.number <= tournament.swissRounds) {
             const opponentMatch = round.matches?.find(
               (m: any) =>
@@ -273,6 +293,11 @@ export const calculateTournamentStandings = (
         opponentBuchholz = opponentOpponentIds.reduce((oppAcc, oppOppId) => {
           let oppOppPoints = 0;
           tournament.rounds?.forEach((round: any) => {
+            // Пропускаем рассадочный тур
+            if (round.number === 0) {
+              return;
+            }
+            
             if (round.number <= tournament.swissRounds) {
               const oppOppMatch = round.matches?.find(
                 (m: any) =>

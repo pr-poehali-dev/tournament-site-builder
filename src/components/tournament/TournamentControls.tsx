@@ -63,12 +63,24 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
     lastRound.matches?.every((match) => !match.player2Id || match.result) ||
     false;
 
+  // Проверка: есть ли только рассадочный тур (number === 0) или нет туров вообще
+  const hasOnlySeatingRound = tournament.rounds?.length === 1 && tournament.rounds[0].number === 0;
+  const hasNoRounds = !tournament.rounds || tournament.rounds.length === 0;
+  const canCreateSeating = tournament.hasSeating && tournament.currentRound === 0 && (hasNoRounds || hasOnlySeatingRound);
+  
+  // Проверка: есть ли реальные (не рассадочные) туры
+  const realRounds = tournament.rounds?.filter(r => r.number > 0) || [];
+  const hasNoRealRounds = realRounds.length === 0;
+
   console.log('🔍 TournamentControls debug:', {
     hasSeating: tournament.hasSeating,
     currentRound: tournament.currentRound,
     roundsLength: tournament.rounds?.length,
-    createSeatingRound: !!createSeatingRound,
-    shouldShowButton: tournament.hasSeating && tournament.currentRound === 0 && (!tournament.rounds || tournament.rounds.length === 0) && createSeatingRound
+    hasOnlySeatingRound,
+    hasNoRounds,
+    canCreateSeating,
+    realRoundsLength: realRounds.length,
+    createSeatingRound: !!createSeatingRound
   });
 
   return (
@@ -78,7 +90,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2 justify-center">
-          {tournament.hasSeating && tournament.currentRound === 0 && (!tournament.rounds || tournament.rounds.length === 0) && createSeatingRound && (
+          {canCreateSeating && createSeatingRound && (
             <Button
               onClick={() => createSeatingRound(tournament.id)}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
@@ -89,9 +101,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
           )}
 
           {canCreateNextRound &&
-            (tournament.rounds?.length === 0 ||
-              !tournament.rounds?.length ||
-              isLastRoundCompleted) && (
+            (hasNoRealRounds || isLastRoundCompleted) && (
               <Button
                 onClick={() => {
                   const pairings = generatePairings(tournament.id);
@@ -116,9 +126,8 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
 
           {tournament.currentRound < totalRounds &&
             (tournament.status === "active" || tournament.status === "draft") &&
-            tournament.rounds &&
-            tournament.rounds.length > 0 &&
-            !tournament.rounds[tournament.rounds.length - 1].matches?.every(
+            realRounds.length > 0 &&
+            !realRounds[realRounds.length - 1].matches?.every(
               (match) => !match.player2Id || match.result,
             ) && (
               <div className="text-center text-sm text-muted-foreground bg-muted p-3 rounded">
@@ -127,16 +136,14 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
               </div>
             )}
 
-          {tournament.rounds &&
-            tournament.rounds.length > 0 &&
-            !tournament.rounds[tournament.rounds.length - 1]?.isCompleted &&
+          {realRounds.length > 0 &&
+            !realRounds[realRounds.length - 1]?.isCompleted &&
             !tournament.confirmed && (
               <Button
                 variant="outline"
                 onClick={() => {
                   console.log("Button clicked!");
-                  const lastRound =
-                    tournament.rounds[tournament.rounds.length - 1];
+                  const lastRound = realRounds[realRounds.length - 1];
                   console.log("Last round:", lastRound);
                   console.log("Setting states...");
                   setEditingRoundId(lastRound.id);
@@ -151,8 +158,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
               </Button>
             )}
 
-          {tournament.rounds && 
-           tournament.rounds.length > 0 && 
+          {realRounds.length > 0 && 
            !tournament.confirmed && 
            tournament.status !== 'confirmed' && (
             <AlertDialog>
@@ -186,8 +192,8 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
           )}
 
           {tournament.currentRound === totalRounds &&
-            tournament.rounds.length > 0 &&
-            tournament.rounds[tournament.rounds.length - 1]?.isCompleted &&
+            realRounds.length > 0 &&
+            realRounds[realRounds.length - 1]?.isCompleted &&
             tournament.status === "active" && (
               <Button
                 onClick={() => finishTournament(tournament.id)}

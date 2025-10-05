@@ -78,7 +78,9 @@ export const RoundsTab: React.FC<RoundsTabProps> = ({
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {!match.result ? (
+                        {round.number === 0 ? (
+                          <Badge variant="secondary">Рассадка</Badge>
+                        ) : !match.result ? (
                           <Badge variant="outline">Не сыграно</Badge>
                         ) : !player2 ? (
                           <Badge variant="secondary">БАЙ</Badge>
