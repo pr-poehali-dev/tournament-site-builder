@@ -63,6 +63,14 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
     lastRound.matches?.every((match) => !match.player2Id || match.result) ||
     false;
 
+  console.log('🔍 TournamentControls debug:', {
+    hasSeating: tournament.hasSeating,
+    currentRound: tournament.currentRound,
+    roundsLength: tournament.rounds?.length,
+    createSeatingRound: !!createSeatingRound,
+    shouldShowButton: tournament.hasSeating && tournament.currentRound === 0 && (!tournament.rounds || tournament.rounds.length === 0) && createSeatingRound
+  });
+
   return (
     <Card>
       <CardHeader>
