@@ -7,6 +7,41 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 import time
 
+# CORS configuration inline (shared module doesn't work in cloud functions)
+ALLOWED_ORIGINS = [
+    'https://poehali.dev',
+    'https://www.poehali.dev',
+    'http://localhost:5173',
+    'http://localhost:3000'
+]
+
+def get_cors_headers(origin: str = None) -> dict:
+    if origin and origin in ALLOWED_ORIGINS:
+        allowed_origin = origin
+    else:
+        allowed_origin = ALLOWED_ORIGINS[0]
+    
+    return {
+        'Access-Control-Allow-Origin': allowed_origin,
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token, X-User-Id, X-Session-Id',
+        'Access-Control-Max-Age': '86400',
+        'Access-Control-Allow-Credentials': 'true'
+    }
+
+def create_response(status_code: int, body: dict, origin: str = None) -> dict:
+    headers = {
+        'Content-Type': 'application/json',
+        **get_cors_headers(origin)
+    }
+    
+    return {
+        'statusCode': status_code,
+        'headers': headers,
+        'isBase64Encoded': False,
+        'body': json.dumps(body)
+    }
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
     Business: User authentication with bcrypt hashing (v2)
@@ -15,44 +50,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Returns: HTTP response with user data if credentials are valid
     '''
     method = event.get('httpMethod', 'POST')
+    origin = event.get('headers', {}).get('origin') or event.get('headers', {}).get('Origin')
     
     # Handle CORS OPTIONS request
     if method == 'OPTIONS':
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Auth-Token',
-                'Access-Control-Max-Age': '86400'
-            },
+            'headers': get_cors_headers(origin),
             'isBase64Encoded': False,
             'body': ''
         }
     
     if method != 'POST':
-        return {
-            'statusCode': 405,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'isBase64Encoded': False,
-            'body': json.dumps({'error': 'Method not allowed'})
-        }
+        return create_response(405, {'error': 'Method not allowed'}, origin)
     
     # Get database connection
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'isBase64Encoded': False,
-            'body': json.dumps({'error': 'Database connection not configured'})
-        }
+        return create_response(500, {'error': 'Database connection not configured'}, origin)
     
     try:
         body_str = event.get('body') or '{}'
@@ -62,15 +77,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         source_ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp', 'unknown')
         
         if not username or not password:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'Username and password are required'})
-            }
+            return create_response(400, {'error': 'Username and password are required'}, origin)
         
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
@@ -92,15 +99,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             # Block if 5+ attempts in last 15 minutes (900 seconds)
             if attempt_count >= 5 and time_diff < 900:
                 time.sleep(2)  # Slow down brute force attempts
-                return {
-                    'statusCode': 429,
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Too many login attempts. Please try again later.'})
-                }
+                return create_response(429, {'error': 'Too many login attempts. Please try again later.'}, origin)
             
             # Reset counter if more than 15 minutes passed
             if time_diff >= 900:
@@ -131,30 +130,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn.close()
             
             time.sleep(1)  # Slow down enumeration attacks
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'Invalid credentials'})
-            }
+            return create_response(401, {'error': 'Invalid credentials'}, origin)
         
         user_id, db_username, name, role, city, is_active, db_password, rating = row
         
         if not is_active:
             cursor.close()
             conn.close()
-            return {
-                'statusCode': 403,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'User is blocked'})
-            }
+            return create_response(403, {'error': 'User is blocked'}, origin)
         
         # Verify password using bcrypt
         password_bytes = password.encode('utf-8')
@@ -173,15 +156,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn.close()
             
             time.sleep(1)  # Slow down brute force attacks
-            return {
-                'statusCode': 401,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'Invalid credentials'})
-            }
+            return create_response(401, {'error': 'Invalid credentials'}, origin)
         
         # Authentication successful - clear failed attempts
         cursor.execute("""
@@ -195,55 +170,31 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Generate JWT token
         jwt_secret = os.environ.get('JWT_SECRET')
         if not jwt_secret:
-            return {
-                'statusCode': 500,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'isBase64Encoded': False,
-                'body': json.dumps({'error': 'JWT not configured'})
-            }
+            return create_response(500, {'error': 'JWT not configured'}, origin)
         
-        # Create JWT token with user data (expires in 7 days)
+        # Create JWT token with user data (expires in 2 hours)
         token_payload = {
             'userId': user_id,
             'username': db_username,
             'role': role,
-            'exp': datetime.utcnow() + timedelta(days=7)
+            'exp': datetime.utcnow() + timedelta(hours=2)
         }
         
         token = jwt.encode(token_payload, jwt_secret, algorithm='HS256')
         
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'isBase64Encoded': False,
-            'body': json.dumps({
-                'success': True,
-                'token': token,
-                'user': {
-                    'id': user_id,
-                    'username': db_username,
-                    'name': name,
-                    'role': role,
-                    'city': city,
-                    'isActive': is_active,
-                    'rating': rating
-                }
-            })
-        }
+        return create_response(200, {
+            'success': True,
+            'token': token,
+            'user': {
+                'id': user_id,
+                'username': db_username,
+                'name': name,
+                'role': role,
+                'city': city,
+                'isActive': is_active,
+                'rating': rating
+            }
+        }, origin)
         
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'isBase64Encoded': False,
-            'body': json.dumps({'error': f'Internal server error: {str(e)}'})
-        }
+        return create_response(500, {'error': f'Internal server error: {str(e)}'}, origin)
