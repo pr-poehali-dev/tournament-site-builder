@@ -2001,15 +2001,16 @@ export const useAppState = () => {
             });
           }
           
-          // Add bye match at the end
+          // Add bye match at the end with last table number
           if (byePlayerId) {
+            const byeTableNumber = bestPairing.pairs.length + 1;
             matches.push({
               id: `match-${Date.now()}-bye`,
               player1Id: byePlayerId,
               player2Id: undefined,
               points1: 3,
               points2: 0,
-              tableNumber: undefined,
+              tableNumber: byeTableNumber,
               result: 'win1'
             });
           }
