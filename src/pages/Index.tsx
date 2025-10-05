@@ -252,12 +252,14 @@ const Index = () => {
       }
 
       // Update user in database
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(
         `https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?id=${appState.currentUser.id}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'X-Auth-Token': token || '',
           },
           body: JSON.stringify(updateData),
         }
