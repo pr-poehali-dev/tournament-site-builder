@@ -31,7 +31,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
       <CardContent className="space-y-4">
         {tournament.rounds?.map((round) => {
           if (round.number === 0) {
-            return <SeatingTable key={round.id} round={round} users={appState.users} />;
+            return <SeatingTable key={round.id} round={round} users={appState.users} tournament={tournament} />;
           }
           
           return (

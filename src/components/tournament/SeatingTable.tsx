@@ -1,13 +1,16 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import type { Round, User } from '@/types';
+import { Button } from '@/components/ui/button';
+import Icon from '@/components/ui/icon';
+import type { Round, User, Tournament } from '@/types';
 
 interface SeatingTableProps {
   round: Round;
   users: User[];
+  tournament?: Tournament;
 }
 
-export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users }) => {
+export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tournament }) => {
   const seatingData = round.matches
     .flatMap((match) => {
       const player1 = users.find((u) => u.id === match.player1Id);
@@ -35,10 +38,104 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users }) => {
     })
     .sort((a, b) => a.playerName.localeCompare(b.playerName, 'ru'));
 
+  const generatePDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Рассадка игроков</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1 {
+              text-align: center;
+              font-size: 24px;
+              margin-bottom: 10px;
+            }
+            .info {
+              text-align: center;
+              margin-bottom: 20px;
+              color: #666;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 12px;
+              text-align: left;
+            }
+            th {
+              background-color: #666;
+              color: white;
+              font-weight: bold;
+            }
+            tr:nth-child(even) {
+              background-color: #f5f5f5;
+            }
+            @media print {
+              body {
+                padding: 10px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Рассадка игроков</h1>
+          ${tournament ? `
+            <div class="info">
+              <p><strong>Турнир:</strong> ${tournament.name}</p>
+              <p><strong>Дата:</strong> ${tournament.date}</p>
+            </div>
+          ` : ''}
+          <table>
+            <thead>
+              <tr>
+                <th>Игрок</th>
+                <th>№ стола</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${seatingData.map(seat => `
+                <tr>
+                  <td>${seat.playerName}</td>
+                  <td>${seat.tableNumber} ${seat.position}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+    
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Рассадка игроков</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Рассадка игроков</CardTitle>
+          <Button onClick={generatePDF} variant="outline" size="sm">
+            <Icon name="Printer" size={16} className="mr-2" />
+            Печать PDF
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
