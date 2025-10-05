@@ -33,12 +33,15 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
     tournament.participants.forEach(participantId => {
       let points = 0;
       tournament.rounds?.forEach(r => {
-        if (r.number < round.number) {
+        // Only count completed rounds BEFORE this round (not including current round)
+        if (r.number < round.number && r.number > 0) {
           const match = r.matches?.find(m => m.player1Id === participantId || m.player2Id === participantId);
-          if (match?.result) {
+          if (match) {
             if (!match.player2Id) {
+              // BYE always gives 3 points
               points += 3;
-            } else {
+            } else if (match.result) {
+              // Regular match with result
               const isPlayer1 = match.player1Id === participantId;
               if (match.result === 'draw') {
                 points += 1;
