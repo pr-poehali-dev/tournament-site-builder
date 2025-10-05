@@ -26,15 +26,21 @@ export const useAppState = () => {
     // Clear old full state from localStorage
     clearOldLocalStorage();
     
+    // Restore last page from localStorage
+    const lastPage = localStorage.getItem('lastPage') as Page | null;
+    
     if (savedUIState) {
       return {
         ...initialState,
         currentUser: savedUIState.currentUser,
-        currentPage: savedUIState.currentPage,
+        currentPage: lastPage || savedUIState.currentPage,
         showLogin: savedUIState.showLogin
       };
     }
-    return initialState;
+    return {
+      ...initialState,
+      currentPage: lastPage || initialState.currentPage
+    };
   });
 
   // Auto-save only UI state to localStorage
@@ -143,9 +149,24 @@ export const useAppState = () => {
     loadTournamentsFromDatabase();
   }, []);
 
+  // Auto-restore last tournament after tournaments are loaded
+  useEffect(() => {
+    const lastTournamentId = localStorage.getItem('lastTournamentId');
+    
+    if (lastTournamentId && appState.tournaments.length > 0) {
+      const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
+      
+      if (tournament && tournament.dbId && appState.currentPage === 'tournamentEdit') {
+        // Only restore if we're on tournamentEdit page and tournament exists
+        loadTournamentWithGames(lastTournamentId);
+      }
+    }
+  }, [appState.tournaments.length, appState.currentPage]);
+
   // Navigation functions
   const navigateTo = (page: Page) => {
     console.log('Navigation to:', page);
+    localStorage.setItem('lastPage', page);
     setAppState(prev => ({ ...prev, currentPage: page }));
   };
 
@@ -164,6 +185,8 @@ export const useAppState = () => {
 
   const logout = () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('lastPage');
+    localStorage.removeItem('lastTournamentId');
     setAppState(prev => ({ ...prev, currentUser: null, showLogin: false, currentPage: 'rating' }));
   };
 
@@ -802,6 +825,8 @@ export const useAppState = () => {
 
   // Load full tournament data with games from database
   const loadTournamentWithGames = useCallback(async (tournamentId: string) => {
+    localStorage.setItem('lastTournamentId', tournamentId);
+    
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament || !tournament.dbId) {
       console.warn('⚠️ Турнир не найден или не имеет dbId');
