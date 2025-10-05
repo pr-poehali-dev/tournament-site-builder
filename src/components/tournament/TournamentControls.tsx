@@ -70,7 +70,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2 justify-center">
-          {tournament.hasSeating && tournament.currentRound === 0 && tournament.rounds?.length === 0 && createSeatingRound && (
+          {tournament.hasSeating && tournament.currentRound === 0 && (!tournament.rounds || tournament.rounds.length === 0) && createSeatingRound && (
             <Button
               onClick={() => createSeatingRound(tournament.id)}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
