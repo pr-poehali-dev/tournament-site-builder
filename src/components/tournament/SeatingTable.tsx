@@ -57,21 +57,21 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
               font-family: Arial, sans-serif;
               padding: 15px;
               margin: 0;
-              font-size: 10px;
+              font-size: 12px;
             }
             h1 {
               text-align: center;
-              font-size: 16px;
-              margin-bottom: 5px;
+              font-size: 20px;
+              margin-bottom: 8px;
             }
             .info {
               text-align: center;
-              margin-bottom: 10px;
-              font-size: 9px;
+              margin-bottom: 12px;
+              font-size: 12px;
               color: #666;
             }
             .info p {
-              margin: 2px 0;
+              margin: 3px 0;
             }
             .columns {
               display: flex;
@@ -86,9 +86,9 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
             }
             th, td {
               border: 1px solid #ddd;
-              padding: 4px 6px;
+              padding: 6px 8px;
               text-align: left;
-              font-size: 9px;
+              font-size: 12px;
             }
             th {
               background-color: #666;
