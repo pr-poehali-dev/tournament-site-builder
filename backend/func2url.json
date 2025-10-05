@@ -1,7 +1,5 @@
 {
-  "recalculate-tournament-results": "https://functions.poehali.dev/272fc358-9672-41f5-a24d-95e7c8c3bc5d",
   "tournament-results": "https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65",
-  "auth-middleware": "https://functions.poehali.dev/30c477c8-12d0-4bd6-8f13-bfcfd144e224",
   "formats": "https://functions.poehali.dev/bc0a368c-af39-49c9-bc4c-18b509328810",
   "cities": "https://functions.poehali.dev/f303dad0-70ce-4afc-b099-fdd164944f64",
   "delete-tournament": "https://functions.poehali.dev/04b06a3d-149f-4a4c-8754-defa21ff87f3",
