@@ -140,39 +140,12 @@ const Index = () => {
   // Auto-restore last tournament on page reload
   useEffect(() => {
     const lastTournamentId = localStorage.getItem('lastTournamentId');
-    const lastPageStr = localStorage.getItem('lastPage');
-    
-    console.log('🔄 Auto-restore check:', { 
-      lastTournamentId, 
-      lastPageStr, 
-      tournamentId, 
-      tournamentsCount: appState.tournaments.length 
-    });
     
     // Only restore if:
     // 1. We have a saved tournament ID
     // 2. We're not already on a tournament URL
     // 3. Tournaments are loaded
     if (lastTournamentId && !tournamentId && appState.tournaments.length > 0) {
-      if (lastPageStr) {
-        try {
-          const lastPage = JSON.parse(lastPageStr);
-          const isTournamentView = typeof lastPage === 'object' && lastPage.page === 'tournament-view';
-          
-          console.log('🔄 Parsed lastPage:', lastPage, 'isTournamentView:', isTournamentView);
-          
-          if (!isTournamentView) {
-            // Old format or non-tournament page, skip restore
-            return;
-          }
-        } catch (e) {
-          // Invalid JSON, skip restore
-          console.warn('❌ Failed to parse lastPage:', e);
-          return;
-        }
-      }
-      
-      // Restore tournament regardless of lastPage format (for backwards compatibility)
       const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
       
       if (tournament) {
