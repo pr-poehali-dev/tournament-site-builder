@@ -19,6 +19,7 @@ interface TournamentForm {
   topRounds: number;
   participants: string[];
   judgeId?: string;
+  tSeating: boolean;
 }
 
 interface CreateTournamentPageProps {
@@ -157,7 +158,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           topRounds: tournament.topRounds,
           isRated: tournament.isRated,
           judgeId: tournamentForm.judgeId || tournament.judgeId,
-          participants: tournament.participants
+          participants: tournament.participants,
+          tSeating: tournamentForm.tSeating
         };
         
         console.log('📤 Отправка турнира в БД:', requestBody);
@@ -203,7 +205,8 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
         isRated: true,
         swissRounds: 3,
         topRounds: 1,
-        participants: []
+        participants: [],
+        tSeating: false
       });
       
       // Переходим к странице управления созданным турниром
@@ -327,6 +330,17 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
                 className="w-4 h-4"
               />
               <Label htmlFor="is-rated">Рейтинговый турнир</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="t-seating"
+                checked={tournamentForm.tSeating}
+                onChange={(e) => handleInputChange('tSeating', e.target.checked)}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="t-seating">Генерация рассадки</Label>
             </div>
             
             <div className="space-y-2">

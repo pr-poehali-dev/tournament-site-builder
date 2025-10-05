@@ -126,6 +126,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         is_rated = tournament_data.get('isRated', True)
         judge_id = tournament_data.get('judgeId')
         participants = tournament_data.get('participants', [])
+        t_seating = tournament_data.get('tSeating', False)
         
         if not name:
             return {
@@ -176,12 +177,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         cursor.execute("""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[])
-            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants
+            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants, t_seating) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s)
+            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants, t_seating
         """, (name, tournament_type, tournament_format, 'setup', 0, swiss_rounds, 
               top_rounds if top_rounds else None, city if city else None, 
-              is_rated, judge_id_int, participants_str))
+              is_rated, judge_id_int, participants_str, t_seating))
         
         row = cursor.fetchone()
         conn.commit()
@@ -199,6 +200,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'is_rated': row[8],
             'judge_id': row[9],
             'participants': row[10] if row[10] else [],
+            't_seating': row[11],
             'db_saved': True
         }
         

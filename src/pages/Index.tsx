@@ -143,6 +143,7 @@ const Index = () => {
       topRounds: 1,
       participants: [] as string[],
       judgeId: "",
+      tSeating: false,
     };
   });
 
