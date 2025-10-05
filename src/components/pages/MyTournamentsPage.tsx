@@ -44,10 +44,21 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
     // Use the same sorting logic as the standings table
     const standings = calculateTournamentStandings(tournament, appState.users);
     
+    console.log(`🔍 Standings for tournament ${tournament.name}:`, standings.map((s, i) => ({
+      place: i + 1,
+      player: s.user.name,
+      points: s.points,
+      buchholz: s.buchholz,
+      isDropped: s.isDropped
+    })));
+    
     // Find player's position
     const playerIndex = standings.findIndex(
       (standing) => standing.user.id === playerId,
     );
+    
+    console.log(`🔍 Player ${playerId} found at index ${playerIndex}, place: ${playerIndex + 1}`);
+    
     return playerIndex + 1;
   };
 
