@@ -27,7 +27,12 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
 
   const handleSave = () => {
     if (updateTournament) {
-      updateTournament(tournament.id, editForm);
+      updateTournament(tournament.id, {
+        name: editForm.name,
+        swissRounds: editForm.swissRounds,
+        topRounds: editForm.topRounds,
+        participants: editForm.participants
+      });
       setIsEditing(false);
     }
   };
@@ -45,7 +50,29 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
     setIsEditing(false);
   };
 
+  const getPlayersInPairings = (): Set<string> => {
+    const playersInPairings = new Set<string>();
+    tournament.rounds?.forEach(round => {
+      round.matches?.forEach(match => {
+        if (match.player1Id) playersInPairings.add(match.player1Id);
+        if (match.player2Id) playersInPairings.add(match.player2Id);
+      });
+    });
+    return playersInPairings;
+  };
+
   const handleParticipantsChange = (playerIds: string[]) => {
+    const playersInPairings = getPlayersInPairings();
+    const removedPlayers = editForm.participants.filter(id => !playerIds.includes(id));
+    
+    for (const playerId of removedPlayers) {
+      if (playersInPairings.has(playerId)) {
+        const playerName = appState?.users.find(u => u.id === playerId)?.name || 'Игрок';
+        alert(`Невозможно удалить игрока "${playerName}", так как он участвует в парингах`);
+        return;
+      }
+    }
+    
     setEditForm(prev => ({
       ...prev,
       participants: playerIds
@@ -89,7 +116,7 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label>Название турнира</Label>
             <Input
@@ -98,64 +125,36 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
             />
           </div>
           
-          <div className="space-y-2">
-            <Label>Дата турнира</Label>
-            <Input
-              type="date"
-              value={editForm.date}
-              onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Туры швейцарки (1-8)</Label>
+              <Input
+                type="number"
+                min="1"
+                max="8"
+                value={editForm.swissRounds}
+                onChange={(e) => setEditForm(prev => ({ ...prev, swissRounds: parseInt(e.target.value) || 3 }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Туры топа</Label>
+              <Input
+                type="number"
+                min="0"
+                value={editForm.topRounds}
+                onChange={(e) => setEditForm(prev => ({ ...prev, topRounds: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label>Город</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={editForm.city}
-              onChange={(e) => setEditForm(prev => ({ ...prev, city: e.target.value }))}
-            >
-              {appState?.cities.map(city => (
-                <option key={city.id} value={city.name}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Формат</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={editForm.format}
-              onChange={(e) => setEditForm(prev => ({ ...prev, format: e.target.value }))}
-            >
-              {appState?.tournamentFormats.map(format => (
-                <option key={format.id} value={format.name}>
-                  {format.name} (коэф. {format.coefficient})
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Туры швейцарки (1-8)</Label>
-            <Input
-              type="number"
-              min="1"
-              max="8"
-              value={editForm.swissRounds}
-              onChange={(e) => setEditForm(prev => ({ ...prev, swissRounds: parseInt(e.target.value) || 3 }))}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Туры топа</Label>
-            <Input
-              type="number"
-              min="0"
-              value={editForm.topRounds}
-              onChange={(e) => setEditForm(prev => ({ ...prev, topRounds: parseInt(e.target.value) || 0 }))}
-            />
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p><strong>Дата:</strong> {tournament.date}</p>
+              <p><strong>Город:</strong> {tournament.city}</p>
+              <p><strong>Формат:</strong> {tournament.format}</p>
+              <p className="text-xs mt-2 italic">Эти параметры нельзя изменить после создания турнира</p>
+            </div>
           </div>
         </div>
 
