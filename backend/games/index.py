@@ -152,7 +152,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             round_number = body_data.get('round_number')
             pairings = body_data.get('pairings', [])
             
-            if not tournament_id or not round_number or not pairings:
+            if not tournament_id or round_number is None or not pairings:
                 return {
                     'statusCode': 400,
                     'headers': {
