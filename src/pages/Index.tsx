@@ -106,11 +106,14 @@ const Index = () => {
   const navigateTo = useCallback((page: Page) => {
     if (typeof page === 'object' && page.page === 'tournament-view') {
       navigate(`/tournament/${page.tournamentId}`);
-    } else if (page !== appState.currentPage) {
-      navigate('/');
+    } else {
+      // For non-tournament pages, navigate to root if we're currently on a tournament URL
+      if (tournamentId) {
+        navigate('/');
+      }
     }
     navigateToState(page);
-  }, [navigate, navigateToState, appState.currentPage]);
+  }, [navigate, navigateToState, tournamentId]);
 
   useEffect(() => {
     console.log('🔍 URL tournamentId:', tournamentId);
