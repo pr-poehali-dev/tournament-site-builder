@@ -47,11 +47,16 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
           const data = await response.json();
           const resultsMap = new Map<string, number>();
           
+          console.log('📊 Загружены результаты турниров:', data.results);
+          
           data.results?.forEach((result: any) => {
+            // Создаем ключ с числовым tournament_id и строковым player_id
             const key = `${result.tournament_id}-${result.player_id}`;
             resultsMap.set(key, result.place);
+            console.log(`  Турнир ${result.tournament_id}, игрок ${result.player_id}: место ${result.place}`);
           });
           
+          console.log('🗺️ Карта результатов создана:', Array.from(resultsMap.entries()));
           setTournamentResults(resultsMap);
         }
       } catch (error) {
@@ -69,13 +74,22 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
     // Try to get place from saved results first
     if (tournament.dbId) {
       const key = `${tournament.dbId}-${playerId}`;
+      console.log(`🔍 Ищу результат для турнира ${tournament.dbId} (${tournament.name}), игрока ${playerId}, ключ: ${key}`);
+      console.log(`📋 Доступные ключи в карте:`, Array.from(tournamentResults.keys()));
+      
       const savedPlace = tournamentResults.get(key);
       if (savedPlace) {
+        console.log(`✅ Найдено сохранённое место: ${savedPlace}`);
         return savedPlace;
+      } else {
+        console.log(`❌ Место не найдено в сохранённых результатах`);
       }
+    } else {
+      console.log(`⚠️ У турнира ${tournament.name} нет dbId`);
     }
 
     // Fallback: calculate from tournament data
+    console.log(`🔄 Пересчитываю место из данных турнира`);
     const standings = calculateTournamentStandings(tournament, appState.users);
     const playerIndex = standings.findIndex(
       (standing) => standing.user.id === playerId,
