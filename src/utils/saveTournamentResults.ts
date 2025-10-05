@@ -48,22 +48,29 @@ export async function saveTournamentResultsToDb(
 
 // For browser console usage
 (window as any).saveTournamentResults = async (tournamentId: number) => {
-  const appStateStr = localStorage.getItem('tournamentAppState');
-  if (!appStateStr) {
-    console.error('AppState not found in localStorage');
-    return;
+  try {
+    const authToken = localStorage.getItem('auth_token') || '';
+    
+    // Load tournament data
+    const tournamentResponse = await fetch(`https://functions.poehali.dev/a47dbb08-55f7-4ce5-9e38-0d8bb9e7bdd1/${tournamentId}`);
+    if (!tournamentResponse.ok) {
+      console.error(`Tournament ${tournamentId} not found`);
+      return;
+    }
+    const tournament = await tournamentResponse.json();
+    
+    // Load users
+    const usersResponse = await fetch('https://functions.poehali.dev/e4bf1ae6-dbd0-4de9-b95d-99e6ad5b2b4a');
+    if (!usersResponse.ok) {
+      console.error('Failed to load users');
+      return;
+    }
+    const users = await usersResponse.json();
+    
+    await saveTournamentResultsToDb(tournament, users, authToken);
+  } catch (error) {
+    console.error('Error saving tournament results:', error);
   }
-
-  const appState = JSON.parse(appStateStr);
-  const tournament = appState.tournaments.find((t: any) => t.dbId === tournamentId);
-  
-  if (!tournament) {
-    console.error(`Tournament ${tournamentId} not found`);
-    return;
-  }
-
-  const authToken = localStorage.getItem('authToken') || '';
-  await saveTournamentResultsToDb(tournament, appState.users, authToken);
 };
 
 console.log('💾 Для сохранения результатов турнира используйте: saveTournamentResults(26)');
