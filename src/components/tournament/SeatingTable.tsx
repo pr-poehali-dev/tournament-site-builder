@@ -18,18 +18,18 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
       
       const results = [];
       
-      if (player1) {
+      if (player1 && match.tableNumber) {
         results.push({
           playerName: player1.name,
-          tableNumber: match.tableNumber || 0,
+          tableNumber: match.tableNumber,
           position: 'слева' as const,
         });
       }
       
-      if (player2) {
+      if (player2 && match.tableNumber) {
         results.push({
           playerName: player2.name,
-          tableNumber: match.tableNumber || 0,
+          tableNumber: match.tableNumber,
           position: 'справа' as const,
         });
       }
