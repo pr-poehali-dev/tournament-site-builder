@@ -64,9 +64,9 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
     false;
 
   // Проверка: есть ли только рассадочный тур (number === 0) или нет туров вообще
-  const hasOnlySeatingRound = tournament.rounds?.length === 1 && tournament.rounds[0].number === 0;
+  const hasSeatingRound = tournament.rounds?.some(r => r.number === 0) || false;
   const hasNoRounds = !tournament.rounds || tournament.rounds.length === 0;
-  const canCreateSeating = tournament.hasSeating && tournament.currentRound === 0 && (hasNoRounds || hasOnlySeatingRound);
+  const canCreateSeating = tournament.hasSeating && tournament.currentRound === 0 && hasNoRounds && !hasSeatingRound;
   
   // Проверка: есть ли реальные (не рассадочные) туры
   const realRounds = tournament.rounds?.filter(r => r.number > 0) || [];
@@ -76,7 +76,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
     hasSeating: tournament.hasSeating,
     currentRound: tournament.currentRound,
     roundsLength: tournament.rounds?.length,
-    hasOnlySeatingRound,
+    hasSeatingRound,
     hasNoRounds,
     canCreateSeating,
     realRoundsLength: realRounds.length,
