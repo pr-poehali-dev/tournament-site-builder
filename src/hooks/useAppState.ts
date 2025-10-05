@@ -1796,6 +1796,7 @@ export const useAppState = () => {
 
   // Generate pairings for next tournament round using Swiss system or elimination brackets
   const generatePairings = useCallback((tournamentId: string) => {
+    console.log('🚀 CACHE BUSTER v3: generatePairings UPDATED');
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament) {
       return { success: false, error: 'Турнир не найден' };
