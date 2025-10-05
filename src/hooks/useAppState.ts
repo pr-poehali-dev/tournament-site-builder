@@ -60,13 +60,20 @@ export const useAppState = () => {
           const data = await response.json();
           
           // Load games for all tournaments
-          const gamesResponse = await fetch(`${API_BASE_URL}/api/games`, {
-            method: 'GET',
-            headers: getAuthHeaders()
-          });
-          
-          const gamesData = gamesResponse.ok ? await gamesResponse.json() : { games: [] };
-          const allGames = gamesData.games || [];
+          let allGames: any[] = [];
+          try {
+            const gamesResponse = await fetch(`${API_BASE_URL}/api/games`, {
+              method: 'GET',
+              headers: getAuthHeaders()
+            });
+            
+            if (gamesResponse.ok) {
+              const gamesData = await gamesResponse.json();
+              allGames = gamesData.games || [];
+            }
+          } catch (error) {
+            console.warn('⚠️ Не удалось загрузить игры из БД:', error);
+          }
           
           const tournamentsFromDb = data.tournaments.map((t: any) => {
             // Map database status to frontend status
