@@ -2029,6 +2029,8 @@ export const useAppState = () => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament) return;
     
+    console.log('🎯 Создание рассадки для турнира:', { id: tournament.id, dbId: tournament.dbId, name: tournament.name });
+    
     if (!tournament.hasSeating) {
       alert('У этого турнира нет признака рассадки');
       return;
