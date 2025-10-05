@@ -1896,6 +1896,9 @@ export const useAppState = () => {
     const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
     
     const matches: Match[] = [];
+    const hasOddPlayers = shuffledParticipants.length % 2 === 1;
+    const maxTableNumber = Math.ceil(shuffledParticipants.length / 2);
+    
     let tableNumber = 1;
     
     for (let i = 0; i < shuffledParticipants.length; i += 2) {
@@ -1918,7 +1921,7 @@ export const useAppState = () => {
           id: `seating-match-${Date.now()}-bye`,
           player1Id: player1.id,
           player2Id: undefined,
-          tableNumber: undefined,
+          tableNumber: maxTableNumber,
           points1: 0,
           points2: 0,
           result: undefined
