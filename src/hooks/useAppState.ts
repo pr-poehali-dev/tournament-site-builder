@@ -83,7 +83,7 @@ export const useAppState = () => {
               rounds: [],
               judgeId: t.judge_id ? t.judge_id.toString() : '',
               droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString()),
-              hasSeating: t.t_seating || false
+              hasSeating: t.hasSeating || false
             };
           });
           
