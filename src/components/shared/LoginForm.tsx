@@ -39,7 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             id="username"
             value={loginForm.username}
             onChange={handleLoginUsernameChange}
-            placeholder="admin"
+            placeholder="Введите логин"
           />
         </div>
         <div>
@@ -49,7 +49,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             type="password"
             value={loginForm.password}
             onChange={handleLoginPasswordChange}
-            placeholder="admin"
+            placeholder="Введите пароль"
             onKeyPress={(e) => e.key === 'Enter' && login()}
           />
         </div>

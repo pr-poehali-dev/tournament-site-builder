@@ -1,7 +1,6 @@
 export interface User {
   id: string;
   username: string;
-  password: string;
   role: 'admin' | 'judge' | 'player';
   name: string;
   isActive: boolean;

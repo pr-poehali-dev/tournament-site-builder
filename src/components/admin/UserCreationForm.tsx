@@ -49,7 +49,6 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
     const user: User = {
       id: Date.now().toString(),
       username: username,
-      password: password,
       name: name,
       city: city,
       role: role,

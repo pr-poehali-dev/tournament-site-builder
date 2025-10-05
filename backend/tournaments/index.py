@@ -235,13 +235,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             # Build UPDATE query dynamically based on provided fields
             update_fields = []
+            query_params = []
+            
             if status is not None:
-                escaped_status = status.replace("'", "''")
-                update_fields.append(f"status = '{escaped_status}'")
+                update_fields.append("status = %s")
+                query_params.append(status)
             if current_round is not None:
-                update_fields.append(f"current_round = {int(current_round)}")
+                update_fields.append("current_round = %s")
+                query_params.append(int(current_round))
             if confirmed is not None:
-                update_fields.append(f"confirmed = {str(bool(confirmed)).upper()}")
+                update_fields.append("confirmed = %s")
+                query_params.append(bool(confirmed))
             
             if not update_fields:
                 return {
@@ -255,14 +259,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
+            query_params.append(int(tournament_id))
+            
             update_query = f"""
                 UPDATE t_p79348767_tournament_site_buil.tournaments
                 SET {', '.join(update_fields)}
-                WHERE id = {int(tournament_id)}
+                WHERE id = %s
                 RETURNING id, status, current_round, updated_at
             """
             
-            cursor.execute(update_query)
+            cursor.execute(update_query, tuple(query_params))
             row = cursor.fetchone()
             conn.commit()
             

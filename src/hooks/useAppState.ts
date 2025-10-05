@@ -336,7 +336,6 @@ export const useAppState = () => {
       const userForState: User = {
         id: createdUser.id.toString(),
         username: createdUser.username,
-        password: user.password, // Сохраняем локально для UI
         name: createdUser.name,
         role: createdUser.role,
         city: createdUser.city,
@@ -419,8 +418,7 @@ export const useAppState = () => {
       name: user.name,
       role: user.role,
       city: user.city || '',
-      isActive: user.is_active !== false,
-      password: '***' // Пароли не нужны в frontend
+      isActive: user.is_active !== false
     }));
 
     setAppState(prev => {

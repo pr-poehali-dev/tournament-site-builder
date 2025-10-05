@@ -136,6 +136,30 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Username, password and name are required'})
                 }
             
+            # Validate username
+            if len(username) < 3 or len(username) > 50:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Username must be between 3 and 50 characters'})
+                }
+            
+            # Validate password strength
+            if len(password) < 6:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Password must be at least 6 characters long'})
+                }
+            
+            # Validate role
+            if role not in ['admin', 'judge', 'player']:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Invalid role'})
+                }
+            
             # Hash password with bcrypt
             hashed_password = hash_password(password)
             
