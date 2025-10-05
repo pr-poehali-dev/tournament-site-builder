@@ -320,52 +320,58 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           </div>
 
           {/* Настройки турнира */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="is-rated"
-                checked={tournamentForm.isRated}
-                onChange={(e) => handleInputChange('isRated', e.target.checked)}
-                className="w-4 h-4"
-              />
-              <Label htmlFor="is-rated">Рейтинговый турнир</Label>
+          <div className="space-y-4">
+            {/* Чекбоксы */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is-rated"
+                  checked={tournamentForm.isRated}
+                  onChange={(e) => handleInputChange('isRated', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="is-rated">Рейтинговый турнир</Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="t-seating"
+                  checked={tournamentForm.tSeating}
+                  onChange={(e) => handleInputChange('tSeating', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="t-seating">Генерация рассадки</Label>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="t-seating"
-                checked={tournamentForm.tSeating}
-                onChange={(e) => handleInputChange('tSeating', e.target.checked)}
-                className="w-4 h-4"
-              />
-              <Label htmlFor="t-seating">Генерация рассадки</Label>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="swiss-rounds">Туры швейцарки (1-8)</Label>
-              <Input
-                id="swiss-rounds"
-                type="number"
-                min="1"
-                max="8"
-                value={tournamentForm.swissRounds}
-                onChange={(e) => handleInputChange('swissRounds', parseInt(e.target.value) || 3)}
-                autoComplete="off"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="top-rounds">Туры топа</Label>
-              <Input
-                id="top-rounds"
-                type="number"
-                min="0"
-                value={tournamentForm.topRounds}
-                onChange={(e) => handleInputChange('topRounds', parseInt(e.target.value) || 0)}
-                autoComplete="off"
-              />
+            {/* Туры */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="swiss-rounds">Туры швейцарки (1-8)</Label>
+                <Input
+                  id="swiss-rounds"
+                  type="number"
+                  min="1"
+                  max="8"
+                  value={tournamentForm.swissRounds}
+                  onChange={(e) => handleInputChange('swissRounds', parseInt(e.target.value) || 3)}
+                  autoComplete="off"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="top-rounds">Туры топа</Label>
+                <Input
+                  id="top-rounds"
+                  type="number"
+                  min="0"
+                  value={tournamentForm.topRounds}
+                  onChange={(e) => handleInputChange('topRounds', parseInt(e.target.value) || 0)}
+                  autoComplete="off"
+                />
+              </div>
             </div>
           </div>
 
