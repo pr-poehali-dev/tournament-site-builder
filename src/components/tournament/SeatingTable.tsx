@@ -42,6 +42,10 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
+    const halfLength = Math.ceil(seatingData.length / 2);
+    const leftColumn = seatingData.slice(0, halfLength);
+    const rightColumn = seatingData.slice(halfLength);
+    
     const html = `
       <!DOCTYPE html>
       <html>
@@ -51,29 +55,40 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
           <style>
             body {
               font-family: Arial, sans-serif;
-              padding: 20px;
-              max-width: 800px;
-              margin: 0 auto;
+              padding: 15px;
+              margin: 0;
+              font-size: 10px;
             }
             h1 {
               text-align: center;
-              font-size: 24px;
-              margin-bottom: 10px;
+              font-size: 16px;
+              margin-bottom: 5px;
             }
             .info {
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 10px;
+              font-size: 9px;
               color: #666;
+            }
+            .info p {
+              margin: 2px 0;
+            }
+            .columns {
+              display: flex;
+              gap: 15px;
+            }
+            .column {
+              flex: 1;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 20px;
             }
             th, td {
               border: 1px solid #ddd;
-              padding: 12px;
+              padding: 4px 6px;
               text-align: left;
+              font-size: 9px;
             }
             th {
               background-color: #666;
@@ -87,6 +102,9 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
               body {
                 padding: 10px;
               }
+              @page {
+                margin: 10mm;
+              }
             }
           </style>
         </head>
@@ -98,22 +116,44 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
               <p><strong>Дата:</strong> ${tournament.date}</p>
             </div>
           ` : ''}
-          <table>
-            <thead>
-              <tr>
-                <th>Игрок</th>
-                <th>№ стола</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${seatingData.map(seat => `
-                <tr>
-                  <td>${seat.playerName}</td>
-                  <td>${seat.tableNumber} ${seat.position}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <div class="columns">
+            <div class="column">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Игрок</th>
+                    <th>Стол</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${leftColumn.map(seat => `
+                    <tr>
+                      <td>${seat.playerName}</td>
+                      <td>${seat.tableNumber} ${seat.position}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="column">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Игрок</th>
+                    <th>Стол</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rightColumn.map(seat => `
+                    <tr>
+                      <td>${seat.playerName}</td>
+                      <td>${seat.tableNumber} ${seat.position}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </body>
       </html>
     `;
