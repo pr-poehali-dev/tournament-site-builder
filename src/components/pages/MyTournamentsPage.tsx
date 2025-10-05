@@ -18,7 +18,7 @@ import {
 import Icon from "@/components/ui/icon";
 import type { AppState, Page, Tournament } from "@/types";
 import { canManageTournament } from "@/utils/permissions";
-import { sortByTopResults } from "@/utils/tournamentHelpers";
+import { calculateTournamentStandings } from "@/utils/tournamentHelpers";
 
 interface MyTournamentsPageProps {
   appState: AppState;
@@ -41,85 +41,12 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
   const getPlayerPlace = (tournament: Tournament, playerId: string): number => {
     if (tournament.status !== 'confirmed') return 0;
 
-    // Calculate final scores for all participants
-    const participantScores = tournament.participants.map((participantId) => {
-      let score = 0;
-      let wins = 0;
-      let draws = 0;
-
-      // Count points from Swiss rounds only (same system as Index.tsx: 3-1-0)
-      tournament.rounds?.forEach((round) => {
-        // Only count Swiss rounds for points calculation
-        if (round.number <= tournament.swissRounds) {
-          const match = round.matches?.find(
-            (m) =>
-              m.player1Id === participantId || m.player2Id === participantId,
-          );
-
-          if (match && match.result) {
-            if (!match.player2Id) {
-              // Bye - 3 points
-              score += 3;
-              wins += 1;
-            } else {
-              const isPlayer1 = match.player1Id === participantId;
-              if (match.result === "draw") {
-                score += 1;
-                draws += 1;
-              } else if (
-                (match.result === "win1" && isPlayer1) ||
-                (match.result === "win2" && !isPlayer1)
-              ) {
-                score += 3;
-                wins += 1;
-              }
-            }
-          }
-        }
-      });
-
-      return {
-        participantId,
-        score,
-        wins,
-        draws,
-        // Tiebreakers: wins first, then draws
-        tiebreaker1: wins,
-        tiebreaker2: draws,
-      };
-    });
-
-    // Sort by score (descending), then by tiebreakers
-    // Special sorting logic for tournaments with TOP rounds
-    participantScores.sort((a, b) => {
-      if (
-        tournament.topRounds > 0 &&
-        tournament.currentRound > tournament.swissRounds
-      ) {
-        const mappedA = {
-          user: { id: a.participantId },
-          points: a.score,
-          buchholz: a.tiebreaker1,
-          sumBuchholz: a.tiebreaker2,
-        };
-        const mappedB = {
-          user: { id: b.participantId },
-          points: b.score,
-          buchholz: b.tiebreaker1,
-          sumBuchholz: b.tiebreaker2,
-        };
-        return sortByTopResults(mappedA, mappedB, tournament, appState.users);
-      }
-
-      // Standard Swiss system sorting
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.tiebreaker1 !== a.tiebreaker1) return b.tiebreaker1 - a.tiebreaker1;
-      return b.tiebreaker2 - a.tiebreaker2;
-    });
-
+    // Use the same sorting logic as the standings table
+    const standings = calculateTournamentStandings(tournament, appState.users);
+    
     // Find player's position
-    const playerIndex = participantScores.findIndex(
-      (p) => p.participantId === playerId,
+    const playerIndex = standings.findIndex(
+      (standing) => standing.user.id === playerId,
     );
     return playerIndex + 1;
   };
