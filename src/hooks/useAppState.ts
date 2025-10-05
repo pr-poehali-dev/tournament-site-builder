@@ -1358,6 +1358,116 @@ export const useAppState = () => {
             console.error('❌ Ошибка пересчёта рейтингов для игр');
           }
           
+          // Save tournament results (places) to database
+          const standings = tournament.participants.map(participantId => {
+            let points = 0;
+            let wins = 0;
+            let losses = 0;
+            let draws = 0;
+            const opponentIds: string[] = [];
+
+            tournament.rounds?.forEach(round => {
+              if (round.number <= tournament.swissRounds) {
+                const match = round.matches?.find(
+                  m => m.player1Id === participantId || m.player2Id === participantId
+                );
+                if (match) {
+                  if (!match.player2Id) {
+                    points += 3;
+                    wins += 1;
+                  } else if (match.result) {
+                    const isPlayer1 = match.player1Id === participantId;
+                    const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                    opponentIds.push(opponentId);
+
+                    if (match.result === 'draw') {
+                      points += 1;
+                      draws += 1;
+                    } else if (
+                      (match.result === 'win1' && isPlayer1) ||
+                      (match.result === 'win2' && !isPlayer1)
+                    ) {
+                      points += 3;
+                      wins += 1;
+                    } else {
+                      losses += 1;
+                    }
+                  }
+                }
+              }
+            });
+
+            const buchholz = opponentIds.reduce((acc, opponentId) => {
+              let opponentPoints = 0;
+              tournament.rounds?.forEach(round => {
+                if (round.number <= tournament.swissRounds) {
+                  const opponentMatch = round.matches?.find(
+                    m => m.player1Id === opponentId || m.player2Id === opponentId
+                  );
+                  if (opponentMatch) {
+                    if (!opponentMatch.player2Id) {
+                      opponentPoints += 3;
+                    } else if (opponentMatch.result) {
+                      const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                      if (opponentMatch.result === 'draw') {
+                        opponentPoints += 1;
+                      } else if (
+                        (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
+                        (opponentMatch.result === 'win2' && !isOpponentPlayer1)
+                      ) {
+                        opponentPoints += 3;
+                      }
+                    }
+                  }
+                }
+              });
+              return acc + opponentPoints;
+            }, 0);
+
+            return {
+              user: appState.users.find(u => u.id === participantId),
+              points,
+              wins,
+              losses,
+              draws,
+              buchholz,
+              sumBuchholz: 0
+            };
+          }).filter(s => s.user).sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
+            return 0;
+          });
+
+          // Save results to database
+          const resultsToSave = standings.map((standing, index) => ({
+            tournament_id: tournament.dbId,
+            player_id: parseInt(standing.user!.id),
+            place: index + 1,
+            points: standing.points,
+            buchholz: standing.buchholz,
+            sum_buchholz: standing.sumBuchholz,
+            wins: standing.wins,
+            losses: standing.losses,
+            draws: standing.draws
+          }));
+
+          try {
+            const resultsResponse = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ results: resultsToSave })
+            });
+            
+            if (resultsResponse.ok) {
+              console.log('✅ Результаты турнира сохранены в БД');
+            } else {
+              console.error('❌ Ошибка сохранения результатов турнира');
+            }
+          } catch (error) {
+            console.warn('⚠️ Не удалось сохранить результаты турнира:', error);
+          }
+          
           // Reload tournaments from DB to sync status
           const tournamentsResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45');
           const tournamentsData = await tournamentsResponse.json();

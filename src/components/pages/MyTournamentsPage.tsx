@@ -30,6 +30,7 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
   navigateTo,
 }) => {
   const currentUserId = appState.currentUser?.id || "";
+  const [tournamentResults, setTournamentResults] = React.useState<Map<string, number>>(new Map());
 
   // Filter only confirmed tournaments where current user participated
   const myConfirmedTournaments = appState.tournaments.filter(
@@ -37,14 +38,45 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
       tournament.participants.includes(currentUserId) && tournament.status === 'confirmed',
   );
 
-  // Function to calculate player's place in tournament
+  // Load tournament results from database
+  React.useEffect(() => {
+    const loadTournamentResults = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65');
+        if (response.ok) {
+          const data = await response.json();
+          const resultsMap = new Map<string, number>();
+          
+          data.results?.forEach((result: any) => {
+            const key = `${result.tournament_id}-${result.player_id}`;
+            resultsMap.set(key, result.place);
+          });
+          
+          setTournamentResults(resultsMap);
+        }
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить результаты турниров:', error);
+      }
+    };
+    
+    loadTournamentResults();
+  }, []);
+
+  // Function to get player's place in tournament
   const getPlayerPlace = (tournament: Tournament, playerId: string): number => {
     if (tournament.status !== 'confirmed') return 0;
 
-    // Use the same sorting logic as the standings table
+    // Try to get place from saved results first
+    if (tournament.dbId) {
+      const key = `${tournament.dbId}-${playerId}`;
+      const savedPlace = tournamentResults.get(key);
+      if (savedPlace) {
+        return savedPlace;
+      }
+    }
+
+    // Fallback: calculate from tournament data
     const standings = calculateTournamentStandings(tournament, appState.users);
-    
-    // Find player's position
     const playerIndex = standings.findIndex(
       (standing) => standing.user.id === playerId,
     );

@@ -1,0 +1,39 @@
+{
+  "tests": [
+    {
+      "name": "Get all tournament results",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "results": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Save tournament results",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "results": [
+          {
+            "tournament_id": 1,
+            "player_id": 1,
+            "place": 1,
+            "points": 12,
+            "buchholz": 30,
+            "sum_buchholz": 0,
+            "wins": 4,
+            "losses": 0,
+            "draws": 0
+          }
+        ]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
