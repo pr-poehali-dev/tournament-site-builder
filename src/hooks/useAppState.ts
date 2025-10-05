@@ -2045,6 +2045,33 @@ export const useAppState = () => {
       return { success: false, error: 'Невозможно создать пары: все возможные комбинации приводят к повторным встречам' };
     }
 
+    // Sort matches by total points (player1 + player2) descending, then assign table numbers
+    // This ensures players with more points get lower table numbers (table 1, 2, 3...)
+    if (tournament.currentRound > 0) {
+      // Separate bye matches from regular matches
+      const byeMatches = matches.filter(m => !m.player2Id);
+      const regularMatches = matches.filter(m => m.player2Id);
+      
+      // Calculate total points for each match and sort
+      const matchesWithPoints = regularMatches.map(match => {
+        const player1Standing = playerStandings.find(p => p.player.id === match.player1Id);
+        const player2Standing = playerStandings.find(p => p.player.id === match.player2Id);
+        const totalPoints = (player1Standing?.points || 0) + (player2Standing?.points || 0);
+        return { match, totalPoints };
+      });
+      
+      // Sort by total points descending (higher points = lower table number)
+      matchesWithPoints.sort((a, b) => b.totalPoints - a.totalPoints);
+      
+      // Reassign table numbers starting from 1
+      matchesWithPoints.forEach(({ match }, index) => {
+        match.tableNumber = index + 1;
+      });
+      
+      // Combine back: regular matches with table numbers + bye matches (no table number)
+      matches = [...matchesWithPoints.map(m => m.match), ...byeMatches];
+    }
+
     return { success: true, matches };
   }, [appState.tournaments, appState.players]);
 
