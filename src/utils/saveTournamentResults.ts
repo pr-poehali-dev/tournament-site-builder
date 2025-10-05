@@ -46,31 +46,80 @@ export async function saveTournamentResultsToDb(
   }
 }
 
-// For browser console usage
-(window as any).saveTournamentResults = async (tournamentId: number) => {
-  try {
-    const authToken = localStorage.getItem('auth_token') || '';
-    
-    // Load tournament data
-    const tournamentResponse = await fetch(`https://functions.poehali.dev/a47dbb08-55f7-4ce5-9e38-0d8bb9e7bdd1/${tournamentId}`);
-    if (!tournamentResponse.ok) {
-      console.error(`Tournament ${tournamentId} not found`);
-      return;
-    }
-    const tournament = await tournamentResponse.json();
-    
-    // Load users
-    const usersResponse = await fetch('https://functions.poehali.dev/e4bf1ae6-dbd0-4de9-b95d-99e6ad5b2b4a');
-    if (!usersResponse.ok) {
-      console.error('Failed to load users');
-      return;
-    }
-    const users = await usersResponse.json();
-    
-    await saveTournamentResultsToDb(tournament, users, authToken);
-  } catch (error) {
-    console.error('Error saving tournament results:', error);
+// Make function available globally with app state access
+(window as any).saveTournament26Results = async () => {
+  // Get React app root element and try to find the app state
+  const appElement = document.querySelector('#root');
+  if (!appElement) {
+    console.error('Не найден элемент #root');
+    return;
   }
+
+  // Access React Fiber to get component instance
+  const reactKey = Object.keys(appElement).find(key => 
+    key.startsWith('__react') && key.includes('internal')
+  );
+  
+  if (!reactKey) {
+    console.error('Не удалось получить доступ к React');
+    return;
+  }
+
+  // Navigate through React Fiber tree to find appState
+  const fiber = (appElement as any)[reactKey];
+  let appState = null;
+  let users = null;
+  
+  // Search for appState in component tree
+  const searchState = (node: any, depth = 0): boolean => {
+    if (depth > 50) return false;
+    
+    if (node?.memoizedProps) {
+      if (node.memoizedProps.appState?.tournaments) {
+        appState = node.memoizedProps.appState;
+        return true;
+      }
+      if (node.memoizedProps.tournaments && node.memoizedProps.users) {
+        users = node.memoizedProps.users;
+        appState = { tournaments: node.memoizedProps.tournaments, users: node.memoizedProps.users };
+        return true;
+      }
+    }
+    
+    if (node?.child && searchState(node.child, depth + 1)) return true;
+    if (node?.sibling && searchState(node.sibling, depth + 1)) return true;
+    
+    return false;
+  };
+  
+  searchState(fiber);
+  
+  if (!appState || !appState.tournaments) {
+    console.error('Не удалось найти appState с данными турниров');
+    console.log('Попробуйте открыть страницу турнира 26 и выполнить команду снова');
+    return;
+  }
+  
+  const tournament = appState.tournaments.find((t: any) => t.dbId === 26);
+  if (!tournament) {
+    console.error('Турнир 26 не найден в appState');
+    console.log('Доступные турниры:', appState.tournaments.map((t: any) => ({ id: t.id, dbId: t.dbId, name: t.name })));
+    return;
+  }
+  
+  const usersData = appState.users || users || [];
+  if (usersData.length === 0) {
+    console.error('Не удалось найти данные пользователей');
+    return;
+  }
+  
+  const authToken = localStorage.getItem('auth_token') || '';
+  
+  console.log(`🎯 Найден турнир: ${tournament.name}`);
+  console.log(`👥 Участников: ${tournament.participants?.length || 0}`);
+  console.log(`🎮 Раундов: ${tournament.rounds?.length || 0}`);
+  
+  await saveTournamentResultsToDb(tournament, usersData, authToken);
 };
 
-console.log('💾 Для сохранения результатов турнира используйте: saveTournamentResults(26)');
+console.log('💾 Для сохранения результатов турнира 26 используйте команду:\nsaveTournament26Results()');

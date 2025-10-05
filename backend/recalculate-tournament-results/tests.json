@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Recalculate tournament results",
+      "method": "GET",
+      "path": "/?tournament_id=26",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "tournament_id": 26
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
