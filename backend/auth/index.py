@@ -11,6 +11,7 @@ import time
 ALLOWED_ORIGINS = [
     'https://poehali.dev',
     'https://www.poehali.dev',
+    'https://preview--tournament-site-builder.poehali.dev',
     'http://localhost:5173',
     'http://localhost:3000'
 ]
