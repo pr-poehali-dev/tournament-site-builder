@@ -28,18 +28,65 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     
-    const pairingsData = round.matches
-      .filter(m => m.player2Id)
-      .sort((a, b) => (a.tableNumber || 0) - (b.tableNumber || 0))
-      .map(match => {
-        const player1 = appState.users.find(u => u.id === match.player1Id);
-        const player2 = appState.users.find(u => u.id === match.player2Id);
-        return {
-          tableNumber: match.tableNumber || 0,
-          player1Name: player1?.name || 'Неизвестный игрок',
-          player2Name: player2?.name || 'Неизвестный игрок',
-        };
+    // Calculate points for each player before this round
+    const playerPoints = new Map<string, number>();
+    tournament.participants.forEach(participantId => {
+      let points = 0;
+      tournament.rounds?.forEach(r => {
+        if (r.number < round.number) {
+          const match = r.matches?.find(m => m.player1Id === participantId || m.player2Id === participantId);
+          if (match?.result) {
+            if (!match.player2Id) {
+              points += 3;
+            } else {
+              const isPlayer1 = match.player1Id === participantId;
+              if (match.result === 'draw') {
+                points += 1;
+              } else if (
+                (match.result === 'win1' && isPlayer1) ||
+                (match.result === 'win2' && !isPlayer1)
+              ) {
+                points += 3;
+              }
+            }
+          }
+        }
       });
+      playerPoints.set(participantId, points);
+    });
+    
+    // Create flat list with each player as a row
+    const pairingsData = round.matches
+      .flatMap(match => {
+        const player1 = appState.users.find(u => u.id === match.player1Id);
+        const player2 = match.player2Id ? appState.users.find(u => u.id === match.player2Id) : null;
+        
+        const player1Points = playerPoints.get(match.player1Id) || 0;
+        const player2Points = match.player2Id ? (playerPoints.get(match.player2Id) || 0) : 0;
+        
+        const results = [];
+        
+        if (player1) {
+          results.push({
+            playerName: player1.name,
+            playerPoints: player1Points,
+            opponentName: player2?.name || 'БАЙ',
+            opponentPoints: player2 ? player2Points : 0,
+          });
+        }
+        
+        if (player2) {
+          results.push({
+            playerName: player2.name,
+            playerPoints: player2Points,
+            opponentName: player1?.name || 'Неизвестный',
+            opponentPoints: player1Points,
+          });
+        }
+        
+        return results;
+      })
+      .sort((a, b) => a.playerName.localeCompare(b.playerName, 'ru'));
 
     const halfLength = Math.ceil(pairingsData.length / 2);
     const leftColumn = pairingsData.slice(0, halfLength);
@@ -74,9 +121,9 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
             }
             .round-title {
               text-align: center;
-              font-size: 14px;
+              font-size: 12px;
               margin-bottom: 12px;
-              font-weight: bold;
+              text-indent: 1em;
             }
             .columns {
               display: flex;
@@ -103,10 +150,15 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
             tr:nth-child(even) {
               background-color: #f5f5f5;
             }
-            .vs {
+            .vs-cell {
               text-align: center;
-              padding: 4px;
               color: #666;
+              width: 30px;
+            }
+            .points-cell {
+              text-align: center;
+              width: 40px;
+              font-weight: bold;
             }
             @media print {
               body {
@@ -129,19 +181,21 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
               <table>
                 <thead>
                   <tr>
-                    <th>Стол</th>
-                    <th>Игрок 1</th>
-                    <th></th>
-                    <th>Игрок 2</th>
+                    <th>Игрок</th>
+                    <th style="width: 40px; text-align: center;">Очки</th>
+                    <th style="width: 30px;"></th>
+                    <th style="width: 40px; text-align: center;">Очки</th>
+                    <th>Оппонент</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${leftColumn.map(pairing => `
                     <tr>
-                      <td style="font-weight: bold;">${pairing.tableNumber}</td>
-                      <td>${pairing.player1Name}</td>
-                      <td class="vs">vs</td>
-                      <td>${pairing.player2Name}</td>
+                      <td>${pairing.playerName}</td>
+                      <td class="points-cell">${pairing.playerPoints}</td>
+                      <td class="vs-cell">vs</td>
+                      <td class="points-cell">${pairing.opponentPoints}</td>
+                      <td>${pairing.opponentName}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -151,19 +205,21 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
               <table>
                 <thead>
                   <tr>
-                    <th>Стол</th>
-                    <th>Игрок 1</th>
-                    <th></th>
-                    <th>Игрок 2</th>
+                    <th>Игрок</th>
+                    <th style="width: 40px; text-align: center;">Очки</th>
+                    <th style="width: 30px;"></th>
+                    <th style="width: 40px; text-align: center;">Очки</th>
+                    <th>Оппонент</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${rightColumn.map(pairing => `
                     <tr>
-                      <td style="font-weight: bold;">${pairing.tableNumber}</td>
-                      <td>${pairing.player1Name}</td>
-                      <td class="vs">vs</td>
-                      <td>${pairing.player2Name}</td>
+                      <td>${pairing.playerName}</td>
+                      <td class="points-cell">${pairing.playerPoints}</td>
+                      <td class="vs-cell">vs</td>
+                      <td class="points-cell">${pairing.opponentPoints}</td>
+                      <td>${pairing.opponentName}</td>
                     </tr>
                   `).join('')}
                 </tbody>
