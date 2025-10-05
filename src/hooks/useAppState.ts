@@ -918,7 +918,7 @@ export const useAppState = () => {
         const pairings = newRound.matches.map(match => ({
           player1_id: parseInt(match.player1Id),
           player2_id: match.player2Id ? parseInt(match.player2Id) : null,
-          table_number: match.tableNumber || null
+          table_number: match.tableNumber !== undefined ? match.tableNumber : null
         }));
         
         console.log('📤 Сохранение пар в БД:', {
