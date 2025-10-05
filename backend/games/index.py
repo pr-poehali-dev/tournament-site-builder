@@ -94,7 +94,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, tournament_id, round_number, player1_id, player2_id, result, created_at, updated_at
+                SELECT id, tournament_id, round_number, player1_id, player2_id, result, table_number, created_at, updated_at
                 FROM t_p79348767_tournament_site_buil.games
                 WHERE tournament_id = %s
                 ORDER BY round_number, id
@@ -111,8 +111,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'player1_id': row[3],
                     'player2_id': row[4],
                     'result': row[5],
-                    'created_at': row[6].isoformat() if row[6] else None,
-                    'updated_at': row[7].isoformat() if row[7] else None
+                    'table_number': row[6],
+                    'created_at': row[7].isoformat() if row[7] else None,
+                    'updated_at': row[8].isoformat() if row[8] else None
                 })
             
             cursor.close()
@@ -171,6 +172,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             for pairing in pairings:
                 player1_id = pairing.get('player1_id')
                 player2_id = pairing.get('player2_id')
+                table_number = pairing.get('table_number')
                 
                 if not player1_id:
                     continue
@@ -187,10 +189,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 # Insert game - using parameterized query
                 cursor.execute("""
                     INSERT INTO t_p79348767_tournament_site_buil.games 
-                    (tournament_id, round_number, player1_id, player2_id, result)
-                    VALUES (%s, %s, %s, %s, %s)
-                    RETURNING id, tournament_id, round_number, player1_id, player2_id, result, created_at
-                """, (tournament_id, round_number, player1_id, player2_value, result_value))
+                    (tournament_id, round_number, player1_id, player2_id, result, table_number)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id, tournament_id, round_number, player1_id, player2_id, result, table_number, created_at
+                """, (tournament_id, round_number, player1_id, player2_value, result_value, table_number))
                 
                 row = cursor.fetchone()
                 created_games.append({
@@ -200,7 +202,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'player1_id': row[3],
                     'player2_id': row[4],
                     'result': row[5],
-                    'created_at': row[6].isoformat() if row[6] else None
+                    'table_number': row[6],
+                    'created_at': row[7].isoformat() if row[7] else None
                 })
             
             conn.commit()

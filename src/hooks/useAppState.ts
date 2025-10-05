@@ -111,7 +111,6 @@ export const useAppState = () => {
               }
               
               const round = roundsMap.get(game.round_number);
-              const isBye = !game.player2_id;
               
               round.matches.push({
                 id: game.id.toString(),
@@ -120,7 +119,7 @@ export const useAppState = () => {
                 points1: game.result === 'win1' ? 3 : (game.result === 'draw' ? 1 : 0),
                 points2: game.result === 'win2' ? 3 : (game.result === 'draw' ? 1 : 0),
                 result: game.result,
-                tableNumber: isBye ? undefined : (round.matches.filter((m: any) => m.tableNumber).length + 1)
+                tableNumber: game.table_number || undefined
               });
             });
             
@@ -918,7 +917,8 @@ export const useAppState = () => {
       try {
         const pairings = newRound.matches.map(match => ({
           player1_id: parseInt(match.player1Id),
-          player2_id: match.player2Id ? parseInt(match.player2Id) : null
+          player2_id: match.player2Id ? parseInt(match.player2Id) : null,
+          table_number: match.tableNumber || null
         }));
         
         console.log('📤 Сохранение пар в БД:', {
