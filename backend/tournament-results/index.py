@@ -60,7 +60,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cursor.execute(query)
             
             rows = cursor.fetchall()
-            results = [dict(row) for row in rows]
+            results = []
+            for row in rows:
+                row_dict = dict(row)
+                # Convert datetime to string if present
+                if 'created_at' in row_dict and row_dict['created_at']:
+                    row_dict['created_at'] = row_dict['created_at'].isoformat()
+                results.append(row_dict)
             
             return {
                 'statusCode': 200,
@@ -80,27 +86,43 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'No results provided'})
                 }
             
-            # Delete existing results for this tournament
-            if results:
-                tournament_id = results[0].get('tournament_id')
-                cursor.execute(
-                    "DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = %s",
-                    (tournament_id,)
-                )
+            tournament_id = results[0].get('tournament_id')
+            if not tournament_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'tournament_id is required'})
+                }
             
-            # Insert new results
-            insert_query = """
+            # Delete existing results for this tournament first
+            cursor.execute(
+                "DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = %s",
+                (tournament_id,)
+            )
+            
+            # Insert new results with UPSERT (in case of any conflicts)
+            upsert_query = """
                 INSERT INTO t_p79348767_tournament_site_buil.tournament_results
                 (tournament_id, player_id, place, points, buchholz, sum_buchholz, wins, losses, draws)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (tournament_id, player_id) 
+                DO UPDATE SET
+                    place = EXCLUDED.place,
+                    points = EXCLUDED.points,
+                    buchholz = EXCLUDED.buchholz,
+                    sum_buchholz = EXCLUDED.sum_buchholz,
+                    wins = EXCLUDED.wins,
+                    losses = EXCLUDED.losses,
+                    draws = EXCLUDED.draws,
+                    created_at = CURRENT_TIMESTAMP
             """
             
             for result in results:
-                cursor.execute(insert_query, (
+                cursor.execute(upsert_query, (
                     result.get('tournament_id'),
                     result.get('player_id'),
                     result.get('place'),
-                    result.get('points'),
+                    result.get('points', 0),
                     result.get('buchholz', 0),
                     result.get('sum_buchholz', 0),
                     result.get('wins', 0),
@@ -117,7 +139,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'saved_count': len(results),
-                    'tournament_id': results[0].get('tournament_id') if results else None
+                    'tournament_id': tournament_id
                 })
             }
         

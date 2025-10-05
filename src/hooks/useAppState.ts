@@ -1442,7 +1442,7 @@ export const useAppState = () => {
           // Save results to database
           const resultsToSave = standings.map((standing, index) => ({
             tournament_id: tournament.dbId,
-            player_id: parseInt(standing.user!.id),
+            player_id: standing.user!.id,
             place: index + 1,
             points: standing.points,
             buchholz: standing.buchholz,
@@ -1452,6 +1452,8 @@ export const useAppState = () => {
             draws: standing.draws
           }));
 
+          console.log('💾 Сохраняю результаты турнира:', resultsToSave);
+
           try {
             const resultsResponse = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65', {
               method: 'POST',
@@ -1460,9 +1462,11 @@ export const useAppState = () => {
             });
             
             if (resultsResponse.ok) {
-              console.log('✅ Результаты турнира сохранены в БД');
+              const savedData = await resultsResponse.json();
+              console.log('✅ Результаты турнира сохранены в БД:', savedData);
             } else {
-              console.error('❌ Ошибка сохранения результатов турнира');
+              const errorText = await resultsResponse.text();
+              console.error('❌ Ошибка сохранения результатов турнира:', errorText);
             }
           } catch (error) {
             console.warn('⚠️ Не удалось сохранить результаты турнира:', error);
