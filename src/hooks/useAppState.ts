@@ -111,12 +111,16 @@ export const useAppState = () => {
               }
               
               const round = roundsMap.get(game.round_number);
+              const isBye = !game.player2_id;
+              
               round.matches.push({
                 id: game.id.toString(),
                 player1Id: game.player1_id.toString(),
                 player2Id: game.player2_id ? game.player2_id.toString() : undefined,
+                points1: game.result === 'win1' ? 3 : (game.result === 'draw' ? 1 : 0),
+                points2: game.result === 'win2' ? 3 : (game.result === 'draw' ? 1 : 0),
                 result: game.result,
-                tableNumber: round.matches.length + 1
+                tableNumber: isBye ? undefined : (round.matches.filter((m: any) => m.tableNumber).length + 1)
               });
             });
             
