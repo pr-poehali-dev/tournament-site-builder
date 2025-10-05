@@ -58,6 +58,16 @@ export const useAppState = () => {
 
         if (response.ok) {
           const data = await response.json();
+          
+          // Load games for all tournaments
+          const gamesResponse = await fetch(`${API_BASE_URL}/api/games`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+          });
+          
+          const gamesData = gamesResponse.ok ? await gamesResponse.json() : { games: [] };
+          const allGames = gamesData.games || [];
+          
           const tournamentsFromDb = data.tournaments.map((t: any) => {
             // Map database status to frontend status
             let frontendStatus: 'draft' | 'active' | 'completed' | 'confirmed' = 'draft';
@@ -65,6 +75,30 @@ export const useAppState = () => {
             else if (t.status === 'completed') frontendStatus = 'completed';
             else if (t.status === 'confirmed') frontendStatus = 'confirmed';
             else frontendStatus = 'draft'; // 'setup' or any other value maps to 'draft'
+            
+            // Load games for this tournament and build rounds
+            const tournamentGames = allGames.filter((g: any) => g.tournament_id === t.id);
+            const roundsMap = new Map<number, any>();
+            
+            tournamentGames.forEach((game: any) => {
+              if (!roundsMap.has(game.round_number)) {
+                roundsMap.set(game.round_number, {
+                  number: game.round_number,
+                  matches: []
+                });
+              }
+              
+              const round = roundsMap.get(game.round_number);
+              round.matches.push({
+                id: game.id.toString(),
+                player1Id: game.player1_id.toString(),
+                player2Id: game.player2_id ? game.player2_id.toString() : undefined,
+                result: game.result,
+                tableNumber: round.matches.length + 1
+              });
+            });
+            
+            const rounds = Array.from(roundsMap.values()).sort((a, b) => a.number - b.number);
             
             return {
               id: t.id.toString(),
@@ -80,7 +114,7 @@ export const useAppState = () => {
               participants: (t.participants || []).map((id: number) => id.toString()),
               status: frontendStatus,
               currentRound: t.current_round || 0,
-              rounds: [],
+              rounds: rounds,
               judgeId: t.judge_id ? t.judge_id.toString() : '',
               droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString()),
               hasSeating: t.hasSeating || false
