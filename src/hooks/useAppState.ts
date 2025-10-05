@@ -915,11 +915,15 @@ export const useAppState = () => {
     // Save pairings to database
     if (tournament?.dbId) {
       try {
-        const pairings = newRound.matches.map(match => ({
-          player1_id: parseInt(match.player1Id),
-          player2_id: match.player2Id ? parseInt(match.player2Id) : null,
-          table_number: match.tableNumber !== undefined ? match.tableNumber : null
-        }));
+        const pairings = newRound.matches.map(match => {
+          const tableNum = match.tableNumber !== undefined ? match.tableNumber : null;
+          console.log('🔍 Матч:', {player1: match.player1Id, player2: match.player2Id, tableNumber: match.tableNumber, sent: tableNum});
+          return {
+            player1_id: parseInt(match.player1Id),
+            player2_id: match.player2Id ? parseInt(match.player2Id) : null,
+            table_number: tableNum
+          };
+        });
         
         console.log('📤 Сохранение пар в БД:', {
           tournament_id: tournament.dbId,
@@ -2004,6 +2008,7 @@ export const useAppState = () => {
           // Add bye match at the end with last table number
           if (byePlayerId) {
             const byeTableNumber = bestPairing.pairs.length + 1;
+            console.log('🔍 БАЙ создан с номером стола:', byeTableNumber);
             matches.push({
               id: `match-${Date.now()}-bye`,
               player1Id: byePlayerId,
