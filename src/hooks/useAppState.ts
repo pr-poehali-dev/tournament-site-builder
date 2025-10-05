@@ -27,7 +27,16 @@ export const useAppState = () => {
     clearOldLocalStorage();
     
     // Restore last page from localStorage
-    const lastPage = localStorage.getItem('lastPage') as Page | null;
+    const lastPageStr = localStorage.getItem('lastPage');
+    let lastPage: Page | null = null;
+    
+    if (lastPageStr) {
+      try {
+        lastPage = JSON.parse(lastPageStr);
+      } catch (e) {
+        // Invalid JSON, ignore
+      }
+    }
     
     if (savedUIState) {
       return {
@@ -149,24 +158,12 @@ export const useAppState = () => {
     loadTournamentsFromDatabase();
   }, []);
 
-  // Auto-restore last tournament after tournaments are loaded
-  useEffect(() => {
-    const lastTournamentId = localStorage.getItem('lastTournamentId');
-    
-    if (lastTournamentId && appState.tournaments.length > 0) {
-      const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
-      
-      if (tournament && tournament.dbId && appState.currentPage === 'tournamentEdit') {
-        // Only restore if we're on tournamentEdit page and tournament exists
-        loadTournamentWithGames(lastTournamentId);
-      }
-    }
-  }, [appState.tournaments.length, appState.currentPage]);
+
 
   // Navigation functions
   const navigateTo = (page: Page) => {
     console.log('Navigation to:', page);
-    localStorage.setItem('lastPage', page);
+    localStorage.setItem('lastPage', JSON.stringify(page));
     setAppState(prev => ({ ...prev, currentPage: page }));
   };
 

@@ -115,6 +115,7 @@ const Index = () => {
     navigateToState(page);
   }, [navigate, navigateToState, tournamentId]);
 
+  // Handle URL-based tournament routing
   useEffect(() => {
     console.log('🔍 URL tournamentId:', tournamentId);
     console.log('🔍 Tournaments:', appState.tournaments.map(t => ({ id: t.id, name: t.name })));
@@ -135,6 +136,44 @@ const Index = () => {
       }
     }
   }, [tournamentId, appState.tournaments, appState.currentPage, navigateToState, navigate]);
+
+  // Auto-restore last tournament on page reload
+  useEffect(() => {
+    const lastTournamentId = localStorage.getItem('lastTournamentId');
+    const lastPageStr = localStorage.getItem('lastPage');
+    
+    // Only restore if:
+    // 1. We have a saved tournament ID
+    // 2. We're not already on a tournament URL
+    // 3. Tournaments are loaded
+    // 4. Last page was tournament-view
+    if (lastTournamentId && !tournamentId && appState.tournaments.length > 0 && lastPageStr) {
+      try {
+        const lastPage = JSON.parse(lastPageStr);
+        const isTournamentView = typeof lastPage === 'object' && lastPage.page === 'tournament-view';
+        
+        if (isTournamentView) {
+          const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
+          
+          if (tournament) {
+            console.log('🔄 Restoring last tournament:', lastTournamentId);
+            navigate(`/tournament/${lastTournamentId}`);
+            
+            // Load tournament data if it has dbId
+            if (tournament.dbId) {
+              loadTournamentWithGames(lastTournamentId);
+            }
+          } else {
+            // Tournament doesn't exist anymore, clear saved state
+            localStorage.removeItem('lastTournamentId');
+          }
+        }
+      } catch (e) {
+        // Invalid JSON, ignore
+        console.warn('Failed to parse lastPage from localStorage');
+      }
+    }
+  }, [appState.tournaments.length, tournamentId, navigate, loadTournamentWithGames]);
 
   const loginHandlers = useLoginHandlers(
     loginForm,
