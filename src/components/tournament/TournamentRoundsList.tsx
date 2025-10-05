@@ -69,22 +69,35 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
         
         const results = [];
         
-        if (player1) {
-          results.push({
-            playerName: player1.name,
-            playerPoints: player1Points,
-            opponentName: player2?.name || 'БАЙ',
-            opponentPoints: player2 ? player2Points : 0,
-          });
-        }
-        
-        if (player2) {
-          results.push({
-            playerName: player2.name,
-            playerPoints: player2Points,
-            opponentName: player1?.name || 'Неизвестный',
-            opponentPoints: player1Points,
-          });
+        // For BYE match (no player2), only add one entry for player1
+        if (!match.player2Id) {
+          if (player1) {
+            results.push({
+              playerName: player1.name,
+              playerPoints: player1Points,
+              opponentName: 'БАЙ',
+              opponentPoints: 0,
+            });
+          }
+        } else {
+          // Regular match - add both players
+          if (player1) {
+            results.push({
+              playerName: player1.name,
+              playerPoints: player1Points,
+              opponentName: player2?.name || 'Неизвестный',
+              opponentPoints: player2Points,
+            });
+          }
+          
+          if (player2) {
+            results.push({
+              playerName: player2.name,
+              playerPoints: player2Points,
+              opponentName: player1?.name || 'Неизвестный',
+              opponentPoints: player1Points,
+            });
+          }
         }
         
         return results;
