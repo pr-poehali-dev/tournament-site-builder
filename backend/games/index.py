@@ -177,18 +177,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 if not player1_id:
                     continue
                 
-                # Skip BYE matches - don't save them to database
-                # BYE matches are handled on frontend only
+                # For BYE matches (player2_id is null), set is_bye flag and auto-win
+                is_bye = False
+                result_value = None
                 if not player2_id:
-                    continue
+                    is_bye = True
+                    result_value = 'win1'
+                    player2_id = None
                 
                 # Insert game - using parameterized query
                 cursor.execute("""
                     INSERT INTO t_p79348767_tournament_site_buil.games 
-                    (tournament_id, round_number, player1_id, player2_id, result, table_number)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    (tournament_id, round_number, player1_id, player2_id, result, table_number, is_bye)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id, tournament_id, round_number, player1_id, player2_id, result, table_number, created_at
-                """, (tournament_id, round_number, player1_id, player2_id, None, table_number))
+                """, (tournament_id, round_number, player1_id, player2_id, result_value, table_number, is_bye))
                 
                 row = cursor.fetchone()
                 created_games.append({
