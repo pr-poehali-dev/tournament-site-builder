@@ -142,6 +142,13 @@ const Index = () => {
     const lastTournamentId = localStorage.getItem('lastTournamentId');
     const lastPageStr = localStorage.getItem('lastPage');
     
+    console.log('🔄 Auto-restore check:', { 
+      lastTournamentId, 
+      lastPageStr, 
+      tournamentId, 
+      tournamentsCount: appState.tournaments.length 
+    });
+    
     // Only restore if:
     // 1. We have a saved tournament ID
     // 2. We're not already on a tournament URL
@@ -152,11 +159,13 @@ const Index = () => {
         const lastPage = JSON.parse(lastPageStr);
         const isTournamentView = typeof lastPage === 'object' && lastPage.page === 'tournament-view';
         
+        console.log('🔄 Parsed lastPage:', lastPage, 'isTournamentView:', isTournamentView);
+        
         if (isTournamentView) {
           const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
           
           if (tournament) {
-            console.log('🔄 Restoring last tournament:', lastTournamentId);
+            console.log('✅ Restoring last tournament:', lastTournamentId);
             navigate(`/tournament/${lastTournamentId}`);
             
             // Load tournament data if it has dbId
@@ -165,12 +174,14 @@ const Index = () => {
             }
           } else {
             // Tournament doesn't exist anymore, clear saved state
+            console.log('❌ Tournament not found, clearing saved state');
             localStorage.removeItem('lastTournamentId');
           }
         }
       } catch (e) {
-        // Invalid JSON, ignore
-        console.warn('Failed to parse lastPage from localStorage');
+        // Invalid JSON, clear it
+        console.warn('❌ Failed to parse lastPage, clearing:', e);
+        localStorage.removeItem('lastPage');
       }
     }
   }, [appState.tournaments.length, tournamentId, navigate, loadTournamentWithGames]);
