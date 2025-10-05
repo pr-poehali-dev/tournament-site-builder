@@ -153,19 +153,22 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [appState.currentUser]);
 
-  // Auto-restore last tournament on page reload
+  // Auto-restore last tournament on page reload (only on initial load)
   useEffect(() => {
     const lastTournamentId = localStorage.getItem('lastTournamentId');
+    const hasRestoredSession = sessionStorage.getItem('hasRestoredTournament');
     
     // Only restore if:
     // 1. We have a saved tournament ID
     // 2. We're not already on a tournament URL
     // 3. Tournaments are loaded
-    if (lastTournamentId && !tournamentId && appState.tournaments.length > 0) {
+    // 4. Haven't restored in this session yet (prevents restoring on every page switch)
+    if (lastTournamentId && !tournamentId && appState.tournaments.length > 0 && !hasRestoredSession) {
       const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
       
       if (tournament) {
         console.log('✅ Restoring last tournament:', lastTournamentId);
+        sessionStorage.setItem('hasRestoredTournament', 'true');
         navigate(`/tournament/${lastTournamentId}`);
         
         // Load tournament data if it has dbId
