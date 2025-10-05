@@ -153,35 +153,40 @@ const Index = () => {
     // 1. We have a saved tournament ID
     // 2. We're not already on a tournament URL
     // 3. Tournaments are loaded
-    // 4. Last page was tournament-view
-    if (lastTournamentId && !tournamentId && appState.tournaments.length > 0 && lastPageStr) {
-      try {
-        const lastPage = JSON.parse(lastPageStr);
-        const isTournamentView = typeof lastPage === 'object' && lastPage.page === 'tournament-view';
-        
-        console.log('🔄 Parsed lastPage:', lastPage, 'isTournamentView:', isTournamentView);
-        
-        if (isTournamentView) {
-          const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
+    if (lastTournamentId && !tournamentId && appState.tournaments.length > 0) {
+      if (lastPageStr) {
+        try {
+          const lastPage = JSON.parse(lastPageStr);
+          const isTournamentView = typeof lastPage === 'object' && lastPage.page === 'tournament-view';
           
-          if (tournament) {
-            console.log('✅ Restoring last tournament:', lastTournamentId);
-            navigate(`/tournament/${lastTournamentId}`);
-            
-            // Load tournament data if it has dbId
-            if (tournament.dbId) {
-              loadTournamentWithGames(lastTournamentId);
-            }
-          } else {
-            // Tournament doesn't exist anymore, clear saved state
-            console.log('❌ Tournament not found, clearing saved state');
-            localStorage.removeItem('lastTournamentId');
+          console.log('🔄 Parsed lastPage:', lastPage, 'isTournamentView:', isTournamentView);
+          
+          if (!isTournamentView) {
+            // Old format or non-tournament page, skip restore
+            return;
           }
+        } catch (e) {
+          // Invalid JSON, skip restore
+          console.warn('❌ Failed to parse lastPage:', e);
+          return;
         }
-      } catch (e) {
-        // Invalid JSON, clear it
-        console.warn('❌ Failed to parse lastPage, clearing:', e);
-        localStorage.removeItem('lastPage');
+      }
+      
+      // Restore tournament regardless of lastPage format (for backwards compatibility)
+      const tournament = appState.tournaments.find(t => t.id === lastTournamentId);
+      
+      if (tournament) {
+        console.log('✅ Restoring last tournament:', lastTournamentId);
+        navigate(`/tournament/${lastTournamentId}`);
+        
+        // Load tournament data if it has dbId
+        if (tournament.dbId) {
+          loadTournamentWithGames(lastTournamentId);
+        }
+      } else {
+        // Tournament doesn't exist anymore, clear saved state
+        console.log('❌ Tournament not found, clearing saved state');
+        localStorage.removeItem('lastTournamentId');
       }
     }
   }, [appState.tournaments.length, tournamentId, navigate, loadTournamentWithGames]);
