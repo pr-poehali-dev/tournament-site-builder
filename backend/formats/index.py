@@ -50,6 +50,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'POST':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             body_data = json.loads(event.get('body', '{}'))
             name = body_data.get('name', '').strip()
             coefficient = body_data.get('coefficient', 1.0)
@@ -61,7 +71,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Format name is required'})
                 }
             
-            cur.execute('SELECT id FROM tournament_formats WHERE name = %s', (name,))
+            escaped_name = name.replace("'", "''")
+            cur.execute(f"SELECT id FROM tournament_formats WHERE name = '{escaped_name}'")
             existing = cur.fetchone()
             if existing:
                 return {
@@ -71,7 +82,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'id': str(existing[0]), 'name': name, 'coefficient': coefficient, 'existing': True})
                 }
             
-            cur.execute('INSERT INTO tournament_formats (name, coefficient) VALUES (%s, %s) RETURNING id', (name, coefficient))
+            cur.execute(f"INSERT INTO tournament_formats (name, coefficient) VALUES ('{escaped_name}', {coefficient}) RETURNING id")
             format_id = cur.fetchone()[0]
             
             return {
@@ -82,6 +93,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'PUT':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             body_data = json.loads(event.get('body', '{}'))
             format_id = body_data.get('id')
             name = body_data.get('name', '').strip()
@@ -94,7 +115,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Format id and name are required'})
                 }
             
-            cur.execute('UPDATE tournament_formats SET name = %s, coefficient = %s WHERE id = %s', (name, coefficient, int(format_id)))
+            escaped_name = name.replace("'", "''")
+            cur.execute(f"UPDATE tournament_formats SET name = '{escaped_name}', coefficient = {coefficient} WHERE id = {int(format_id)}")
             
             return {
                 'statusCode': 200,
@@ -104,6 +126,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'DELETE':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             params = event.get('queryStringParameters', {})
             format_id = params.get('id')
             
@@ -114,7 +146,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Format id is required'})
                 }
             
-            cur.execute('DELETE FROM tournament_formats WHERE id = %s', (int(format_id),))
+            cur.execute(f'DELETE FROM tournament_formats WHERE id = {int(format_id)}')
             
             return {
                 'statusCode': 200,

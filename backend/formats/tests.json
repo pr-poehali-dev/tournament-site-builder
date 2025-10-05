@@ -7,19 +7,14 @@
       "expectedStatus": 200
     },
     {
-      "name": "Create format returns existing",
+      "name": "Create format without auth fails",
       "method": "POST",
       "path": "/",
       "body": {
         "name": "Силед",
         "coefficient": 1.0
       },
-      "expectedStatus": 200,
-      "expectedBody": {
-        "id": "string",
-        "name": "Силед"
-      },
-      "bodyMatcher": "partial"
+      "expectedStatus": 401
     }
   ]
 }

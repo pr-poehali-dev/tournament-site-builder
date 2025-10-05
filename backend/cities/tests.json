@@ -7,18 +7,13 @@
       "expectedStatus": 200
     },
     {
-      "name": "Create new city returns existing",
+      "name": "Create city without auth fails",
       "method": "POST",
       "path": "/",
       "body": {
         "name": "Москва"
       },
-      "expectedStatus": 200,
-      "expectedBody": {
-        "id": "string",
-        "name": "Москва"
-      },
-      "bodyMatcher": "partial"
+      "expectedStatus": 401
     }
   ]
 }

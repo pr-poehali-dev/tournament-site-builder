@@ -50,6 +50,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'POST':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             body_data = json.loads(event.get('body', '{}'))
             name = body_data.get('name', '').strip()
             
@@ -60,7 +70,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'City name is required'})
                 }
             
-            cur.execute('SELECT id FROM cities WHERE name = %s', (name,))
+            escaped_name = name.replace("'", "''")
+            cur.execute(f"SELECT id FROM cities WHERE name = '{escaped_name}'")
             existing = cur.fetchone()
             if existing:
                 return {
@@ -70,7 +81,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'id': str(existing[0]), 'name': name, 'existing': True})
                 }
             
-            cur.execute('INSERT INTO cities (name) VALUES (%s) RETURNING id', (name,))
+            cur.execute(f"INSERT INTO cities (name) VALUES ('{escaped_name}') RETURNING id")
             city_id = cur.fetchone()[0]
             
             return {
@@ -81,6 +92,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'PUT':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             body_data = json.loads(event.get('body', '{}'))
             city_id = body_data.get('id')
             name = body_data.get('name', '').strip()
@@ -92,7 +113,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'City id and name are required'})
                 }
             
-            cur.execute('UPDATE cities SET name = %s WHERE id = %s', (name, int(city_id)))
+            escaped_name = name.replace("'", "''")
+            cur.execute(f"UPDATE cities SET name = '{escaped_name}' WHERE id = {int(city_id)}")
             
             return {
                 'statusCode': 200,
@@ -102,6 +124,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         elif method == 'DELETE':
+            headers = event.get('headers', {})
+            token = headers.get('X-Auth-Token') or headers.get('x-auth-token')
+            if not token:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'isBase64Encoded': False,
+                    'body': json.dumps({'error': 'Missing authentication token', 'success': False})
+                }
+            
             params = event.get('queryStringParameters', {})
             city_id = params.get('id')
             
@@ -112,7 +144,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'City id is required'})
                 }
             
-            cur.execute('DELETE FROM cities WHERE id = %s', (int(city_id),))
+            cur.execute(f'DELETE FROM cities WHERE id = {int(city_id)}')
             
             return {
                 'statusCode': 200,
