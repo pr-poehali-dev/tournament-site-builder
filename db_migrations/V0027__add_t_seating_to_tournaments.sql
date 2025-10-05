@@ -1,0 +1,1 @@
+ALTER TABLE tournaments ADD COLUMN t_seating BOOLEAN DEFAULT FALSE;
