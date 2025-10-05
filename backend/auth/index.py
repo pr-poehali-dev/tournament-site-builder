@@ -42,15 +42,54 @@ def create_response(status_code: int, body: dict, origin: str = None) -> dict:
         'body': json.dumps(body)
     }
 
+def refresh_token_handler(event: Dict[str, Any], origin: str) -> Dict[str, Any]:
+    '''Refresh JWT token if still valid'''
+    try:
+        auth_header = event.get('headers', {}).get('X-Auth-Token') or event.get('headers', {}).get('x-auth-token')
+        
+        if not auth_header:
+            return create_response(401, {'error': 'No token provided'}, origin)
+        
+        jwt_secret = os.environ.get('JWT_SECRET')
+        if not jwt_secret:
+            return create_response(500, {'error': 'JWT not configured'}, origin)
+        
+        # Decode token (will fail if expired or invalid)
+        try:
+            payload = jwt.decode(auth_header, jwt_secret, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            return create_response(401, {'error': 'Token expired'}, origin)
+        except jwt.InvalidTokenError:
+            return create_response(401, {'error': 'Invalid token'}, origin)
+        
+        # Generate new token with same data but fresh expiration
+        new_payload = {
+            'userId': payload['userId'],
+            'username': payload['username'],
+            'role': payload['role'],
+            'exp': datetime.utcnow() + timedelta(hours=2)
+        }
+        
+        new_token = jwt.encode(new_payload, jwt_secret, algorithm='HS256')
+        
+        return create_response(200, {
+            'success': True,
+            'token': new_token
+        }, origin)
+        
+    except Exception as e:
+        return create_response(500, {'error': f'Token refresh failed: {str(e)}'}, origin)
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: User authentication with bcrypt hashing (v2)
-    Args: event - dict with httpMethod, body containing username and password
+    Business: User authentication with bcrypt hashing and token refresh
+    Args: event - dict with httpMethod, body containing username and password OR X-Auth-Token for refresh
           context - object with attributes: request_id, function_name
     Returns: HTTP response with user data if credentials are valid
     '''
     method = event.get('httpMethod', 'POST')
     origin = event.get('headers', {}).get('origin') or event.get('headers', {}).get('Origin')
+    path = event.get('path', '/')
     
     # Handle CORS OPTIONS request
     if method == 'OPTIONS':
@@ -60,6 +99,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'isBase64Encoded': False,
             'body': ''
         }
+    
+    # Handle token refresh endpoint
+    if method == 'POST' and path.endswith('/refresh'):
+        return refresh_token_handler(event, origin)
     
     if method != 'POST':
         return create_response(405, {'error': 'Method not allowed'}, origin)

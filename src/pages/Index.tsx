@@ -10,6 +10,7 @@ import { useLoginHandlers } from "@/components/Index/LoginHandlers";
 import { useProfileHandlers } from "@/components/Index/ProfileHandlers";
 import { useCityHandlers } from "@/components/Index/CityHandlers";
 import { useTournamentHandlers } from "@/components/Index/TournamentHandlers";
+import { authUtils } from "@/utils/auth";
 
 const Index = () => {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -136,6 +137,21 @@ const Index = () => {
       }
     }
   }, [tournamentId, appState.tournaments, appState.currentPage, navigateToState, navigate]);
+
+  // Auto-refresh token every 5 minutes if user is logged in
+  useEffect(() => {
+    if (!appState.currentUser) return;
+
+    // Initial check
+    authUtils.autoRefreshIfNeeded();
+
+    // Check every 5 minutes (300000ms)
+    const interval = setInterval(() => {
+      authUtils.autoRefreshIfNeeded();
+    }, 300000);
+
+    return () => clearInterval(interval);
+  }, [appState.currentUser]);
 
   // Auto-restore last tournament on page reload
   useEffect(() => {
