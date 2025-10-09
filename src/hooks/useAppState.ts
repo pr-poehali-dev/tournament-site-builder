@@ -315,12 +315,11 @@ export const useAppState = () => {
   const addUser = async (user: User) => {
     try {
       // Сохраняем пользователя в БД через backend API
+      // Логин и пароль генерируются автоматически на сервере
       const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          username: user.username,
-          password: user.password,
           name: user.name,
           role: user.role,
           city: user.city
@@ -350,8 +349,13 @@ export const useAppState = () => {
         users: [...prev.users, userForState]
       }));
 
-      return { success: true, user: userForState };
-    } catch (error) {
+      // Возвращаем также временный пароль для показа администратору
+      return { 
+        success: true, 
+        user: userForState, 
+        temporaryPassword: createdUser.temporary_password 
+      };
+    } catch (error: any) {
       console.error('Error creating user:', error);
       
       // В случае ошибки сохраняем локально как fallback
@@ -360,7 +364,7 @@ export const useAppState = () => {
         users: [...prev.users, user]
       }));
 
-      return { success: false, error: error.message };
+      return { success: false, error: error?.message };
     }
   };
 

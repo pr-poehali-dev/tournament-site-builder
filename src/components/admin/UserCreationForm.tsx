@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import Icon from "@/components/ui/icon";
+import { toast } from "@/hooks/use-toast";
 import type { AppState, User, Player } from "@/types";
 
 interface UserCreationFormProps {
@@ -18,67 +19,88 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
   addUser,
   addPlayer,
 }) => {
-  const localUsernameRef = useRef<HTMLInputElement>(null);
-  const localPasswordRef = useRef<HTMLInputElement>(null);
   const localNameRef = useRef<HTMLInputElement>(null);
   const [localCity, setLocalCity] = useState(appState.currentUser?.city || "");
   const [localRole, setLocalRole] = useState<"admin" | "judge" | "player">("player");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!appState.currentUser || appState.currentUser.role !== "admin") {
-      alert("У вас нет прав для создания пользователей");
+      toast({
+        title: "Ошибка",
+        description: "У вас нет прав для создания пользователей",
+        variant: "destructive"
+      });
       return;
     }
 
-    const username = localUsernameRef.current?.value?.trim() || "";
-    const password = localPasswordRef.current?.value?.trim() || "";
     const name = localNameRef.current?.value?.trim() || "";
     const city = localCity?.trim() || undefined;
     const role = localRole;
 
-    if (!username || !password || !name) {
-      alert("Заполните все обязательные поля");
+    if (!name) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните имя пользователя",
+        variant: "destructive"
+      });
       return;
     }
 
-    if (appState.users.some((u) => u.username === username)) {
-      alert("Пользователь с таким логином уже существует");
-      return;
-    }
+    setIsCreating(true);
 
     const user: User = {
       id: Date.now().toString(),
-      username: username,
+      username: "",
       name: name,
       city: city,
       role: role,
       isActive: true,
     };
 
-    let newPlayer: Player | null = null;
-    if (user.role === "judge" || user.role === "player") {
-      newPlayer = {
-        id: user.id,
-        name: user.name,
-        city: user.city,
-        rating: 1200,
-        tournaments: 0,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-      };
-    }
+    const result = await addUser(user);
+    setIsCreating(false);
 
-    addUser(user);
-    if (newPlayer) {
-      addPlayer(newPlayer);
-    }
+    if (result.success && result.user) {
+      // Создаём профиль игрока если нужно
+      if (result.user.role === "judge" || result.user.role === "player") {
+        const newPlayer: Player = {
+          id: result.user.id,
+          name: result.user.name,
+          city: result.user.city,
+          rating: 1200,
+          tournaments: 0,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+        };
+        addPlayer(newPlayer);
+      }
 
-    if (localUsernameRef.current) localUsernameRef.current.value = "";
-    if (localPasswordRef.current) localPasswordRef.current.value = "";
-    if (localNameRef.current) localNameRef.current.value = "";
-    setLocalCity("");
-    setLocalRole("player");
+      // Показываем сгенерированные данные
+      toast({
+        title: "Пользователь создан!",
+        description: (
+          <div className="mt-2 space-y-1">
+            <div><strong>Логин:</strong> {result.user.username}</div>
+            <div><strong>Временный пароль:</strong> {result.temporaryPassword}</div>
+            <div className="text-xs text-muted-foreground mt-2">Передайте эти данные пользователю</div>
+          </div>
+        ),
+        duration: 10000, // 10 секунд
+      });
+
+      // Очищаем форму
+      if (localNameRef.current) localNameRef.current.value = "";
+      setLocalCity("");
+      setLocalRole("player");
+    } else {
+      toast({
+        title: "Ошибка",
+        description: result.error || "Не удалось создать пользователя",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -92,25 +114,6 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <Label htmlFor="username">Логин *</Label>
-            <Input
-              id="username"
-              ref={localUsernameRef}
-              placeholder="username"
-              className="w-full"
-            />
-          </div>
-          <div>
-            <Label htmlFor="password">Пароль *</Label>
-            <Input
-              id="password"
-              ref={localPasswordRef}
-              type="password"
-              placeholder="password"
-              className="w-full"
-            />
-          </div>
           <div>
             <Label htmlFor="name">Имя *</Label>
             <Input
@@ -152,9 +155,9 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
             </Select>
           </div>
           <div className="flex items-end">
-            <Button onClick={handleCreateUser} className="w-full">
+            <Button onClick={handleCreateUser} className="w-full" disabled={isCreating}>
               <Icon name="Plus" size={16} className="mr-2" />
-              Создать
+              {isCreating ? "Создаём..." : "Создать"}
             </Button>
           </div>
         </div>

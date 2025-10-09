@@ -3,6 +3,8 @@ import os
 import psycopg2
 import bcrypt
 import jwt
+import secrets
+import string
 from typing import Dict, Any, Optional, Tuple
 
 def verify_token(event: Dict[str, Any]) -> Tuple[bool, Optional[Dict], Optional[str]]:
@@ -50,6 +52,11 @@ def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode('utf-8')
+
+def generate_temporary_password(length: int = 10) -> str:
+    """Generate random temporary password"""
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     '''
@@ -123,33 +130,15 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             
             # Create new user
             body_data = json.loads(event.get('body', '{}'))
-            username = body_data.get('username', '').strip()
-            password = body_data.get('password', '').strip()
             name = body_data.get('name', '').strip()
             role = body_data.get('role', 'player')
             city = body_data.get('city', '').strip() or None
             
-            if not all([username, password, name]):
+            if not name:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Username, password and name are required'})
-                }
-            
-            # Validate username
-            if len(username) < 3 or len(username) > 50:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Username must be between 3 and 50 characters'})
-                }
-            
-            # Validate password strength
-            if len(password) < 6:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Password must be at least 6 characters long'})
+                    'body': json.dumps({'error': 'Name is required'})
                 }
             
             # Validate role
@@ -160,29 +149,30 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Invalid role'})
                 }
             
-            # Hash password with bcrypt
-            hashed_password = hash_password(password)
+            # Generate temporary password
+            temporary_password = generate_temporary_password()
+            hashed_password = hash_password(temporary_password)
             
-            # Check if username exists - using parameterized query
-            cursor.execute("""
-                SELECT id FROM t_p79348767_tournament_site_buil.users 
-                WHERE username = %s
-            """, (username,))
-            
-            if cursor.fetchone():
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Username already exists'})
-                }
-            
-            # Insert new user - using parameterized query
+            # Insert new user first to get the ID (username will be generated based on ID)
             cursor.execute("""
                 INSERT INTO t_p79348767_tournament_site_buil.users 
-                (username, password, name, role, city, is_active)
-                VALUES (%s, %s, %s, %s, %s, true)
-                RETURNING id, username, name, role, city, is_active, created_at, rating
-            """, (username, hashed_password, name, role, city))
+                (username, password, name, role, city, is_active, requires_password_reset, temporary_password)
+                VALUES ('temp', %s, %s, %s, %s, true, true, %s)
+                RETURNING id
+            """, (hashed_password, name, role, city, temporary_password))
+            
+            user_id = cursor.fetchone()[0]
+            
+            # Generate username as user + id
+            generated_username = f'user{user_id}'
+            
+            # Update username
+            cursor.execute("""
+                UPDATE t_p79348767_tournament_site_buil.users
+                SET username = %s
+                WHERE id = %s
+                RETURNING id, username, name, role, city, is_active, created_at, rating, temporary_password
+            """, (generated_username, user_id))
             
             row = cursor.fetchone()
             conn.commit()
@@ -195,7 +185,8 @@ def handler(event: Dict[str, Any], context) -> Dict[str, Any]:
                 'city': row[4],
                 'is_active': row[5],
                 'created_at': row[6].isoformat() if row[6] else None,
-                'rating': row[7]
+                'rating': row[7],
+                'temporary_password': row[8]  # Возвращаем временный пароль для показа админу
             }
             
             return {
