@@ -172,27 +172,16 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
             <Select 
               value={localCity} 
               onValueChange={setLocalCity}
-              disabled={appState.currentUser?.role === "judge"}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Выберите город" />
               </SelectTrigger>
               <SelectContent>
-                {appState.currentUser?.role === "judge" ? (
-                  // Судьи видят только свой город
-                  appState.currentUser.city && (
-                    <SelectItem value={appState.currentUser.city}>
-                      {appState.currentUser.city}
-                    </SelectItem>
-                  )
-                ) : (
-                  // Админы видят все города
-                  appState.cities.map((city) => (
-                    <SelectItem key={city.id} value={city.name}>
-                      {city.name}
-                    </SelectItem>
-                  ))
-                )}
+                {appState.cities.map((city) => (
+                  <SelectItem key={city.id} value={city.name}>
+                    {city.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
