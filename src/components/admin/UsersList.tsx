@@ -38,7 +38,11 @@ export const UsersList: React.FC<UsersListProps> = ({
   deleteUser,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState<string>("all");
+  // Для судей по умолчанию фильтр по их городу, для админов - все города
+  const defaultCity = appState.currentUser?.role === "judge" && appState.currentUser?.city 
+    ? appState.currentUser.city 
+    : "all";
+  const [selectedCity, setSelectedCity] = useState<string>(defaultCity);
 
   const userHasTournaments = (userId: string) => {
     return appState.tournaments.some(
@@ -76,17 +80,33 @@ export const UsersList: React.FC<UsersListProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select value={selectedCity} onValueChange={setSelectedCity}>
+          <Select 
+            value={selectedCity} 
+            onValueChange={setSelectedCity}
+            disabled={appState.currentUser?.role === "judge"}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Все города" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все города</SelectItem>
-              {appState.cities.map(city => (
-                <SelectItem key={city.id} value={city.name}>
-                  {city.name}
-                </SelectItem>
-              ))}
+              {appState.currentUser?.role === "admin" && (
+                <SelectItem value="all">Все города</SelectItem>
+              )}
+              {appState.currentUser?.role === "judge" ? (
+                // Судьи видят только свой город
+                appState.currentUser.city && (
+                  <SelectItem value={appState.currentUser.city}>
+                    {appState.currentUser.city}
+                  </SelectItem>
+                )
+              ) : (
+                // Админы видят все города
+                appState.cities.map(city => (
+                  <SelectItem key={city.id} value={city.name}>
+                    {city.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
