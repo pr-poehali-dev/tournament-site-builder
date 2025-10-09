@@ -27,7 +27,10 @@ export const useLoginHandlers = (
   );
 
   const login = useCallback(async () => {
+    console.log('🔐 Попытка входа:', loginForm.username);
+    
     try {
+      console.log('📡 Отправка запроса на авторизацию...');
       const response = await fetch('https://functions.poehali.dev/c8519cb6-9df9-4faf-a146-2fedd66d1623', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,7 +40,9 @@ export const useLoginHandlers = (
         })
       });
 
+      console.log('📡 Ответ получен, статус:', response.status);
       const data = await response.json();
+      console.log('📡 Данные ответа:', data);
 
       if (response.ok && data.success) {
         if (data.token) {
@@ -57,11 +62,12 @@ export const useLoginHandlers = (
         hideLoginForm();
         setLoginForm({ username: "", password: "" });
       } else {
+        console.error('❌ Ошибка авторизации:', data.error);
         alert(data.error || "Неверные учетные данные или пользователь заблокирован");
       }
     } catch (error) {
-      console.error('Login error:', error);
-      alert("Ошибка подключения к серверу");
+      console.error('❌ Критическая ошибка входа:', error);
+      alert(`Ошибка подключения к серверу: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     }
   }, [loginForm, hideLoginForm]);
 
