@@ -48,8 +48,8 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
             </DropdownMenuItem>
             {appState.currentUser.role === 'admin' && (
               <DropdownMenuItem onClick={() => navigateTo('admin')}>
-                <Icon name="Settings" size={16} className="mr-2" />
-                Админка
+                <Icon name="Users" size={16} className="mr-2" />
+                Игроки
               </DropdownMenuItem>
             )}
             {appState.currentUser.role === 'admin' && (
