@@ -111,7 +111,7 @@ export const UsersList: React.FC<UsersListProps> = ({
                   <td className="p-2">{user.name}</td>
                   <td className="p-2">{user.city || "-"}</td>
                   <td className="p-2">
-                    {user.role === "admin" && appState.currentUser?.role === "admin" ? (
+                    {user.role === "admin" || appState.currentUser?.role === "judge" ? (
                       <Badge variant="default">{user.role}</Badge>
                     ) : (
                       <Select
@@ -138,7 +138,7 @@ export const UsersList: React.FC<UsersListProps> = ({
                   </td>
                   <td className="p-2">
                     <div className="flex gap-2">
-                      {!(user.role === "admin" && appState.currentUser?.role === "admin") && (
+                      {appState.currentUser?.role === "admin" && !(user.role === "admin") && (
                         <Button
                           size="sm"
                           variant="outline"

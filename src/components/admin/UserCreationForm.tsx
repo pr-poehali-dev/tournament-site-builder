@@ -25,10 +25,20 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateUser = async () => {
-    if (!appState.currentUser || appState.currentUser.role !== "admin") {
+    if (!appState.currentUser || (appState.currentUser.role !== "admin" && appState.currentUser.role !== "judge")) {
       toast({
         title: "Ошибка",
         description: "У вас нет прав для создания пользователей",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Судьи могут создавать только игроков
+    if (appState.currentUser.role === "judge" && localRole !== "player") {
+      toast({
+        title: "Ошибка",
+        description: "Судьи могут создавать только пользователей с ролью Игрок",
         variant: "destructive"
       });
       return;
@@ -177,14 +187,19 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
             <Select
               value={localRole}
               onValueChange={(value: "admin" | "judge" | "player") => setLocalRole(value)}
+              disabled={appState.currentUser?.role === "judge"}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="player">Игрок</SelectItem>
-                <SelectItem value="judge">Судья</SelectItem>
-                <SelectItem value="admin">Админ</SelectItem>
+                {appState.currentUser?.role === "admin" && (
+                  <SelectItem value="judge">Судья</SelectItem>
+                )}
+                {appState.currentUser?.role === "admin" && (
+                  <SelectItem value="admin">Админ</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

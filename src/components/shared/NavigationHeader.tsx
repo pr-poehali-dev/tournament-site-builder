@@ -46,7 +46,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               <Icon name="Award" size={16} className="mr-2" />
               Рейтинг
             </DropdownMenuItem>
-            {appState.currentUser.role === 'admin' && (
+            {(appState.currentUser.role === 'admin' || appState.currentUser.role === 'judge') && (
               <DropdownMenuItem onClick={() => navigateTo('admin')}>
                 <Icon name="Users" size={16} className="mr-2" />
                 Игроки
