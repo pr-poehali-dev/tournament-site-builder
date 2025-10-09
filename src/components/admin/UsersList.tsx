@@ -83,7 +83,6 @@ export const UsersList: React.FC<UsersListProps> = ({
           <Select 
             value={selectedCity} 
             onValueChange={setSelectedCity}
-            disabled={appState.currentUser?.role === "judge"}
           >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Все города" />
@@ -92,21 +91,11 @@ export const UsersList: React.FC<UsersListProps> = ({
               {appState.currentUser?.role === "admin" && (
                 <SelectItem value="all">Все города</SelectItem>
               )}
-              {appState.currentUser?.role === "judge" ? (
-                // Судьи видят только свой город
-                appState.currentUser.city && (
-                  <SelectItem value={appState.currentUser.city}>
-                    {appState.currentUser.city}
-                  </SelectItem>
-                )
-              ) : (
-                // Админы видят все города
-                appState.cities.map(city => (
-                  <SelectItem key={city.id} value={city.name}>
-                    {city.name}
-                  </SelectItem>
-                ))
-              )}
+              {appState.cities.map(city => (
+                <SelectItem key={city.id} value={city.name}>
+                  {city.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
