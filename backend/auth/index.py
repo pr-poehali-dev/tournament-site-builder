@@ -12,6 +12,7 @@ ALLOWED_ORIGINS = [
     'https://poehali.dev',
     'https://www.poehali.dev',
     'https://preview--tournament-site-builder.poehali.dev',
+    'https://tournament-site-builder--preview.poehali.dev',
     'http://localhost:5173',
     'http://localhost:3000'
 ]
