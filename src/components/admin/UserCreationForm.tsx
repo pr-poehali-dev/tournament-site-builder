@@ -78,16 +78,50 @@ export const UserCreationForm: React.FC<UserCreationFormProps> = ({
       }
 
       // Показываем сгенерированные данные
+      const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+          toast({
+            title: "Скопировано!",
+            description: `${label} скопирован в буфер обмена`,
+            duration: 2000,
+          });
+        });
+      };
+
       toast({
         title: "Пользователь создан!",
         description: (
-          <div className="mt-2 space-y-1">
-            <div><strong>Логин:</strong> {result.user.username}</div>
-            <div><strong>Временный пароль:</strong> {result.temporaryPassword}</div>
-            <div className="text-xs text-muted-foreground mt-2">Передайте эти данные пользователю</div>
+          <div className="mt-2 space-y-2">
+            <div className="flex items-center justify-between gap-2 p-2 bg-background rounded border">
+              <div className="flex-1">
+                <div className="text-xs text-muted-foreground">Логин</div>
+                <div className="font-mono font-semibold">{result.user.username}</div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copyToClipboard(result.user.username, 'Логин')}
+              >
+                <Icon name="Copy" size={14} />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-2 p-2 bg-background rounded border">
+              <div className="flex-1">
+                <div className="text-xs text-muted-foreground">Временный пароль</div>
+                <div className="font-mono font-semibold">{result.temporaryPassword}</div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copyToClipboard(result.temporaryPassword, 'Пароль')}
+              >
+                <Icon name="Copy" size={14} />
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">Нажмите на иконку для копирования</div>
           </div>
         ),
-        duration: 10000, // 10 секунд
+        duration: 15000,
       });
 
       // Очищаем форму
