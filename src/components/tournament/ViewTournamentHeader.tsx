@@ -110,6 +110,15 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
               {judge ? judge.name : "Не указан"}
             </div>
           </div>
+          {tournament.club && (
+            <div>
+              <div className="text-muted-foreground">Клуб</div>
+              <div className="font-medium flex items-center gap-1">
+                <Icon name="Users" size={14} />
+                {tournament.club}
+              </div>
+            </div>
+          )}
           <div>
             <div className="text-muted-foreground">Туров проведено</div>
             <div className="font-medium">
