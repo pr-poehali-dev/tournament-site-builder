@@ -821,7 +821,50 @@ export const useAppState = () => {
     }));
   };
 
-  const updateTournament = (tournamentId: string, updates: Partial<Tournament>) => {
+  const updateTournament = async (tournamentId: string, updates: Partial<Tournament>) => {
+    // Find the tournament to get full data
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament) {
+      console.error('Tournament not found:', tournamentId);
+      return;
+    }
+
+    // Merge updates with existing tournament data
+    const updatedTournament = { ...tournament, ...updates };
+
+    try {
+      // Save to backend database
+      const response = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: parseInt(tournamentId),
+          name: updatedTournament.name,
+          format: updatedTournament.format,
+          date: updatedTournament.date,
+          city: updatedTournament.city,
+          club: updatedTournament.club,
+          is_rated: updatedTournament.isRated,
+          swiss_rounds: updatedTournament.swissRounds,
+          top_rounds: updatedTournament.topRounds,
+          participants: updatedTournament.participants.map((id: string) => parseInt(id)),
+          status: updatedTournament.status,
+          current_round: updatedTournament.currentRound,
+          judge_id: updatedTournament.judgeId ? parseInt(updatedTournament.judgeId) : null,
+          hasSeating: updatedTournament.hasSeating || false
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ Турнир успешно обновлён в БД:', tournamentId);
+      } else {
+        console.error('❌ Ошибка при обновлении турнира в БД:', await response.text());
+      }
+    } catch (error) {
+      console.error('❌ Не удалось обновить турнир в БД:', error);
+    }
+
+    // Update local state
     setAppState(prev => ({
       ...prev,
       tournaments: prev.tournaments.map(tournament =>
