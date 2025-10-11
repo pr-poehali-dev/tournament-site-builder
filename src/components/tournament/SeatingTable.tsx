@@ -8,9 +8,10 @@ interface SeatingTableProps {
   round: Round;
   users: User[];
   tournament?: Tournament;
+  onEdit?: () => void;
 }
 
-export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tournament }) => {
+export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tournament, onEdit }) => {
   const seatingData = round.matches
     .flatMap((match) => {
       const player1 = users.find((u) => u.id === match.player1Id);
@@ -177,30 +178,51 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Рассадка игроков</CardTitle>
-          <Button onClick={generatePDF} variant="outline" size="sm">
-            <Icon name="Printer" size={16} className="mr-2" />
-            Печать PDF
-          </Button>
+          <div className="flex gap-2">
+            {onEdit && (
+              <Button onClick={onEdit} variant="outline" size="sm">
+                <Icon name="Edit" size={16} className="mr-2" />
+                Изменить
+              </Button>
+            )}
+            <Button onClick={generatePDF} variant="outline" size="sm">
+              <Icon name="Printer" size={16} className="mr-2" />
+              Печать PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2 font-medium">Игрок</th>
-                <th className="text-left p-2 font-medium">№ стола</th>
-              </tr>
-            </thead>
-            <tbody>
-              {seatingData.map((seat, index) => (
-                <tr key={index} className="border-b hover:bg-gray-50">
-                  <td className="p-2 font-medium">{seat.playerName}</td>
-                  <td className="p-2">{seat.tableNumber} {seat.position}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {round.matches
+            .sort((a, b) => (a.tableNumber || 0) - (b.tableNumber || 0))
+            .map((match) => {
+              const player1 = users.find((u) => u.id === match.player1Id);
+              const player2 = match.player2Id
+                ? users.find((u) => u.id === match.player2Id)
+                : null;
+
+              return (
+                <div
+                  key={match.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="font-medium min-w-[70px]">
+                      Стол {match.tableNumber}
+                    </div>
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-sm text-gray-500 min-w-[50px]">Слева:</span>
+                      <span className="font-medium">{player1?.name || "Неизвестный игрок"}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-sm text-gray-500 min-w-[60px]">Справа:</span>
+                    <span className="font-medium">{player2?.name || "Неизвестный игрок"}</span>
+                  </div>
+                </div>
+              );
+            })}
         </div>
       </CardContent>
     </Card>

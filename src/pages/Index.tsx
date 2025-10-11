@@ -291,6 +291,7 @@ const Index = () => {
           confirmTournamentWithPlayerUpdates={confirmTournamentWithPlayerUpdates}
           updateTournament={updateTournament}
           createSeatingRound={createSeatingRound}
+          updateRoundMatches={updateRoundMatches}
           loadTournamentWithGames={loadTournamentWithGames}
           toggleUserStatus={toggleUserStatus}
           updateUserRole={updateUserRole}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,12 +6,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament, Round } from '@/types';
 import { SeatingTable } from './SeatingTable';
+import { SeatingEditor } from './SeatingEditor';
 
 interface TournamentRoundsListProps {
   tournament: Tournament;
   appState: AppState;
   updateMatchResult: (tournamentId: string, roundId: string, matchId: string, result: string) => void;
   togglePlayerDrop: (tournamentId: string, playerId: string) => void;
+  updateRoundMatches: (tournamentId: string, roundId: string, matches: any[]) => void;
 }
 
 export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
@@ -19,10 +21,26 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
   appState,
   updateMatchResult,
   togglePlayerDrop,
+  updateRoundMatches,
 }) => {
+  const [isEditingSeating, setIsEditingSeating] = useState(false);
+
   if (!tournament.rounds || tournament.rounds.length === 0) {
     return null;
   }
+
+  const handleSeatingEdit = () => {
+    setIsEditingSeating(true);
+  };
+
+  const handleSeatingCancel = () => {
+    setIsEditingSeating(false);
+  };
+
+  const handleSeatingSave = (tournamentId: string, roundId: string, matches: any[]) => {
+    updateRoundMatches(tournamentId, roundId, matches);
+    setIsEditingSeating(false);
+  };
 
   const generateRoundPDF = (round: Round) => {
     const printWindow = window.open('', '_blank');
@@ -262,7 +280,27 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
       <CardContent className="space-y-4">
         {tournament.rounds?.map((round) => {
           if (round.number === 0) {
-            return <SeatingTable key={round.id} round={round} users={appState.users} tournament={tournament} />;
+            if (isEditingSeating) {
+              return (
+                <SeatingEditor
+                  key={round.id}
+                  round={round}
+                  users={appState.users}
+                  tournament={tournament}
+                  onSave={handleSeatingSave}
+                  onCancel={handleSeatingCancel}
+                />
+              );
+            }
+            return (
+              <SeatingTable
+                key={round.id}
+                round={round}
+                users={appState.users}
+                tournament={tournament}
+                onEdit={handleSeatingEdit}
+              />
+            );
           }
           
           return (
