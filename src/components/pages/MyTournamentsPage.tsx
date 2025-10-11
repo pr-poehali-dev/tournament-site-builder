@@ -142,6 +142,7 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Название турнира</TableHead>
+                  <TableHead>Клуб</TableHead>
                   <TableHead>Формат</TableHead>
                   <TableHead>Дата</TableHead>
                   <TableHead className="text-center">Участников</TableHead>
@@ -175,6 +176,16 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
                         <div className="flex items-center gap-2">
                           {tournament.name}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {tournament.club ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Icon name="Users" size={14} />
+                            {tournament.club}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
                       </TableCell>
                       <TableCell>{formatTournamentType(tournament)}</TableCell>
                       <TableCell>{tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'}</TableCell>
