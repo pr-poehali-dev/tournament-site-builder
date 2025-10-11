@@ -833,9 +833,9 @@ export const useAppState = () => {
     const updatedTournament = { ...tournament, ...updates };
 
     try {
-      // Save to backend database
+      // Save to backend database using PUT method
       const response = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: parseInt(tournamentId),

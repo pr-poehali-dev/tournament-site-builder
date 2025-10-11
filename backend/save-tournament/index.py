@@ -43,11 +43,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         body = event.get('body', '{}')
         tournament_data = json.loads(body)
         
-        # Handle PUT request for status or dropped_players update
+        # Handle PUT request for updating tournament
         if method == 'PUT':
             tournament_id = tournament_data.get('id')
-            status = tournament_data.get('status')
-            dropped_players = tournament_data.get('droppedPlayers')
             
             if not tournament_id:
                 return {
@@ -81,12 +79,73 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             update_fields = []
             update_values = []
             
-            if status is not None:
-                update_fields.append('status = %s')
-                update_values.append(status)
+            # Check for all possible fields that can be updated
+            if 'name' in tournament_data:
+                update_fields.append('name = %s')
+                update_values.append(tournament_data['name'])
             
-            if dropped_players is not None:
-                # Convert to PostgreSQL array format
+            if 'format' in tournament_data:
+                update_fields.append('format = %s')
+                update_values.append(tournament_data['format'])
+            
+            if 'date' in tournament_data:
+                update_fields.append('tournament_date = %s')
+                update_values.append(tournament_data['date'] if tournament_data['date'] else None)
+            
+            if 'city' in tournament_data:
+                update_fields.append('city = %s')
+                update_values.append(tournament_data['city'] if tournament_data['city'] else None)
+            
+            if 'club' in tournament_data:
+                update_fields.append('club = %s')
+                update_values.append(tournament_data['club'] if tournament_data['club'] else None)
+            
+            if 'is_rated' in tournament_data:
+                update_fields.append('is_rated = %s')
+                update_values.append(tournament_data['is_rated'])
+            
+            if 'swiss_rounds' in tournament_data:
+                update_fields.append('swiss_rounds = %s')
+                update_values.append(tournament_data['swiss_rounds'])
+            
+            if 'top_rounds' in tournament_data:
+                update_fields.append('top_rounds = %s')
+                update_values.append(tournament_data['top_rounds'] if tournament_data['top_rounds'] else None)
+            
+            if 'participants' in tournament_data:
+                participants = tournament_data['participants']
+                if participants:
+                    participants_str = '{' + ','.join(str(int(p)) for p in participants) + '}'
+                else:
+                    participants_str = '{}'
+                update_fields.append('participants = %s::integer[]')
+                update_values.append(participants_str)
+            
+            if 'status' in tournament_data:
+                update_fields.append('status = %s')
+                update_values.append(tournament_data['status'])
+            
+            if 'current_round' in tournament_data:
+                update_fields.append('current_round = %s')
+                update_values.append(tournament_data['current_round'])
+            
+            if 'judge_id' in tournament_data:
+                judge_id = tournament_data['judge_id']
+                judge_id_int = None
+                if judge_id:
+                    try:
+                        judge_id_int = int(judge_id)
+                    except (ValueError, TypeError):
+                        judge_id_int = None
+                update_fields.append('judge_id = %s')
+                update_values.append(judge_id_int)
+            
+            if 'hasSeating' in tournament_data:
+                update_fields.append('t_seating = %s')
+                update_values.append(tournament_data['hasSeating'])
+            
+            if 'droppedPlayers' in tournament_data:
+                dropped_players = tournament_data['droppedPlayers']
                 if dropped_players:
                     dropped_str = '{' + ','.join(str(int(p)) for p in dropped_players) + '}'
                 else:
