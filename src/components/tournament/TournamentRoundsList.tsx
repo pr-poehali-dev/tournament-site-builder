@@ -102,6 +102,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
           if (player1) {
             results.push({
               playerName: player1.name,
+              tableNumber: '—',
               playerPoints: player1Points,
               opponentName: 'БАЙ',
               opponentPoints: 0,
@@ -112,6 +113,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
           if (player1) {
             results.push({
               playerName: player1.name,
+              tableNumber: match.tableNumber || '?',
               playerPoints: player1Points,
               opponentName: player2?.name || 'Неизвестный',
               opponentPoints: player2Points,
@@ -121,6 +123,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
           if (player2) {
             results.push({
               playerName: player2.name,
+              tableNumber: match.tableNumber || '?',
               playerPoints: player2Points,
               opponentName: player1?.name || 'Неизвестный',
               opponentPoints: player1Points,
@@ -204,6 +207,11 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
               width: 40px;
               font-weight: bold;
             }
+            .table-cell {
+              text-align: center;
+              width: 50px;
+              font-weight: bold;
+            }
             @media print {
               body {
                 padding: 10px;
@@ -226,6 +234,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                 <thead>
                   <tr>
                     <th>Игрок</th>
+                    <th style="width: 50px; text-align: center;">Стол</th>
                     <th style="width: 40px; text-align: center;">Очки</th>
                     <th style="width: 30px;"></th>
                     <th style="width: 40px; text-align: center;">Очки</th>
@@ -236,6 +245,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                   ${leftColumn.map(pairing => `
                     <tr>
                       <td>${pairing.playerName}</td>
+                      <td class="table-cell">${pairing.tableNumber}</td>
                       <td class="points-cell">${pairing.playerPoints}</td>
                       <td class="vs-cell">vs</td>
                       <td class="points-cell">${pairing.opponentPoints}</td>
@@ -250,6 +260,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                 <thead>
                   <tr>
                     <th>Игрок</th>
+                    <th style="width: 50px; text-align: center;">Стол</th>
                     <th style="width: 40px; text-align: center;">Очки</th>
                     <th style="width: 30px;"></th>
                     <th style="width: 40px; text-align: center;">Очки</th>
@@ -260,6 +271,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                   ${rightColumn.map(pairing => `
                     <tr>
                       <td>${pairing.playerName}</td>
+                      <td class="table-cell">${pairing.tableNumber}</td>
                       <td class="points-cell">${pairing.playerPoints}</td>
                       <td class="vs-cell">vs</td>
                       <td class="points-cell">${pairing.opponentPoints}</td>
