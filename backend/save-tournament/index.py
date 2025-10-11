@@ -214,12 +214,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         cursor.execute("""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, club, is_rated, judge_id, participants, t_seating, dropped_players) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s, %s::integer[])
-            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, club, is_rated, judge_id, participants, t_seating, dropped_players
+            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, club, tournament_date, is_rated, judge_id, participants, t_seating, dropped_players) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s, %s::integer[])
+            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, club, tournament_date, is_rated, judge_id, participants, t_seating, dropped_players
         """, (name, tournament_type, tournament_format, 'setup', 0, swiss_rounds, 
-              top_rounds if top_rounds else None, city if city else None, club if club else None,
-              is_rated, judge_id_int, participants_str, t_seating, '{}'))
+              top_rounds if top_rounds else None, city if city else None, club if club else None, 
+              date if date else None, is_rated, judge_id_int, participants_str, t_seating, '{}'))
         
         row = cursor.fetchone()
         conn.commit()
@@ -235,11 +235,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'created_at': row[6].isoformat() if row[6] else None,
             'city': row[7],
             'club': row[8],
-            'is_rated': row[9],
-            'judge_id': row[10],
-            'participants': row[11] if row[11] else [],
-            't_seating': row[12],
-            'droppedPlayers': row[13] if row[13] else [],
+            'tournament_date': row[9].isoformat() if row[9] else None,
+            'is_rated': row[10],
+            'judge_id': row[11],
+            'participants': row[12] if row[12] else [],
+            't_seating': row[13],
+            'droppedPlayers': row[14] if row[14] else [],
             'db_saved': True
         }
         

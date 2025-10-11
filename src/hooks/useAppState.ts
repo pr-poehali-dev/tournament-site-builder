@@ -130,7 +130,7 @@ export const useAppState = () => {
               dbId: t.id,
               name: t.name,
               format: t.format || 'sealed',
-              date: t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+              date: t.tournament_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
               city: t.city || '',
               club: t.club,
               description: `Турнир по формату ${t.format || 'sealed'}`,
