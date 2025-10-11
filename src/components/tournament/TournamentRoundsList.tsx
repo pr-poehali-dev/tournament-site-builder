@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament } from '@/types';
+import { generateSlipsContent, printSlips } from '@/utils/printSlips';
 
 interface TournamentRoundsListProps {
   tournament: Tournament;
@@ -241,6 +242,19 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                   <Icon name="Printer" size={16} className="mr-2" />
                   Печать PDF
                 </Button>
+                {round.number > 0 && (
+                  <Button 
+                    onClick={() => {
+                      const content = generateSlipsContent(tournament, round, appState.users);
+                      printSlips(content);
+                    }} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Icon name="FileText" size={16} className="mr-2" />
+                    Печать слипов
+                  </Button>
+                )}
                 <Badge variant={round.isCompleted ? "default" : "secondary"}>
                   {round.isCompleted ? "Завершён" : "В процессе"}
                 </Badge>
