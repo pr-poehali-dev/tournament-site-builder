@@ -340,5 +340,17 @@ export const calculateTournamentStandings = (
       };
     })
     .filter((item: any) => item !== null)
-    .sort((a: any, b: any) => sortByTopResults(a, b, tournament, users));
+    .sort((a: any, b: any) => {
+      // Если турнир ещё не начался (нет реальных туров или currentRound === 0), сортируем по алфавиту
+      const hasRealRounds = tournament.rounds?.some((r: any) => r.number > 0) || false;
+      const tournamentStarted = tournament.currentRound > 0 && hasRealRounds;
+      
+      if (!tournamentStarted) {
+        // Сортировка по алфавиту (по имени игрока)
+        return a.user.name.localeCompare(b.user.name, 'ru');
+      }
+      
+      // Иначе используем обычную сортировку по результатам
+      return sortByTopResults(a, b, tournament, users);
+    });
 };
