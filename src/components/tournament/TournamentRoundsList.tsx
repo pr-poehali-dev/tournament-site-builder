@@ -135,10 +135,6 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
       })
       .sort((a, b) => a.playerName.localeCompare(b.playerName, 'ru'));
 
-    const halfLength = Math.ceil(pairingsData.length / 2);
-    const leftColumn = pairingsData.slice(0, halfLength);
-    const rightColumn = pairingsData.slice(halfLength);
-    
     const html = `
       <!DOCTYPE html>
       <html>
@@ -171,13 +167,6 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
               font-size: 12px;
               margin-bottom: 12px;
               text-indent: 1em;
-            }
-            .columns {
-              display: flex;
-              gap: 15px;
-            }
-            .column {
-              flex: 1;
             }
             table {
               width: 100%;
@@ -228,60 +217,30 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
             <p>${tournament.date}</p>
           </div>
           <div class="round-title">Тур ${round.number}</div>
-          <div class="columns">
-            <div class="column">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Игрок</th>
-                    <th style="width: 50px; text-align: center;">Стол</th>
-                    <th style="width: 40px; text-align: center;">Очки</th>
-                    <th style="width: 30px;"></th>
-                    <th style="width: 40px; text-align: center;">Очки</th>
-                    <th>Оппонент</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${leftColumn.map(pairing => `
-                    <tr>
-                      <td>${pairing.playerName}</td>
-                      <td class="table-cell">${pairing.tableNumber}</td>
-                      <td class="points-cell">${pairing.playerPoints}</td>
-                      <td class="vs-cell">vs</td>
-                      <td class="points-cell">${pairing.opponentPoints}</td>
-                      <td>${pairing.opponentName}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-            <div class="column">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Игрок</th>
-                    <th style="width: 50px; text-align: center;">Стол</th>
-                    <th style="width: 40px; text-align: center;">Очки</th>
-                    <th style="width: 30px;"></th>
-                    <th style="width: 40px; text-align: center;">Очки</th>
-                    <th>Оппонент</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rightColumn.map(pairing => `
-                    <tr>
-                      <td>${pairing.playerName}</td>
-                      <td class="table-cell">${pairing.tableNumber}</td>
-                      <td class="points-cell">${pairing.playerPoints}</td>
-                      <td class="vs-cell">vs</td>
-                      <td class="points-cell">${pairing.opponentPoints}</td>
-                      <td>${pairing.opponentName}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Игрок</th>
+                <th style="width: 50px; text-align: center;">Стол</th>
+                <th style="width: 40px; text-align: center;">Очки</th>
+                <th style="width: 30px;"></th>
+                <th style="width: 40px; text-align: center;">Очки</th>
+                <th>Оппонент</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pairingsData.map(pairing => `
+                <tr>
+                  <td>${pairing.playerName}</td>
+                  <td class="table-cell">${pairing.tableNumber}</td>
+                  <td class="points-cell">${pairing.playerPoints}</td>
+                  <td class="vs-cell">vs</td>
+                  <td class="points-cell">${pairing.opponentPoints}</td>
+                  <td>${pairing.opponentName}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </body>
       </html>
     `;
