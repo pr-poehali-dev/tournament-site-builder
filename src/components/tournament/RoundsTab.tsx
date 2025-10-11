@@ -14,9 +14,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import type { AppState, Tournament } from "@/types";
 import { getRoundName } from "@/utils/tournamentHelpers";
+import { generateSlipsContent, printSlips } from "@/utils/printSlips";
 
 interface RoundsTabProps {
   tournament: Tournament;
@@ -29,14 +31,34 @@ export const RoundsTab: React.FC<RoundsTabProps> = ({
   appState,
   currentUserId,
 }) => {
+  const handlePrintSlips = (roundIndex: number) => {
+    const round = tournament.rounds?.[roundIndex];
+    if (!round) return;
+
+    const content = generateSlipsContent(tournament, round, appState.users);
+    printSlips(content);
+  };
+
   return (
     <div className="space-y-4">
       {tournament.rounds?.map((round, roundIndex) => (
         <Card key={roundIndex}>
           <CardHeader>
-            <CardTitle className="text-lg">
-              {getRoundName(tournament, round.number)}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">
+                {getRoundName(tournament, round.number)}
+              </CardTitle>
+              {round.number > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePrintSlips(roundIndex)}
+                >
+                  <Icon name="Printer" size={16} className="mr-2" />
+                  Печать слипов
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
