@@ -76,9 +76,9 @@ export const printSlips = (
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 8pt;
-            line-height: 1.1;
-            margin: 5px;
+            font-size: 10pt;
+            line-height: 1.2;
+            margin: 10px;
             color: #000;
             background: #fff;
           }
@@ -86,7 +86,7 @@ export const printSlips = (
             white-space: pre-wrap;
             page-break-inside: avoid;
             break-inside: avoid;
-            margin-bottom: 3px;
+            margin-bottom: 10px;
           }
         </style>
       </head>
