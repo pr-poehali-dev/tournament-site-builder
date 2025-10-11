@@ -1229,23 +1229,84 @@ export const useAppState = () => {
     }));
   }, [appState.tournaments]);
 
-  const updateRoundMatches = useCallback((tournamentId: string, roundId: string, updatedMatches: Match[]) => {
-    setAppState(prev => ({
-      ...prev,
-      tournaments: prev.tournaments.map(tournament =>
-        tournament.id === tournamentId
-          ? {
-              ...tournament,
-              rounds: tournament.rounds.map(round =>
-                round.id === roundId
-                  ? { ...round, matches: updatedMatches }
-                  : round
-              )
-            }
-          : tournament
-      )
-    }));
-  }, []);
+  const updateRoundMatches = useCallback(async (tournamentId: string, roundId: string, updatedMatches: Match[]) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament || !tournament.dbId) {
+      console.warn('⚠️ Tournament not found or not saved to DB');
+      return;
+    }
+
+    const round = tournament.rounds?.find(r => r.id === roundId);
+    if (!round) {
+      console.warn('⚠️ Round not found');
+      return;
+    }
+
+    // Save to database first (especially for seating round)
+    try {
+      // Delete old games for this round
+      await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          tournament_id: tournament.dbId,
+          round_number: round.number
+        })
+      });
+
+      // Create new games with updated pairings
+      const pairings = updatedMatches.map(match => ({
+        player1_id: match.player1Id,
+        player2_id: match.player2Id || null,
+        table_number: match.tableNumber
+      }));
+
+      const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          tournament_id: tournament.dbId,
+          round_number: round.number,
+          pairings
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ Round matches saved to DB');
+        
+        // Update local state only after successful DB save
+        setAppState(prev => ({
+          ...prev,
+          tournaments: prev.tournaments.map(t =>
+            t.id === tournamentId
+              ? {
+                  ...t,
+                  rounds: t.rounds?.map(r =>
+                    r.id === roundId
+                      ? { ...r, matches: updatedMatches }
+                      : r
+                  )
+                }
+              : t
+          )
+        }));
+
+        toast({
+          title: "Успешно",
+          description: round.number === 0 ? "Рассадка обновлена" : "Паринги обновлены",
+        });
+      } else {
+        throw new Error('Failed to save matches');
+      }
+    } catch (error) {
+      console.error('❌ Error saving round matches:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить изменения",
+        variant: "destructive",
+      });
+    }
+  }, [appState.tournaments]);
 
   const finishTournament = useCallback(async (tournamentId: string) => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
@@ -2223,7 +2284,8 @@ export const useAppState = () => {
       try {
         const pairings = seatingRound.matches.map(match => ({
           player1_id: match.player1Id,
-          player2_id: match.player2Id || null
+          player2_id: match.player2Id || null,
+          table_number: match.tableNumber
         }));
         
         console.log('📤 Сохранение рассадки в БД:', {

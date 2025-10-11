@@ -88,7 +88,14 @@ export const SeatingEditor: React.FC<SeatingEditorProps> = ({
       return;
     }
 
-    onSave(tournament.id, round.id, editedMatches);
+    // Renumber tables to ensure sequential numbering
+    const sortedMatches = [...editedMatches].sort((a, b) => (a.tableNumber || 0) - (b.tableNumber || 0));
+    const renumberedMatches = sortedMatches.map((match, index) => ({
+      ...match,
+      tableNumber: index + 1
+    }));
+
+    onSave(tournament.id, round.id, renumberedMatches);
   };
 
   const getPlayerSelectOptions = (currentPlayerId: string | null) => {
