@@ -53,7 +53,7 @@ export const TournamentControls: React.FC<TournamentControlsProps> = ({
   const totalRounds = tournament.swissRounds + tournament.topRounds;
   const canCreateNextRound =
     tournament.currentRound < totalRounds &&
-    (tournament.status === "active" || tournament.status === "draft");
+    (tournament.status === "active" || tournament.status === "draft" || tournament.status === "setup" as any);
   const lastRound =
     tournament.rounds && tournament.rounds.length > 0
       ? tournament.rounds[tournament.rounds.length - 1]

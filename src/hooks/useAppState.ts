@@ -1028,8 +1028,12 @@ export const useAppState = () => {
 
   // Specific tournament operations
   const addTournamentRound = useCallback(async (tournamentId: string, newRound: Round) => {
+    console.log('🎯 addTournamentRound вызван:', { tournamentId, roundNumber: newRound.number, matchesCount: newRound.matches.length });
+    
     // Find tournament to get dbId
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    
+    console.log('🔍 Турнир найден:', { id: tournament?.id, dbId: tournament?.dbId, name: tournament?.name });
     
     // Save pairings to database
     if (tournament?.dbId) {
