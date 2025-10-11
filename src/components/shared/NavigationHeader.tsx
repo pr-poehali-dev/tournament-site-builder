@@ -59,6 +59,12 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               </DropdownMenuItem>
             )}
             {appState.currentUser.role === 'admin' && (
+              <DropdownMenuItem onClick={() => navigateTo('clubs')}>
+                <Icon name="Building2" size={16} className="mr-2" />
+                Клубы
+              </DropdownMenuItem>
+            )}
+            {appState.currentUser.role === 'admin' && (
               <DropdownMenuItem onClick={() => navigateTo('formats')}>
                 <Icon name="Layers" size={16} className="mr-2" />
                 Форматы турниров

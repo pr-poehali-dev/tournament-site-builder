@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Add new club",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Club",
+        "city": "Moscow"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "id": "number",
+        "name": "string",
+        "city": "string",
+        "created_at": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

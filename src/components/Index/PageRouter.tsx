@@ -6,6 +6,7 @@ import { ProfilePage } from "@/components/pages/ProfilePage";
 import { TournamentsPage } from "@/components/pages/TournamentsPage";
 import { MyTournamentsPage } from "@/components/pages/MyTournamentsPage";
 import { CitiesPage } from "@/components/pages/CitiesPage";
+import { ClubsPage } from "@/components/pages/ClubsPage";
 import { FormatsPage } from "@/components/pages/FormatsPage";
 import { CreateTournamentPage } from "@/components/pages/CreateTournamentPage";
 import { TournamentViewPage } from "@/components/pages/TournamentViewPage";
@@ -221,6 +222,10 @@ export const PageRouter: React.FC<PageRouterProps> = ({
           deleteCity={deleteCity}
           cityNameInputRef={cityNameInputRef}
         />
+      )}
+
+      {appState.currentPage === "clubs" && (
+        <ClubsPage appState={appState} />
       )}
 
       {appState.currentPage === "formats" && (
