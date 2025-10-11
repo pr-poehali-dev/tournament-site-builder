@@ -32,6 +32,7 @@ export const generateSlipsContent = (
     lines.push(
       `${(player1?.name || "Неизвестный").padEnd(24)} |           |      |`
     );
+    lines.push("-------------------------|-----------|------|------------------");
     lines.push(
       `${(player2?.name || "Неизвестный").padEnd(24)} |           |      |`
     );
@@ -54,19 +55,27 @@ export const printSlips = (content: string) => {
     <!DOCTYPE html>
     <html>
       <head>
+        <meta charset="utf-8">
         <title>Слипы для турнира</title>
         <style>
+          @page {
+            margin: 1.5cm;
+            size: A4;
+          }
           @media print {
-            @page {
-              margin: 1cm;
+            body {
+              margin: 0;
+              padding: 0;
             }
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 12pt;
-            line-height: 1.4;
+            font-size: 11pt;
+            line-height: 1.5;
             white-space: pre-wrap;
             margin: 20px;
+            color: #000;
+            background: #fff;
           }
         </style>
       </head>
