@@ -91,6 +91,17 @@ export const useAppState = () => {
           }
           
           const tournamentsFromDb = data.tournaments.map((t: any) => {
+            // Debug logging for tournament dates
+            if (t.id === 40) {
+              console.log('🔍 Турнир 40 данные из БД:', {
+                id: t.id,
+                name: t.name,
+                tournament_date: t.tournament_date,
+                created_at: t.created_at,
+                final_date: t.tournament_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0])
+              });
+            }
+            
             // Map database status to frontend status
             let frontendStatus: 'draft' | 'active' | 'completed' | 'confirmed' = 'draft';
             if (t.status === 'active') frontendStatus = 'active';
