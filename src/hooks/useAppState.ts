@@ -122,19 +122,35 @@ export const useAppState = () => {
               }
               
               const round = roundsMap.get(game.round_number);
+              const isBye = !game.player2_id || game.player1_id === game.player2_id;
               
               round.matches.push({
                 id: game.id.toString(),
                 player1Id: game.player1_id.toString(),
-                player2Id: game.player2_id ? game.player2_id.toString() : undefined,
+                player2Id: isBye ? undefined : game.player2_id.toString(),
                 points1: game.result === 'win1' ? 3 : (game.result === 'draw' ? 1 : 0),
-                points2: game.result === 'win2' ? 3 : (game.result === 'draw' ? 1 : 0),
+                points2: isBye ? 0 : (game.result === 'win2' ? 3 : (game.result === 'draw' ? 1 : 0)),
                 result: game.result,
                 tableNumber: game.table_number || undefined
               });
             });
             
             const rounds = Array.from(roundsMap.values()).sort((a, b) => a.number - b.number);
+            
+            rounds.forEach(round => {
+              const regularMatches = round.matches.filter((m: any) => m.player2Id);
+              const byeMatches = round.matches.filter((m: any) => !m.player2Id);
+              
+              regularMatches.forEach((m: any, index: number) => {
+                m.tableNumber = index + 1;
+              });
+              
+              byeMatches.forEach((m: any) => {
+                m.tableNumber = regularMatches.length + 1;
+              });
+              
+              round.matches = [...regularMatches, ...byeMatches];
+            });
             
             const tournament = {
               id: t.id.toString(),
@@ -930,16 +946,35 @@ export const useAppState = () => {
         .sort((a, b) => parseInt(a) - parseInt(b))
         .map((roundNum) => {
           const roundGames = gamesByRound[roundNum];
-          const matches = roundGames.map((game: any, index: number) => ({
+          
+          const regularGames = roundGames.filter((game: any) => 
+            game.player2_id && game.player1_id !== game.player2_id
+          );
+          const byeGames = roundGames.filter((game: any) => 
+            !game.player2_id || game.player1_id === game.player2_id
+          );
+          
+          const regularMatches = regularGames.map((game: any, index: number) => ({
             id: `match-${game.id}`,
             player1Id: game.player1_id.toString(),
-            player2Id: game.player2_id ? game.player2_id.toString() : undefined,
+            player2Id: game.player2_id.toString(),
             points1: game.result === 'win1' ? 3 : game.result === 'draw' ? 1 : 0,
             points2: game.result === 'win2' ? 3 : game.result === 'draw' ? 1 : 0,
             result: game.result || undefined,
-            tableNumber: game.player2_id ? index + 1 : undefined
+            tableNumber: index + 1
           }));
-
+          
+          const byeMatches = byeGames.map((game: any) => ({
+            id: `match-${game.id}`,
+            player1Id: game.player1_id.toString(),
+            player2Id: undefined,
+            points1: game.result === 'win1' ? 3 : game.result === 'draw' ? 1 : 0,
+            points2: 0,
+            result: game.result || undefined,
+            tableNumber: regularMatches.length + 1
+          }));
+          
+          const matches = [...regularMatches, ...byeMatches];
           const isCompleted = matches.every((m: any) => !m.player2Id || m.result);
 
           return {
