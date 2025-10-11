@@ -136,7 +136,7 @@ export const useAppState = () => {
             
             const rounds = Array.from(roundsMap.values()).sort((a, b) => a.number - b.number);
             
-            return {
+            const tournament = {
               id: t.id.toString(),
               dbId: t.id,
               name: t.name,
@@ -156,6 +156,12 @@ export const useAppState = () => {
               droppedPlayerIds: (t.droppedPlayers || []).map((id: number) => id.toString()),
               hasSeating: t.hasSeating || false
             };
+            
+            if (t.id === 26 || t.id === 42) {
+              console.log(`🔍 Турнир ${t.id} клуб из БД:`, t.club, 'финальный объект:', tournament.club);
+            }
+            
+            return tournament;
           });
           
           console.log('🔄 Загружено турниров из БД:', tournamentsFromDb.length);

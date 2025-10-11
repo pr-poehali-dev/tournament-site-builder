@@ -22,6 +22,7 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
   appState,
   navigateTo,
 }) => {
+  console.log('🏢 ViewTournamentHeader - клуб турнира:', tournament.club, 'полный объект:', { id: tournament.id, name: tournament.name, club: tournament.club });
   const judge = appState.users.find((u) => u.id === tournament.judgeId);
 
   const getRoundsLabel = (count: number): string => {
