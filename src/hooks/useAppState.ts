@@ -836,32 +836,30 @@ export const useAppState = () => {
     }
   };
 
-  const deleteTournament = async (tournamentId: string) => {
+  const deleteTournament = async (tournamentId: string): Promise<void> => {
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
     if (!tournament?.dbId) {
       console.error('Tournament not found or has no dbId');
-      return;
+      throw new Error('Tournament not found or has no dbId');
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/delete-tournament?id=${tournament.dbId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+    const response = await fetch(`${API_BASE_URL}/api/delete-tournament?id=${tournament.dbId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete tournament');
-      }
-
-      setAppState(prev => ({
-        ...prev,
-        tournaments: prev.tournaments.filter(t => t.id !== tournamentId)
-      }));
-
-      console.log('✅ Турнир удалён:', tournamentId);
-    } catch (error) {
-      console.error('❌ Ошибка удаления турнира:', error);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Ошибка удаления турнира:', errorData);
+      throw new Error(errorData.error || 'Failed to delete tournament');
     }
+
+    setAppState(prev => ({
+      ...prev,
+      tournaments: prev.tournaments.filter(t => t.id !== tournamentId)
+    }));
+
+    console.log('✅ Турнир удалён:', tournamentId);
   };
 
   const updateTournament = async (tournamentId: string, updates: Partial<Tournament>) => {

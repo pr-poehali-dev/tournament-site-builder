@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament } from '@/types';
 import { canManageTournament } from '@/utils/permissions';
@@ -29,6 +30,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
   confirmTournament,
   deleteTournament
 }) => {
+  const { toast } = useToast();
   const currentUserId = appState.currentUser?.id || '';
   const isAdmin = appState.currentUser?.role === 'admin';
   const userCity = appState.currentUser?.city || '';
@@ -150,9 +152,21 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     <Button 
                       variant="destructive" 
                       size="sm" 
-                      onClick={() => {
+                      onClick={async () => {
                         if (confirm('Удалить турнир? Это действие нельзя отменить.')) {
-                          deleteTournament(tournament.id);
+                          try {
+                            await deleteTournament(tournament.id);
+                            toast({
+                              title: 'Турнир удалён',
+                              description: `Турнир "${tournament.name}" успешно удалён`,
+                            });
+                          } catch (error) {
+                            toast({
+                              title: 'Ошибка',
+                              description: 'Не удалось удалить турнир',
+                              variant: 'destructive',
+                            });
+                          }
                         }
                       }}
                     >
