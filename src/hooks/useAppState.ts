@@ -836,11 +836,32 @@ export const useAppState = () => {
     }
   };
 
-  const deleteTournament = (tournamentId: string) => {
-    setAppState(prev => ({
-      ...prev,
-      tournaments: prev.tournaments.filter(t => t.id !== tournamentId)
-    }));
+  const deleteTournament = async (tournamentId: string) => {
+    const tournament = appState.tournaments.find(t => t.id === tournamentId);
+    if (!tournament?.dbId) {
+      console.error('Tournament not found or has no dbId');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/delete-tournament?id=${tournament.dbId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete tournament');
+      }
+
+      setAppState(prev => ({
+        ...prev,
+        tournaments: prev.tournaments.filter(t => t.id !== tournamentId)
+      }));
+
+      console.log('✅ Турнир удалён:', tournamentId);
+    } catch (error) {
+      console.error('❌ Ошибка удаления турнира:', error);
+    }
   };
 
   const updateTournament = async (tournamentId: string, updates: Partial<Tournament>) => {

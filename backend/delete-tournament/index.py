@@ -1,6 +1,6 @@
 '''
-Business: Удаление турнира и всех его парингов (только для администраторов)
-Args: event - dict с httpMethod, body (tournament_id), headers (X-User-Id)
+Business: Удаление турнира и всех его парингов (для администраторов и судей турнира)
+Args: event - dict с httpMethod, queryStringParameters (id) или body (tournament_id), headers (X-User-Id)
       context - object с атрибутами request_id, function_name
 Returns: HTTP response dict с результатом удаления
 '''
@@ -52,13 +52,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'error': 'Unauthorized'})
         }
     
-    # Получаем tournament_id из body
-    body_str = event.get('body', '{}')
-    if body_str:
-        body_data = json.loads(body_str)
-    else:
-        body_data = {}
-    tournament_id = body_data.get('tournament_id')
+    # Получаем tournament_id из query параметров или body
+    query_params = event.get('queryStringParameters', {}) or {}
+    tournament_id = query_params.get('id')
+    
+    if not tournament_id:
+        # Пробуем получить из body
+        body_str = event.get('body', '{}')
+        if body_str:
+            body_data = json.loads(body_str)
+            tournament_id = body_data.get('tournament_id')
     
     if not tournament_id:
         return {
@@ -76,13 +79,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     conn = psycopg2.connect(dsn)
     cur = conn.cursor()
     
-    # Проверка что пользователь - администратор
+    # Проверка прав пользователя (администратор или судья турнира)
     cur.execute(
         f"SELECT role FROM t_p79348767_tournament_site_buil.users WHERE id = {user_id}"
     )
     result = cur.fetchone()
     
-    if not result or result[0] != 'admin':
+    if not result:
         cur.close()
         conn.close()
         return {
@@ -92,8 +95,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'Access-Control-Allow-Origin': '*'
             },
             'isBase64Encoded': False,
-            'body': json.dumps({'error': 'Only administrators can delete tournaments'})
+            'body': json.dumps({'error': 'User not found'})
         }
+    
+    user_role = result[0]
+    
+    # Если не админ, проверяем что пользователь - судья этого турнира
+    if user_role != 'admin':
+        cur.execute(
+            f"SELECT judge_id FROM t_p79348767_tournament_site_buil.tournaments WHERE id = {tournament_id}"
+        )
+        tournament_result = cur.fetchone()
+        
+        if not tournament_result or tournament_result[0] != int(user_id):
+            cur.close()
+            conn.close()
+            return {
+                'statusCode': 403,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'isBase64Encoded': False,
+                'body': json.dumps({'error': 'Only tournament judge or administrator can delete this tournament'})
+            }
+    
+    # Удаление результатов турнира
+    cur.execute(
+        f"DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = {tournament_id}"
+    )
     
     # Удаление парингов турнира
     cur.execute(

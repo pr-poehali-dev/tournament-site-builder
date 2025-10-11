@@ -26,7 +26,8 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
   appState,
   goToCreateTournament,
   startEditTournament,
-  confirmTournament
+  confirmTournament,
+  deleteTournament
 }) => {
   const currentUserId = appState.currentUser?.id || '';
   const isAdmin = appState.currentUser?.role === 'admin';
@@ -142,6 +143,21 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     <Button variant="default" size="sm" onClick={() => confirmTournament(tournament.id)}>
                       <Icon name="CheckCircle" size={14} className="mr-1" />
                       Подтвердить турнир
+                    </Button>
+                  )}
+                  {canManageTournament(appState.currentUser, tournament) && 
+                   (!tournament.rounds || tournament.rounds.length === 0) && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => {
+                        if (confirm('Удалить турнир? Это действие нельзя отменить.')) {
+                          deleteTournament(tournament.id);
+                        }
+                      }}
+                    >
+                      <Icon name="Trash2" size={14} className="mr-1" />
+                      Удалить
                     </Button>
                   )}
                 </div>
