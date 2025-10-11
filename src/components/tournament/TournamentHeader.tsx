@@ -90,7 +90,7 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
                 {tournament.name}
               </CardTitle>
               <CardDescription>
-                {tournament.date} • {tournament.city} • {tournament.format} • 
+                {tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'} • {tournament.city} • {tournament.format} • 
                 Швейцарка: {tournament.swissRounds} • Топ: {tournament.topRounds} • 
                 Участников: {tournament.participants?.length || 0}
               </CardDescription>
@@ -150,7 +150,7 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
           
           <div className="p-4 bg-muted/50 rounded-lg">
             <div className="text-sm text-muted-foreground space-y-1">
-              <p><strong>Дата:</strong> {tournament.date}</p>
+              <p><strong>Дата:</strong> {tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'}</p>
               <p><strong>Город:</strong> {tournament.city}</p>
               <p><strong>Формат:</strong> {tournament.format}</p>
               <p className="text-xs mt-2 italic">Эти параметры нельзя изменить после создания турнира</p>

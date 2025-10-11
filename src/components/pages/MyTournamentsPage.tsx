@@ -177,7 +177,7 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
                         </div>
                       </TableCell>
                       <TableCell>{formatTournamentType(tournament)}</TableCell>
-                      <TableCell>{tournament.date}</TableCell>
+                      <TableCell>{tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'}</TableCell>
                       <TableCell className="text-center">
                         {tournament.participants.length}
                       </TableCell>

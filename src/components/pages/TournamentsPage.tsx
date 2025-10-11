@@ -107,7 +107,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     <div className="font-medium text-lg">{tournament.name}</div>
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Icon name="Calendar" size={14} />
-                      <span>{tournament.date}</span>
+                      <span>{tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'}</span>
                       <Icon name="MapPin" size={14} />
                       <span>{tournament.city}</span>
                       {tournament.club && (
