@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament } from '@/types';
-import { generateSlipsContent, printSlips } from '@/utils/printSlips';
+import { printSlips } from '@/utils/printSlips';
 
 interface TournamentRoundsListProps {
   tournament: Tournament;
@@ -244,10 +244,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                 </Button>
                 {round.number > 0 && (
                   <Button 
-                    onClick={() => {
-                      const content = generateSlipsContent(tournament, round, appState.users);
-                      printSlips(content);
-                    }} 
+                    onClick={() => printSlips(tournament, round, appState.users)} 
                     variant="outline" 
                     size="sm"
                   >

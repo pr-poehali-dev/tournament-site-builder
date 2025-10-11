@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import type { AppState, Tournament } from "@/types";
 import { getRoundName } from "@/utils/tournamentHelpers";
-import { generateSlipsContent, printSlips } from "@/utils/printSlips";
+import { printSlips } from "@/utils/printSlips";
 
 interface RoundsTabProps {
   tournament: Tournament;
@@ -35,8 +35,7 @@ export const RoundsTab: React.FC<RoundsTabProps> = ({
     const round = tournament.rounds?.[roundIndex];
     if (!round) return;
 
-    const content = generateSlipsContent(tournament, round, appState.users);
-    printSlips(content);
+    printSlips(tournament, round, appState.users);
   };
 
   return (

@@ -1,11 +1,11 @@
 import type { Tournament, User, Round } from "@/types";
 
-export const generateSlipsContent = (
+export const generateSlipsHTML = (
   tournament: Tournament,
   round: Round,
   users: User[]
 ): string => {
-  const lines: string[] = [];
+  const slips: string[] = [];
   
   round.matches?.forEach((match, index) => {
     const player1 = users.find((u) => u.id === match.player1Id);
@@ -22,33 +22,36 @@ export const generateSlipsContent = (
       : "Дата не указана";
     const tableNumber = index + 1;
 
-    lines.push(
-      `${tournament.name} - ${tournamentDate} - Тур ${round.number} - Стол ${tableNumber}`
-    );
-    lines.push("-------------------------|-----------|------|------------------");
-    lines.push("Игрок                    | Результат | Дроп | Подпись");
-    lines.push("-------------------------|-----------|------|------------------");
-    lines.push(
-      `${(player1?.name || "Неизвестный").padEnd(24)} |           |      |`
-    );
-    lines.push("-------------------------|-----------|------|------------------");
-    lines.push(
-      `${(player2?.name || "Неизвестный").padEnd(24)} |           |      |`
-    );
-    lines.push("-------------------------|-----------|------|------------------");
-    lines.push("=".repeat(70));
-    lines.push("");
+    const slip = `<div class="slip">
+${tournament.name} - ${tournamentDate} - Тур ${round.number} - Стол ${tableNumber}
+-------------------------|-----------|------|------------------
+Игрок                    | Результат | Дроп | Подпись
+-------------------------|-----------|------|------------------
+${(player1?.name || "Неизвестный").padEnd(24)} |           |      |
+-------------------------|-----------|------|------------------
+${(player2?.name || "Неизвестный").padEnd(24)} |           |      |
+-------------------------|-----------|------|------------------
+${"=".repeat(70)}
+</div>`;
+    
+    slips.push(slip);
   });
 
-  return lines.join("\n");
+  return slips.join("\n");
 };
 
-export const printSlips = (content: string) => {
+export const printSlips = (
+  tournament: Tournament,
+  round: Round,
+  users: User[]
+) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
     alert("Пожалуйста, разрешите всплывающие окна для печати");
     return;
   }
+
+  const content = generateSlipsHTML(tournament, round, users);
 
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -66,15 +69,24 @@ export const printSlips = (content: string) => {
               margin: 0;
               padding: 0;
             }
+            .slip {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
           }
           body {
             font-family: 'Courier New', monospace;
             font-size: 10pt;
             line-height: 1.2;
-            white-space: pre-wrap;
             margin: 10px;
             color: #000;
             background: #fff;
+          }
+          .slip {
+            white-space: pre-wrap;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            margin-bottom: 10px;
           }
         </style>
       </head>
