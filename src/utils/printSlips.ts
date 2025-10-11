@@ -22,11 +22,9 @@ export const generateSlipsContent = (
       : "Дата не указана";
     const tableNumber = index + 1;
 
-    lines.push("");
     lines.push(
       `${tournament.name} - ${tournamentDate} - Тур ${round.number} - Стол ${tableNumber}`
     );
-    lines.push("");
     lines.push("-------------------------|-----------|------|------------------");
     lines.push("Игрок                    | Результат | Дроп | Подпись");
     lines.push("-------------------------|-----------|------|------------------");
@@ -38,7 +36,6 @@ export const generateSlipsContent = (
       `${(player2?.name || "Неизвестный").padEnd(24)} |           |      |`
     );
     lines.push("-------------------------|-----------|------|------------------");
-    lines.push("");
     lines.push("=".repeat(70));
     lines.push("");
   });
@@ -72,10 +69,10 @@ export const printSlips = (content: string) => {
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 11pt;
-            line-height: 1.5;
+            font-size: 10pt;
+            line-height: 1.2;
             white-space: pre-wrap;
-            margin: 20px;
+            margin: 10px;
             color: #000;
             background: #fff;
           }
