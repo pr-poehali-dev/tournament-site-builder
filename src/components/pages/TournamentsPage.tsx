@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import type { AppState, Tournament } from '@/types';
 import { canManageTournament } from '@/utils/permissions';
@@ -23,9 +30,21 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
 }) => {
   const currentUserId = appState.currentUser?.id || '';
   const isAdmin = appState.currentUser?.role === 'admin';
+  const userCity = appState.currentUser?.city || '';
+  
+  const [selectedCity, setSelectedCity] = useState<string>('all');
+  
+  useEffect(() => {
+    if (isAdmin && userCity) {
+      setSelectedCity(userCity);
+    }
+  }, [isAdmin, userCity]);
   
   const visibleTournaments = appState.tournaments.filter(tournament => {
-    if (isAdmin) return true;
+    if (isAdmin) {
+      const matchesCity = selectedCity === 'all' || tournament.city === selectedCity;
+      return matchesCity;
+    }
     return tournament.judgeId === currentUserId;
   });
 
@@ -43,6 +62,23 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
           <CardDescription>Создание и управление турнирами</CardDescription>
         </CardHeader>
         <CardContent>
+          {isAdmin && (
+            <div className="mb-4">
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Все города" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все города</SelectItem>
+                  {appState.cities.map((city) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {visibleTournaments.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Icon name="Trophy" size={48} className="mx-auto mb-4 opacity-50" />
