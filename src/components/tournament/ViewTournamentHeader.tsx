@@ -46,7 +46,7 @@ export const ViewTournamentHeader: React.FC<ViewTournamentHeaderProps> = ({
               {tournament.name}
             </CardTitle>
             <CardDescription>
-              {tournament.date} • {tournament.city} •{" "}
+              {tournament.date ? new Date(tournament.date).toLocaleDateString('ru-RU') : 'Дата не указана'} • {tournament.city} •{" "}
               {tournament.participants.length} участников
             </CardDescription>
           </div>
