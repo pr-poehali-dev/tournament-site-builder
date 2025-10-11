@@ -61,7 +61,14 @@ const Admin = () => {
         'https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45'
       );
       const data = await response.json();
-      setTournaments(data);
+      const userId = parseInt(localStorage.getItem('userId') || '0');
+      
+      // Filter tournaments by judge_id matching current user
+      const userTournaments = data.tournaments?.filter(
+        (t: any) => t.judge_id === userId
+      ) || [];
+      
+      setTournaments(userTournaments);
     } catch (error) {
       console.error('Load error:', error);
       toast({
