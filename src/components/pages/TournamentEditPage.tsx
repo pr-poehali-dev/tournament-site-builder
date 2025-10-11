@@ -4,6 +4,7 @@ import { TournamentHeader } from '@/components/tournament/TournamentHeader';
 import { TournamentRoundsList } from '@/components/tournament/TournamentRoundsList';
 import { TournamentControls } from '@/components/tournament/TournamentControls';
 import { TournamentStandings } from '@/components/tournament/TournamentStandings';
+import { QuickAddPlayer } from '@/components/tournament/QuickAddPlayer';
 
 interface TournamentEditPageProps {
   appState: AppState;
@@ -48,6 +49,12 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
     <div className="space-y-6">
       <TournamentHeader 
         tournament={tournament} 
+        appState={appState}
+        updateTournament={updateTournament}
+      />
+
+      <QuickAddPlayer
+        tournament={tournament}
         appState={appState}
         updateTournament={updateTournament}
       />
