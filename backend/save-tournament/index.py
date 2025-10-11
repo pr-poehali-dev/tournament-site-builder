@@ -47,6 +47,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if method == 'PUT':
             tournament_id = tournament_data.get('id')
             
+            # Debug logging
+            print(f'🔍 PUT request to update tournament {tournament_id}')
+            print(f'📦 Received data: {json.dumps(tournament_data, indent=2)}')
+            
             if not tournament_id:
                 return {
                     'statusCode': 400,
@@ -171,8 +175,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 UPDATE t_p79348767_tournament_site_buil.tournaments 
                 SET {', '.join(update_fields)}
                 WHERE id = %s
-                RETURNING id, status, dropped_players
+                RETURNING id, name, status, swiss_rounds, top_rounds, participants
             """
+            
+            print(f'🔧 Update query: {query}')
+            print(f'📝 Update values: {update_values}')
             
             cursor.execute(query, tuple(update_values))
             row = cursor.fetchone()
@@ -191,6 +198,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Tournament not found'})
                 }
             
+            print(f'✅ Tournament updated successfully: {row}')
+            
             cursor.close()
             conn.close()
             
@@ -204,9 +213,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({
                     'success': True,
                     'tournament': {
-                        'id': row[0], 
-                        'status': row[1],
-                        'droppedPlayers': row[2] if row[2] else []
+                        'id': row[0],
+                        'name': row[1],
+                        'status': row[2],
+                        'swiss_rounds': row[3],
+                        'top_rounds': row[4],
+                        'participants': row[5] if row[5] else []
                     }
                 })
             }
