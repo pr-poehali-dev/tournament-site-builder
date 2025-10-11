@@ -53,7 +53,7 @@ export const ClubsManagement: React.FC<ClubsManagementProps> = ({ cities }) => {
     try {
       setLoading(true);
       const response = await fetch(
-        'https://functions.poehali.dev/get-clubs'
+        'https://functions.poehali.dev/2adee2e5-a74d-4e01-b240-228c00c11820'
       );
       
       if (!response.ok) {
@@ -86,7 +86,7 @@ export const ClubsManagement: React.FC<ClubsManagementProps> = ({ cities }) => {
 
     try {
       const response = await fetch(
-        'https://functions.poehali.dev/add-club',
+        'https://functions.poehali.dev/10326b0a-e045-4216-aa29-bc5affe080e7',
         {
           method: 'POST',
           headers: {
