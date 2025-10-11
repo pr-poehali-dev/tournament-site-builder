@@ -51,6 +51,8 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
       return;
     }
 
+    console.log('🗑️ Удаляем турнир:', { tournamentId, userId: appState.currentUser?.id });
+
     try {
       const response = await fetch(
         'https://functions.poehali.dev/04b06a3d-149f-4a4c-8754-defa21ff87f3',
@@ -64,7 +66,11 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         }
       );
 
+      console.log('📡 Ответ бэкенда:', { status: response.status, ok: response.ok });
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Успешное удаление:', result);
         toast({
           title: 'Успешно',
           description: `Турнир "${tournamentName}" удалён`,
@@ -72,6 +78,7 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         loadTournaments();
       } else {
         const error = await response.json();
+        console.error('❌ Ошибка удаления:', error);
         toast({
           title: 'Ошибка',
           description: error.error || 'Не удалось удалить турнир',
@@ -79,7 +86,7 @@ export const TournamentManagementPage: React.FC<TournamentManagementPageProps> =
         });
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error('💥 Исключение при удалении:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось удалить турнир',
