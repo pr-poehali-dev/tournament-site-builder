@@ -148,7 +148,7 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     </Button>
                   )}
                   {canManageTournament(appState.currentUser, tournament) && 
-                   (!tournament.rounds || tournament.rounds.length === 0) && (
+                   (!tournament.rounds || tournament.rounds.filter(r => r.number > 0).length === 0) && (
                     <Button 
                       variant="destructive" 
                       size="sm" 
