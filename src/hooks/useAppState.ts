@@ -1559,6 +1559,7 @@ export const useAppState = () => {
 
     // Update tournament status to confirmed in database
     if (tournament.dbId) {
+      // Try to confirm tournament status
       try {
         const confirmResponse = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
           method: 'PUT',
@@ -1574,154 +1575,163 @@ export const useAppState = () => {
         
         if (confirmResponse.ok) {
           console.log('✅ Турнир подтверждён в БД (status = confirmed)');
-          
-          // Recalculate rating changes for all games in the tournament
-          const recalcResponse = await fetch('https://functions.poehali.dev/b995ecfd-0dac-4af5-9359-0d111138afbd', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Auth-Token': localStorage.getItem('authToken') || ''
-            },
-            body: JSON.stringify({ tournament_id: tournament.dbId })
-          });
-          
-          if (recalcResponse.ok) {
-            const recalcData = await recalcResponse.json();
-            console.log('✅ Рейтинги пересчитаны для игр турнира:', recalcData);
-          } else {
-            console.error('❌ Ошибка пересчёта рейтингов для игр');
-          }
-          
-          // Save tournament results (places) to database
-          const standings = tournament.participants.map(participantId => {
-            let points = 0;
-            let wins = 0;
-            let losses = 0;
-            let draws = 0;
-            const opponentIds: string[] = [];
+        } else {
+          console.error('❌ Ошибка подтверждения статуса турнира в БД');
+        }
+      } catch (error) {
+        console.error('❌ Ошибка запроса подтверждения турнира:', error);
+      }
+      
+      // Recalculate ratings (independent of status update)
+      try {
+        const recalcResponse = await fetch('https://functions.poehali.dev/b995ecfd-0dac-4af5-9359-0d111138afbd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': localStorage.getItem('authToken') || ''
+          },
+          body: JSON.stringify({ tournament_id: tournament.dbId })
+        });
+        
+        if (recalcResponse.ok) {
+          const recalcData = await recalcResponse.json();
+          console.log('✅ Рейтинги пересчитаны для игр турнира:', recalcData);
+        } else {
+          console.error('❌ Ошибка пересчёта рейтингов для игр');
+        }
+      } catch (error) {
+        console.error('❌ Ошибка запроса пересчёта рейтингов:', error);
+      }
+      
+      // Save tournament results (independent of other operations)
+      try {
+        // Calculate tournament standings
+        const standings = tournament.participants.map(participantId => {
+          let points = 0;
+          let wins = 0;
+          let losses = 0;
+          let draws = 0;
+          const opponentIds: string[] = [];
 
-            tournament.rounds?.forEach(round => {
-              if (round.number <= tournament.swissRounds) {
-                const match = round.matches?.find(
-                  m => m.player1Id === participantId || m.player2Id === participantId
-                );
-                if (match) {
-                  if (!match.player2Id) {
+          tournament.rounds?.forEach(round => {
+            if (round.number <= tournament.swissRounds) {
+              const match = round.matches?.find(
+                m => m.player1Id === participantId || m.player2Id === participantId
+              );
+              if (match) {
+                if (!match.player2Id) {
+                  points += 3;
+                  wins += 1;
+                } else if (match.result) {
+                  const isPlayer1 = match.player1Id === participantId;
+                  const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                  opponentIds.push(opponentId);
+
+                  if (match.result === 'draw') {
+                    points += 1;
+                    draws += 1;
+                  } else if (
+                    (match.result === 'win1' && isPlayer1) ||
+                    (match.result === 'win2' && !isPlayer1)
+                  ) {
                     points += 3;
                     wins += 1;
-                  } else if (match.result) {
-                    const isPlayer1 = match.player1Id === participantId;
-                    const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-                    opponentIds.push(opponentId);
+                  } else {
+                    losses += 1;
+                  }
+                }
+              }
+            }
+          });
 
-                    if (match.result === 'draw') {
-                      points += 1;
-                      draws += 1;
+          const buchholz = opponentIds.reduce((acc, opponentId) => {
+            let opponentPoints = 0;
+            tournament.rounds?.forEach(round => {
+              if (round.number <= tournament.swissRounds) {
+                const opponentMatch = round.matches?.find(
+                  m => m.player1Id === opponentId || m.player2Id === opponentId
+                );
+                if (opponentMatch) {
+                  if (!opponentMatch.player2Id) {
+                    opponentPoints += 3;
+                  } else if (opponentMatch.result) {
+                    const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
+                    if (opponentMatch.result === 'draw') {
+                      opponentPoints += 1;
                     } else if (
-                      (match.result === 'win1' && isPlayer1) ||
-                      (match.result === 'win2' && !isPlayer1)
+                      (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
+                      (opponentMatch.result === 'win2' && !isOpponentPlayer1)
                     ) {
-                      points += 3;
-                      wins += 1;
-                    } else {
-                      losses += 1;
+                      opponentPoints += 3;
                     }
                   }
                 }
               }
             });
+            return acc + opponentPoints;
+          }, 0);
 
-            const buchholz = opponentIds.reduce((acc, opponentId) => {
-              let opponentPoints = 0;
-              tournament.rounds?.forEach(round => {
-                if (round.number <= tournament.swissRounds) {
-                  const opponentMatch = round.matches?.find(
-                    m => m.player1Id === opponentId || m.player2Id === opponentId
-                  );
-                  if (opponentMatch) {
-                    if (!opponentMatch.player2Id) {
-                      opponentPoints += 3;
-                    } else if (opponentMatch.result) {
-                      const isOpponentPlayer1 = opponentMatch.player1Id === opponentId;
-                      if (opponentMatch.result === 'draw') {
-                        opponentPoints += 1;
-                      } else if (
-                        (opponentMatch.result === 'win1' && isOpponentPlayer1) ||
-                        (opponentMatch.result === 'win2' && !isOpponentPlayer1)
-                      ) {
-                        opponentPoints += 3;
-                      }
-                    }
-                  }
-                }
-              });
-              return acc + opponentPoints;
-            }, 0);
+          return {
+            user: appState.users.find(u => u.id === participantId),
+            points,
+            wins,
+            losses,
+            draws,
+            buchholz,
+            sumBuchholz: 0
+          };
+        }).filter(s => s.user).sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
+          return 0;
+        });
 
-            return {
-              user: appState.users.find(u => u.id === participantId),
-              points,
-              wins,
-              losses,
-              draws,
-              buchholz,
-              sumBuchholz: 0
-            };
-          }).filter(s => s.user).sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.buchholz !== a.buchholz) return b.buchholz - a.buchholz;
-            return 0;
-          });
+        // Save results to database
+        const resultsToSave = standings.map((standing, index) => ({
+          tournament_id: tournament.dbId,
+          player_id: standing.user!.id,
+          place: index + 1,
+          points: standing.points,
+          buchholz: standing.buchholz,
+          sum_buchholz: standing.sumBuchholz,
+          wins: standing.wins,
+          losses: standing.losses,
+          draws: standing.draws
+        }));
 
-          // Save results to database
-          const resultsToSave = standings.map((standing, index) => ({
-            tournament_id: tournament.dbId,
-            player_id: standing.user!.id,
-            place: index + 1,
-            points: standing.points,
-            buchholz: standing.buchholz,
-            sum_buchholz: standing.sumBuchholz,
-            wins: standing.wins,
-            losses: standing.losses,
-            draws: standing.draws
-          }));
+        console.log('💾 Сохраняю результаты турнира:', resultsToSave);
 
-          console.log('💾 Сохраняю результаты турнира:', resultsToSave);
-
-          try {
-            const resultsResponse = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Auth-Token': localStorage.getItem('authToken') || ''
-              },
-              body: JSON.stringify({ results: resultsToSave })
-            });
-            
-            if (resultsResponse.ok) {
-              const savedData = await resultsResponse.json();
-              console.log('✅ Результаты турнира сохранены в БД:', savedData);
-            } else {
-              const errorText = await resultsResponse.text();
-              console.error('❌ Ошибка сохранения результатов турнира:', errorText);
-            }
-          } catch (error) {
-            console.warn('⚠️ Не удалось сохранить результаты турнира:', error);
-          }
-          
-          // Reload tournaments from DB to sync status
-          const tournamentsResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45');
-          const tournamentsData = await tournamentsResponse.json();
-          
-          if (tournamentsData?.tournaments) {
-            syncDbTournaments(tournamentsData.tournaments);
-            console.log('✅ Турниры синхронизированы с БД после подтверждения');
-          }
+        const resultsResponse = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': localStorage.getItem('authToken') || ''
+          },
+          body: JSON.stringify({ results: resultsToSave })
+        });
+        
+        if (resultsResponse.ok) {
+          const savedData = await resultsResponse.json();
+          console.log('✅ Результаты турнира сохранены в БД:', savedData);
         } else {
-          console.error('❌ Ошибка подтверждения турнира в БД');
+          const errorText = await resultsResponse.text();
+          console.error('❌ Ошибка сохранения результатов турнира:', errorText);
         }
       } catch (error) {
-        console.error('❌ Ошибка подключения к БД при подтверждении турнира:', error);
+        console.error('⚠️ Не удалось сохранить результаты турнира:', error);
+      }
+      
+      // Reload tournaments from DB to sync status
+      try {
+        const tournamentsResponse = await fetch('https://functions.poehali.dev/8a52c439-d181-4ec4-a56f-98614012bf45');
+        const tournamentsData = await tournamentsResponse.json();
+        
+        if (tournamentsData?.tournaments) {
+          syncDbTournaments(tournamentsData.tournaments);
+          console.log('✅ Турниры синхронизированы с БД после подтверждения');
+        }
+      } catch (error) {
+        console.error('⚠️ Ошибка синхронизации турниров:', error);
       }
     }
 
