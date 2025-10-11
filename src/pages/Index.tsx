@@ -50,6 +50,7 @@ const Index = () => {
     generatePairings,
     loadTournamentWithGames,
     createSeatingRound,
+    deleteSeatingRound,
   } = useAppState();
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -291,6 +292,7 @@ const Index = () => {
           confirmTournamentWithPlayerUpdates={confirmTournamentWithPlayerUpdates}
           updateTournament={updateTournament}
           createSeatingRound={createSeatingRound}
+          deleteSeatingRound={deleteSeatingRound}
           updateRoundMatches={updateRoundMatches}
           loadTournamentWithGames={loadTournamentWithGames}
           toggleUserStatus={toggleUserStatus}

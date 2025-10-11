@@ -87,6 +87,7 @@ interface PageRouterProps {
   confirmTournamentWithPlayerUpdates: (tournamentId: string) => void;
   updateTournament: (id: string, updates: any) => void;
   createSeatingRound: (tournamentId: string) => void;
+  deleteSeatingRound: (tournamentId: string) => void;
   updateRoundMatches: (tournamentId: string, roundId: string, matches: any[]) => void;
   loadTournamentWithGames: (tournamentId: string) => void;
   toggleUserStatus: (id: string) => void;
@@ -150,6 +151,7 @@ export const PageRouter: React.FC<PageRouterProps> = ({
   confirmTournamentWithPlayerUpdates,
   updateTournament,
   createSeatingRound,
+  deleteSeatingRound,
   updateRoundMatches,
   loadTournamentWithGames,
   toggleUserStatus,
@@ -274,6 +276,7 @@ export const PageRouter: React.FC<PageRouterProps> = ({
           confirmTournament={confirmTournament}
           updateTournament={updateTournament}
           createSeatingRound={createSeatingRound}
+          deleteSeatingRound={deleteSeatingRound}
           updateRoundMatches={updateRoundMatches}
         />
       )}

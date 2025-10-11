@@ -14,6 +14,7 @@ interface TournamentRoundsListProps {
   updateMatchResult: (tournamentId: string, roundId: string, matchId: string, result: string) => void;
   togglePlayerDrop: (tournamentId: string, playerId: string) => void;
   updateRoundMatches: (tournamentId: string, roundId: string, matches: any[]) => void;
+  deleteSeatingRound?: (tournamentId: string) => void;
 }
 
 export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
@@ -22,6 +23,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
   updateMatchResult,
   togglePlayerDrop,
   updateRoundMatches,
+  deleteSeatingRound,
 }) => {
   const [isEditingSeating, setIsEditingSeating] = useState(false);
 
@@ -40,6 +42,14 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
   const handleSeatingSave = (tournamentId: string, roundId: string, matches: any[]) => {
     updateRoundMatches(tournamentId, roundId, matches);
     setIsEditingSeating(false);
+  };
+
+  const handleSeatingDelete = () => {
+    if (!deleteSeatingRound) return;
+    
+    if (confirm('Вы уверены, что хотите удалить рассадку? Это действие нельзя отменить.')) {
+      deleteSeatingRound(tournament.id);
+    }
   };
 
   const generateRoundPDF = (round: Round) => {
@@ -299,6 +309,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                 users={appState.users}
                 tournament={tournament}
                 onEdit={handleSeatingEdit}
+                onDelete={deleteSeatingRound ? handleSeatingDelete : undefined}
               />
             );
           }

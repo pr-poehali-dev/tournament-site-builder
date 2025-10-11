@@ -9,9 +9,10 @@ interface SeatingTableProps {
   users: User[];
   tournament?: Tournament;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tournament, onEdit }) => {
+export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tournament, onEdit, onDelete }) => {
   const seatingData = round.matches
     .flatMap((match) => {
       const player1 = users.find((u) => u.id === match.player1Id);
@@ -183,6 +184,12 @@ export const SeatingTable: React.FC<SeatingTableProps> = ({ round, users, tourna
               <Button onClick={onEdit} variant="outline" size="sm">
                 <Icon name="Edit" size={16} className="mr-2" />
                 Изменить
+              </Button>
+            )}
+            {onDelete && (
+              <Button onClick={onDelete} variant="destructive" size="sm">
+                <Icon name="Trash2" size={16} className="mr-2" />
+                Удалить
               </Button>
             )}
             <Button onClick={generatePDF} variant="outline" size="sm">

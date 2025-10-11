@@ -2268,6 +2268,72 @@ export const useAppState = () => {
     }));
   }, [appState.tournaments, appState.players]);
 
+  const deleteSeatingRound = useCallback(async (tournamentId: string) => {
+    const tournament = appState.tournaments.find((t) => t.id === tournamentId);
+    if (!tournament) {
+      toast({
+        title: "Ошибка",
+        description: "Турнир не найден",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if seating round exists
+    const seatingRound = tournament.rounds?.find(r => r.number === 0);
+    if (!seatingRound) {
+      toast({
+        title: "Ошибка",
+        description: "Рассадка не найдена",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!tournament.dbId) {
+      toast({
+        title: "Ошибка",
+        description: "Турнир не сохранён в БД",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Delete seating round from database
+      const response = await api.deleteSeatingRound(tournament.dbId.toString());
+
+      if (!response.ok) {
+        throw new Error('Failed to delete seating round');
+      }
+
+      // Update local state
+      setAppState((prev) => ({
+        ...prev,
+        tournaments: prev.tournaments.map((t) =>
+          t.id === tournamentId
+            ? {
+                ...t,
+                rounds: t.rounds?.filter(r => r.number !== 0) || [],
+              }
+            : t
+        ),
+      }));
+
+      toast({
+        title: "Успешно",
+        description: "Рассадка удалена",
+      });
+    } catch (error) {
+      console.error('❌ Ошибка при удалении рассадки:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить рассадку",
+        variant: "destructive",
+      });
+    }
+  }, [appState.tournaments]);
+
   return {
     // State
     appState,
@@ -2323,6 +2389,7 @@ export const useAppState = () => {
     confirmTournamentWithPlayerUpdates,
     generatePairings,
     createSeatingRound,
+    deleteSeatingRound,
     
     // Raw state setter (for complex updates)
     setAppState,

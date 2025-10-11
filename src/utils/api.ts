@@ -99,5 +99,27 @@ export const api = {
       
       return response.json();
     }
+  },
+
+  // Seating API
+  async deleteSeatingRound(tournamentId: string) {
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      headers['X-Auth-Token'] = token;
+    }
+
+    const response = await fetch('https://functions.poehali.dev/f701e507-6542-4d30-be94-8bcad260ece0', {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({
+        tournament_id: tournamentId,
+        round_number: 0
+      })
+    });
+
+    return response;
   }
 };

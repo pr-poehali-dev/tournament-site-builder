@@ -341,11 +341,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Delete games for a specific round
         try:
+            # Try to get params from query string first, then from body
             query_params = event.get('queryStringParameters', {}) or {}
             tournament_id = query_params.get('tournament_id')
             round_number = query_params.get('round_number')
             
-            if not tournament_id or not round_number:
+            # If not in query params, try body
+            if not tournament_id or round_number is None:
+                body_data = json.loads(event.get('body', '{}'))
+                tournament_id = tournament_id or body_data.get('tournament_id')
+                round_number = round_number if round_number is not None else body_data.get('round_number')
+            
+            if not tournament_id or round_number is None:
                 return {
                     'statusCode': 400,
                     'headers': {

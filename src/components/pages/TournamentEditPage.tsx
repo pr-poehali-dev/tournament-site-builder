@@ -21,6 +21,7 @@ interface TournamentEditPageProps {
   confirmTournament: (tournamentId: string) => void;
   updateTournament: (tournamentId: string, updates: Partial<Tournament>) => void;
   createSeatingRound?: (tournamentId: string) => void;
+  deleteSeatingRound?: (tournamentId: string) => void;
   updateRoundMatches: (tournamentId: string, roundId: string, matches: any[]) => void;
 }
 
@@ -39,6 +40,7 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
   confirmTournament,
   updateTournament,
   createSeatingRound,
+  deleteSeatingRound,
   updateRoundMatches,
 }) => {
   if (!editingTournament) return null;
@@ -67,6 +69,7 @@ export const TournamentEditPage: React.FC<TournamentEditPageProps> = ({
         updateMatchResult={updateMatchResult}
         togglePlayerDrop={togglePlayerDrop}
         updateRoundMatches={updateRoundMatches}
+        deleteSeatingRound={deleteSeatingRound}
       />
 
       <TournamentControls
