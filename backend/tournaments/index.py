@@ -79,7 +79,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cursor.execute("""
                 SELECT id, name, format, status, swiss_rounds, top_rounds,
-                       created_at, updated_at, city, is_rated, judge_id, participants, current_round, confirmed, dropped_players, t_seating
+                       created_at, updated_at, city, club, is_rated, judge_id, participants, current_round, confirmed, dropped_players, t_seating
                 FROM t_p79348767_tournament_site_buil.tournaments
                 ORDER BY created_at DESC
             """)
@@ -98,13 +98,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'created_at': row[6].isoformat() if row[6] else None,
                     'updated_at': row[7].isoformat() if row[7] else None,
                     'city': row[8],
-                    'is_rated': row[9],
-                    'judge_id': row[10],
-                    'participants': row[11] if row[11] else [],
-                    'current_round': row[12] if len(row) > 12 else 0,
-                    'confirmed': row[13] if len(row) > 13 else False,
-                    'droppedPlayers': row[14] if len(row) > 14 and row[14] else [],
-                    'hasSeating': row[15] if len(row) > 15 else False
+                    'club': row[9],
+                    'is_rated': row[10],
+                    'judge_id': row[11],
+                    'participants': row[12] if row[12] else [],
+                    'current_round': row[13] if len(row) > 13 else 0,
+                    'confirmed': row[14] if len(row) > 14 else False,
+                    'droppedPlayers': row[15] if len(row) > 15 and row[15] else [],
+                    'hasSeating': row[16] if len(row) > 16 else False
                 })
             
             cursor.close()

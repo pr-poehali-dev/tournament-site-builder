@@ -74,6 +74,12 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                       <span>{tournament.date}</span>
                       <Icon name="MapPin" size={14} />
                       <span>{tournament.city}</span>
+                      {tournament.club && (
+                        <>
+                          <Icon name="Building2" size={14} />
+                          <span>{tournament.club}</span>
+                        </>
+                      )}
                       <Icon name="Layers" size={14} />
                       <span>{tournament.format}</span>
                       <Icon name="Users" size={14} />

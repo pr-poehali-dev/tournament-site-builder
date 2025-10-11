@@ -12,6 +12,7 @@ interface TournamentForm {
   name: string;
   date: string;
   city: string;
+  club?: string;
   format: string;
   description: string;
   isRated: boolean;
@@ -44,6 +45,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
   const [dbUsers, setDbUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState('');
+  const [clubs, setClubs] = useState<Array<{id: number; name: string; city: string}>>([]);
 
   // Загружаем пользователей из БД при монтировании компонента
   useEffect(() => {
@@ -91,6 +93,21 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
     loadUsersFromDatabase();
   }, []);
 
+  useEffect(() => {
+    const loadClubs = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/2adee2e5-a74d-4e01-b240-228c00c11820');
+        if (response.ok) {
+          const data = await response.json();
+          setClubs(data);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки клубов:', error);
+      }
+    };
+    loadClubs();
+  }, []);
+
   // Синхронизируем пользователей с appState.players после загрузки
   useEffect(() => {
     if (dbUsers.length > 0) {
@@ -131,6 +148,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
       name: name.trim(),
       date: date.trim(),
       city: city.trim(),
+      club: tournamentForm.club,
       format: format.trim(),
       description: `Турнир по формату ${format.trim()} в городе ${city.trim()}`,
       isRated,
@@ -154,6 +172,7 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
           name: tournament.name,
           format: tournament.format,
           city: tournament.city,
+          club: tournament.club,
           date: tournament.date,
           swissRounds: tournament.swissRounds,
           topRounds: tournament.topRounds,
@@ -299,6 +318,25 @@ export const CreateTournamentPage: React.FC<CreateTournamentPageProps> = React.m
                     {city.name}
                   </option>
                 ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="tournament-club">Клуб (необязательно)</Label>
+              <select
+                id="tournament-club"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={tournamentForm.club || ''}
+                onChange={(e) => handleInputChange('club', e.target.value)}
+              >
+                <option value="">Не выбран</option>
+                {clubs
+                  .filter(club => !tournamentForm.city || club.city === tournamentForm.city)
+                  .map(club => (
+                    <option key={club.id} value={club.name}>
+                      {club.name}
+                    </option>
+                  ))}
               </select>
             </div>
             

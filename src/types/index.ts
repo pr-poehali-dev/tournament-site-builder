@@ -43,6 +43,7 @@ export interface Tournament {
   name: string;
   date: string;
   city: string;
+  club?: string;
   format: string;
   description: string;
   isRated: boolean;

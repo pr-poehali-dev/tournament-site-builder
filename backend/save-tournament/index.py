@@ -156,6 +156,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         name = tournament_data.get('name', '').strip()
         tournament_format = tournament_data.get('format', 'sealed')
         city = tournament_data.get('city', '')
+        club = tournament_data.get('club')
         date = tournament_data.get('date', '')
         swiss_rounds = tournament_data.get('swissRounds', 3)
         top_rounds = tournament_data.get('topRounds', 0)
@@ -213,11 +214,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         cursor.execute("""
             INSERT INTO t_p79348767_tournament_site_buil.tournaments 
-            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, is_rated, judge_id, participants, t_seating, dropped_players) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s, %s::integer[])
-            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, is_rated, judge_id, participants, t_seating, dropped_players
+            (name, type, format, status, current_round, swiss_rounds, top_rounds, city, club, is_rated, judge_id, participants, t_seating, dropped_players) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::integer[], %s, %s::integer[])
+            RETURNING id, name, format, status, swiss_rounds, top_rounds, created_at, city, club, is_rated, judge_id, participants, t_seating, dropped_players
         """, (name, tournament_type, tournament_format, 'setup', 0, swiss_rounds, 
-              top_rounds if top_rounds else None, city if city else None, 
+              top_rounds if top_rounds else None, city if city else None, club if club else None,
               is_rated, judge_id_int, participants_str, t_seating, '{}'))
         
         row = cursor.fetchone()
@@ -233,11 +234,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'top_rounds': row[5],
             'created_at': row[6].isoformat() if row[6] else None,
             'city': row[7],
-            'is_rated': row[8],
-            'judge_id': row[9],
-            'participants': row[10] if row[10] else [],
-            't_seating': row[11],
-            'droppedPlayers': row[12] if row[12] else [],
+            'club': row[8],
+            'is_rated': row[9],
+            'judge_id': row[10],
+            'participants': row[11] if row[11] else [],
+            't_seating': row[12],
+            'droppedPlayers': row[13] if row[13] else [],
             'db_saved': True
         }
         
