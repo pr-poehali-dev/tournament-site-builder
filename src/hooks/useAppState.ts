@@ -1439,8 +1439,21 @@ export const useAppState = () => {
 
   // Calculate Elo rating changes and confirm tournament
   const confirmTournament = useCallback(async (tournamentId: string) => {
+    console.log('🎯 confirmTournament вызван для турнира:', tournamentId);
     const tournament = appState.tournaments.find(t => t.id === tournamentId);
-    if (!tournament || tournament.status !== 'completed') return;
+    console.log('📋 Найден турнир:', tournament);
+    
+    if (!tournament) {
+      console.error('❌ Турнир не найден!');
+      return;
+    }
+    
+    if (tournament.status !== 'completed') {
+      console.warn(`⚠️ Турнир имеет статус "${tournament.status}", а должен быть "completed"`);
+      return;
+    }
+    
+    console.log('✅ Турнир подходит для подтверждения, начинаем процесс...');
 
     // Get players with their initial ratings
     const playerRatings = new Map<string, number>();
