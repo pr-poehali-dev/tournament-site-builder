@@ -63,9 +63,9 @@ const Admin = () => {
       const data = await response.json();
       const userId = parseInt(localStorage.getItem('userId') || '0');
       
-      // Filter tournaments by judge_id matching current user
+      // Filter tournaments where user is a participant
       const userTournaments = data.tournaments?.filter(
-        (t: any) => t.judge_id === userId
+        (t: any) => t.participants?.includes(userId)
       ) || [];
       
       setTournaments(userTournaments);
