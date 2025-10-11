@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
-import type { AppState, Tournament, Round } from '@/types';
-import { SeatingTable } from './SeatingTable';
-import { SeatingEditor } from './SeatingEditor';
+import type { AppState, Tournament } from '@/types';
 
 interface TournamentRoundsListProps {
   tournament: Tournament;
@@ -22,35 +19,10 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
   appState,
   updateMatchResult,
   togglePlayerDrop,
-  updateRoundMatches,
-  deleteSeatingRound,
 }) => {
-  const [isEditingSeating, setIsEditingSeating] = useState(false);
-
   if (!tournament.rounds || tournament.rounds.length === 0) {
     return null;
   }
-
-  const handleSeatingEdit = () => {
-    setIsEditingSeating(true);
-  };
-
-  const handleSeatingCancel = () => {
-    setIsEditingSeating(false);
-  };
-
-  const handleSeatingSave = (tournamentId: string, roundId: string, matches: any[]) => {
-    updateRoundMatches(tournamentId, roundId, matches);
-    setIsEditingSeating(false);
-  };
-
-  const handleSeatingDelete = () => {
-    if (!deleteSeatingRound) return;
-    
-    if (confirm('Вы уверены, что хотите удалить рассадку? Это действие нельзя отменить.')) {
-      deleteSeatingRound(tournament.id);
-    }
-  };
 
   const generateRoundPDF = (round: Round) => {
     const printWindow = window.open('', '_blank');
@@ -260,31 +232,6 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {tournament.rounds?.map((round) => {
-          if (round.number === 0) {
-            if (isEditingSeating) {
-              return (
-                <SeatingEditor
-                  key={round.id}
-                  round={round}
-                  users={appState.users}
-                  tournament={tournament}
-                  onSave={handleSeatingSave}
-                  onCancel={handleSeatingCancel}
-                />
-              );
-            }
-            return (
-              <SeatingTable
-                key={round.id}
-                round={round}
-                users={appState.users}
-                tournament={tournament}
-                onEdit={handleSeatingEdit}
-                onDelete={deleteSeatingRound ? handleSeatingDelete : undefined}
-              />
-            );
-          }
-          
           return (
           <div key={round.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
