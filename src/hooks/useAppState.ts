@@ -1562,7 +1562,10 @@ export const useAppState = () => {
       try {
         const confirmResponse = await fetch('https://functions.poehali.dev/27da478c-7993-4119-a4e5-66f336dbb8c0', {
           method: 'PUT',
-          headers: getAuthHeaders(),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': localStorage.getItem('authToken') || ''
+          },
           body: JSON.stringify({
             id: tournament.dbId,
             status: 'confirmed'
@@ -1575,7 +1578,10 @@ export const useAppState = () => {
           // Recalculate rating changes for all games in the tournament
           const recalcResponse = await fetch('https://functions.poehali.dev/b995ecfd-0dac-4af5-9359-0d111138afbd', {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': localStorage.getItem('authToken') || ''
+            },
             body: JSON.stringify({ tournament_id: tournament.dbId })
           });
           
@@ -1685,7 +1691,10 @@ export const useAppState = () => {
           try {
             const resultsResponse = await fetch('https://functions.poehali.dev/14e205c3-5a13-45c5-a7ab-d2b8ed973b65', {
               method: 'POST',
-              headers: getAuthHeaders(),
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Token': localStorage.getItem('authToken') || ''
+              },
               body: JSON.stringify({ results: resultsToSave })
             });
             
@@ -1725,7 +1734,10 @@ export const useAppState = () => {
     try {
       const response = await fetch('https://functions.poehali.dev/d3e14bd8-3da2-4652-b8d2-e10a3f83e792?batch=true', {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': appState.currentUser?.id || ''
+        },
         body: JSON.stringify({ updates })
       });
       
