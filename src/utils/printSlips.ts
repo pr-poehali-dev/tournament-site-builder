@@ -27,6 +27,7 @@ export const generateSlipsContent = (
       `${tournament.name} - ${tournamentDate} - Тур ${round.number} - Стол ${tableNumber}`
     );
     lines.push("");
+    lines.push("-------------------------|-----------|------|------------------");
     lines.push("Игрок                    | Результат | Дроп | Подпись");
     lines.push("-------------------------|-----------|------|------------------");
     lines.push(
@@ -36,6 +37,7 @@ export const generateSlipsContent = (
     lines.push(
       `${(player2?.name || "Неизвестный").padEnd(24)} |           |      |`
     );
+    lines.push("-------------------------|-----------|------|------------------");
     lines.push("");
     lines.push("=".repeat(70));
     lines.push("");
