@@ -61,7 +61,7 @@ export const printSlips = (
         <title>Слипы для турнира</title>
         <style>
           @page {
-            margin: 1.5cm;
+            margin: 0.5cm;
             size: A4;
           }
           @media print {
@@ -76,9 +76,9 @@ export const printSlips = (
           }
           body {
             font-family: 'Courier New', monospace;
-            font-size: 10pt;
-            line-height: 1.2;
-            margin: 10px;
+            font-size: 8pt;
+            line-height: 1.1;
+            margin: 5px;
             color: #000;
             background: #fff;
           }
@@ -86,7 +86,7 @@ export const printSlips = (
             white-space: pre-wrap;
             page-break-inside: avoid;
             break-inside: avoid;
-            margin-bottom: 10px;
+            margin-bottom: 3px;
           }
         </style>
       </head>
