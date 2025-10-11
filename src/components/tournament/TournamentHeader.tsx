@@ -64,11 +64,28 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
   const handleParticipantsChange = (playerIds: string[]) => {
     const playersInPairings = getPlayersInPairings();
     const removedPlayers = editForm.participants.filter(id => !playerIds.includes(id));
+    const addedPlayers = playerIds.filter(id => !editForm.participants.includes(id));
     
+    // Проверяем только удаление игроков, которые уже в парингах
     for (const playerId of removedPlayers) {
       if (playersInPairings.has(playerId)) {
         const playerName = appState?.users.find(u => u.id === playerId)?.name || 'Игрок';
         alert(`Невозможно удалить игрока "${playerName}", так как он участвует в парингах`);
+        return;
+      }
+    }
+    
+    // Информируем о добавлении новых игроков в активный турнир
+    if (addedPlayers.length > 0 && tournament.currentRound > 0) {
+      const playerNames = addedPlayers
+        .map(id => appState?.users.find(u => u.id === id)?.name || 'Игрок')
+        .join(', ');
+      
+      const confirmed = confirm(
+        `Игрок(и) ${playerNames} будут добавлены в турнир и начнут участвовать в парингах со следующего тура (тур ${tournament.currentRound + 1}). Продолжить?`
+      );
+      
+      if (!confirmed) {
         return;
       }
     }
