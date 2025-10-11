@@ -38,8 +38,8 @@ def create_auth_error(message: str, status_code: int = 401) -> Dict[str, Any]:
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Business: Manage tournament games (pairings and results)
-    Args: event - dict with httpMethod, body containing game data
+    Business: Manage tournament games (pairings and results) using Simple Query Protocol
+    Args: event - dict with httpMethod, body containing game data, headers (X-Auth-Token)
           context - execution context
     Returns: HTTP response dict
     '''
@@ -93,12 +93,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            cursor.execute("""
+            query = f"""
                 SELECT id, tournament_id, round_number, player1_id, player2_id, result, table_number, created_at, updated_at
                 FROM t_p79348767_tournament_site_buil.games
-                WHERE tournament_id = %s
+                WHERE tournament_id = {tournament_id}
                 ORDER BY round_number, id
-            """, (tournament_id,))
+            """
+            cursor.execute(query)
             
             rows = cursor.fetchall()
             games = []
@@ -185,13 +186,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     result_value = 'win1'
                     player2_id = None
                 
-                # Insert game - using parameterized query
-                cursor.execute("""
+                # Insert game - using Simple Query Protocol
+                result_sql = f"'{result_value}'" if result_value else 'NULL'
+                player2_sql = str(player2_id) if player2_id else 'NULL'
+                table_sql = str(table_number) if table_number else 'NULL'
+                
+                query = f"""
                     INSERT INTO t_p79348767_tournament_site_buil.games 
                     (tournament_id, round_number, player1_id, player2_id, result, table_number, is_bye)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES ({tournament_id}, {round_number}, {player1_id}, {player2_sql}, {result_sql}, {table_sql}, {is_bye})
                     RETURNING id, tournament_id, round_number, player1_id, player2_id, result, table_number, created_at
-                """, (tournament_id, round_number, player1_id, player2_id, result_value, table_number, is_bye))
+                """
+                cursor.execute(query)
                 
                 row = cursor.fetchone()
                 created_games.append({
@@ -272,12 +278,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            cursor.execute("""
+            query = f"""
                 UPDATE t_p79348767_tournament_site_buil.games
-                SET result = %s, updated_at = CURRENT_TIMESTAMP
-                WHERE id = %s
+                SET result = '{result}', updated_at = CURRENT_TIMESTAMP
+                WHERE id = {game_id}
                 RETURNING id, tournament_id, round_number, player1_id, player2_id, result, updated_at
-            """, (result, game_id))
+            """
+            cursor.execute(query)
             
             row = cursor.fetchone()
             
@@ -366,12 +373,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             conn = psycopg2.connect(database_url)
             cursor = conn.cursor()
             
-            # Delete games for the round - parameterized query
-            cursor.execute("""
+            # Delete games for the round - Simple Query Protocol
+            query = f"""
                 DELETE FROM t_p79348767_tournament_site_buil.games
-                WHERE tournament_id = %s AND round_number = %s
+                WHERE tournament_id = {tournament_id} AND round_number = {round_number}
                 RETURNING id
-            """, (tournament_id, round_number))
+            """
+            cursor.execute(query)
             
             deleted_ids = [row[0] for row in cursor.fetchall()]
             
