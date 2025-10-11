@@ -32,10 +32,11 @@ export const MyTournamentsPage: React.FC<MyTournamentsPageProps> = ({
   const currentUserId = appState.currentUser?.id || "";
   const [tournamentResults, setTournamentResults] = React.useState<Map<string, number>>(new Map());
 
-  // Filter only confirmed tournaments where current user participated
+  // Filter only confirmed or completed tournaments where current user participated
   const myConfirmedTournaments = appState.tournaments.filter(
     (tournament) =>
-      tournament.participants.includes(currentUserId) && tournament.status === 'confirmed',
+      tournament.participants.includes(currentUserId) && 
+      (tournament.status === 'confirmed' || tournament.status === 'completed'),
   );
 
   // Load tournament results from database
