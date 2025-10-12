@@ -47,7 +47,7 @@ export const RoundsTab: React.FC<RoundsTabProps> = ({
               <CardTitle className="text-lg">
                 {getRoundName(tournament, round.number)}
               </CardTitle>
-              {round.number > 0 && (
+              {round.number > 0 && tournament.status !== 'confirmed' && (
                 <Button
                   variant="outline"
                   size="sm"

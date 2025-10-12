@@ -242,7 +242,7 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
                   <Icon name="Printer" size={16} className="mr-2" />
                   Печать PDF
                 </Button>
-                {round.number > 0 && (
+                {round.number > 0 && tournament.status !== 'confirmed' && (
                   <Button 
                     onClick={() => printSlips(tournament, round, appState.users)} 
                     variant="outline" 
