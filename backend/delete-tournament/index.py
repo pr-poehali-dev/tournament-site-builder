@@ -130,16 +130,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     cur.execute(
         f"DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = {tournament_id}"
     )
+    print(f'✅ Deleted tournament_results for tournament {tournament_id}')
     
     # Удаление парингов турнира
     cur.execute(
         f"DELETE FROM t_p79348767_tournament_site_buil.games WHERE tournament_id = {tournament_id}"
     )
+    print(f'✅ Deleted games for tournament {tournament_id}')
+    
+    # Удаление игроков турнира
+    cur.execute(
+        f"DELETE FROM t_p79348767_tournament_site_buil.players WHERE tournament_id = {tournament_id}"
+    )
+    print(f'✅ Deleted players for tournament {tournament_id}')
     
     # Удаление турнира
     cur.execute(
         f"DELETE FROM t_p79348767_tournament_site_buil.tournaments WHERE id = {tournament_id}"
     )
+    print(f'✅ Deleted tournament {tournament_id}')
     
     conn.commit()
     cur.close()
