@@ -1614,7 +1614,7 @@ export const useAppState = () => {
           const opponentIds: string[] = [];
 
           tournament.rounds?.forEach(round => {
-            if (round.number <= tournament.swissRounds) {
+            if (round.number > 0) {
               const match = round.matches?.find(
                 m => m.player1Id === participantId || m.player2Id === participantId
               );
@@ -1647,7 +1647,7 @@ export const useAppState = () => {
           const buchholz = opponentIds.reduce((acc, opponentId) => {
             let opponentPoints = 0;
             tournament.rounds?.forEach(round => {
-              if (round.number <= tournament.swissRounds) {
+              if (round.number > 0 && round.number <= tournament.swissRounds) {
                 const opponentMatch = round.matches?.find(
                   m => m.player1Id === opponentId || m.player2Id === opponentId
                 );

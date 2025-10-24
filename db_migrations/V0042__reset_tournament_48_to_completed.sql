@@ -1,0 +1,1 @@
+UPDATE t_p79348767_tournament_site_buil.tournaments SET status = 'completed' WHERE id = 48;

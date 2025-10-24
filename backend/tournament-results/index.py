@@ -8,7 +8,6 @@ import json
 import os
 from typing import Dict, Any
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'GET')
@@ -34,7 +33,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
     
     conn = psycopg2.connect(dsn)
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = conn.cursor()
     
     try:
         if method == 'GET':
@@ -42,14 +41,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             tournament_id = query_params.get('tournament_id')
             
             if tournament_id:
-                query = """
+                query = f"""
                     SELECT tournament_id, player_id, place, points, buchholz, 
                            sum_buchholz, wins, losses, draws, created_at
                     FROM t_p79348767_tournament_site_buil.tournament_results
-                    WHERE tournament_id = %s
+                    WHERE tournament_id = {int(tournament_id)}
                     ORDER BY place ASC
                 """
-                cursor.execute(query, (int(tournament_id),))
             else:
                 query = """
                     SELECT tournament_id, player_id, place, points, buchholz,
@@ -57,16 +55,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     FROM t_p79348767_tournament_site_buil.tournament_results
                     ORDER BY tournament_id DESC, place ASC
                 """
-                cursor.execute(query)
             
+            cursor.execute(query)
             rows = cursor.fetchall()
+            
             results = []
             for row in rows:
-                row_dict = dict(row)
-                # Convert datetime to string if present
-                if 'created_at' in row_dict and row_dict['created_at']:
-                    row_dict['created_at'] = row_dict['created_at'].isoformat()
-                results.append(row_dict)
+                result_dict = {
+                    'tournament_id': row[0],
+                    'player_id': row[1],
+                    'place': row[2],
+                    'points': row[3],
+                    'buchholz': row[4],
+                    'sum_buchholz': row[5],
+                    'wins': row[6],
+                    'losses': row[7],
+                    'draws': row[8],
+                    'created_at': row[9].isoformat() if row[9] else None
+                }
+                results.append(result_dict)
             
             return {
                 'statusCode': 200,
@@ -94,41 +101,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'tournament_id is required'})
                 }
             
-            # Delete existing results for this tournament first
-            cursor.execute(
-                "DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = %s",
-                (tournament_id,)
-            )
-            
-            # Insert new results with UPSERT (in case of any conflicts)
-            upsert_query = """
-                INSERT INTO t_p79348767_tournament_site_buil.tournament_results
-                (tournament_id, player_id, place, points, buchholz, sum_buchholz, wins, losses, draws)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (tournament_id, player_id) 
-                DO UPDATE SET
-                    place = EXCLUDED.place,
-                    points = EXCLUDED.points,
-                    buchholz = EXCLUDED.buchholz,
-                    sum_buchholz = EXCLUDED.sum_buchholz,
-                    wins = EXCLUDED.wins,
-                    losses = EXCLUDED.losses,
-                    draws = EXCLUDED.draws,
-                    created_at = CURRENT_TIMESTAMP
-            """
+            delete_query = f"DELETE FROM t_p79348767_tournament_site_buil.tournament_results WHERE tournament_id = {int(tournament_id)}"
+            cursor.execute(delete_query)
             
             for result in results:
-                cursor.execute(upsert_query, (
-                    result.get('tournament_id'),
-                    result.get('player_id'),
-                    result.get('place'),
-                    result.get('points', 0),
-                    result.get('buchholz', 0),
-                    result.get('sum_buchholz', 0),
-                    result.get('wins', 0),
-                    result.get('losses', 0),
-                    result.get('draws', 0)
-                ))
+                def escape_val(val):
+                    if val is None:
+                        return 'NULL'
+                    if isinstance(val, (int, float)):
+                        return str(val)
+                    return "'" + str(val).replace("'", "''") + "'"
+                
+                insert_query = f"""
+                    INSERT INTO t_p79348767_tournament_site_buil.tournament_results
+                    (tournament_id, player_id, place, points, buchholz, sum_buchholz, wins, losses, draws)
+                    VALUES (
+                        {int(result.get('tournament_id'))},
+                        {int(result.get('player_id'))},
+                        {int(result.get('place'))},
+                        {int(result.get('points', 0))},
+                        {int(result.get('buchholz', 0))},
+                        {int(result.get('sum_buchholz', 0))},
+                        {int(result.get('wins', 0))},
+                        {int(result.get('losses', 0))},
+                        {int(result.get('draws', 0))}
+                    )
+                """
+                cursor.execute(insert_query)
             
             conn.commit()
             
@@ -149,6 +148,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': json.dumps({'error': 'Method not allowed'})
         }
     
+    except Exception as e:
+        conn.rollback()
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({'error': str(e)})
+        }
     finally:
         cursor.close()
         conn.close()
