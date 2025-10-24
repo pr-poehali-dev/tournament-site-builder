@@ -144,6 +144,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     )
     print(f'✅ Deleted players for tournament {tournament_id}')
     
+    # Удаление старых игр из бэкапа (если есть)
+    cur.execute(
+        f"DELETE FROM t_p79348767_tournament_site_buil.games_backup_old WHERE tournament_id = {tournament_id}"
+    )
+    print(f'✅ Deleted games_backup_old for tournament {tournament_id}')
+    
     # Удаление турнира
     cur.execute(
         f"DELETE FROM t_p79348767_tournament_site_buil.tournaments WHERE id = {tournament_id}"
