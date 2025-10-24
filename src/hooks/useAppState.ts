@@ -843,9 +843,14 @@ export const useAppState = () => {
       throw new Error('Tournament not found or has no dbId');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/delete-tournament?id=${tournament.dbId}`, {
+    const headers = getAuthHeaders();
+    if (appState.currentUser?.id) {
+      headers['X-User-Id'] = appState.currentUser.id;
+    }
+
+    const response = await fetch(`https://functions.poehali.dev/04b06a3d-149f-4a4c-8754-defa21ff87f3?id=${tournament.dbId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers
     });
 
     if (!response.ok) {
