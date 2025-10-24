@@ -148,6 +148,8 @@ export const TournamentsPage: React.FC<TournamentsPageProps> = ({
                     </Button>
                   )}
                   {canManageTournament(appState.currentUser, tournament) && 
+                   tournament.status !== 'completed' &&
+                   tournament.status !== 'confirmed' &&
                    (!tournament.rounds || tournament.rounds.filter(r => r.number > 0).length === 0) && (
                     <Button 
                       variant="destructive" 
