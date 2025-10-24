@@ -1,0 +1,1 @@
+ALTER TABLE t_p79348767_tournament_site_buil.games_backup_old DROP CONSTRAINT games_tournament_id_fkey;
