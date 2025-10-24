@@ -13,6 +13,10 @@ from typing import Dict, Any
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'GET')
     
+    print(f'🔍 DELETE tournament request: method={method}')
+    print(f'📋 Headers: {event.get("headers", {})}')
+    print(f'📋 Query params: {event.get("queryStringParameters", {})}')
+    
     # Handle CORS OPTIONS request
     if method == 'OPTIONS':
         return {
@@ -20,7 +24,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, X-User-Id',
+                'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Auth-Token',
                 'Access-Control-Max-Age': '86400'
             },
             'body': ''
@@ -40,6 +44,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Получаем user_id из заголовков
     headers = event.get('headers', {})
     user_id = headers.get('x-user-id') or headers.get('X-User-Id')
+    
+    print(f'👤 User ID from headers: {user_id}')
     
     if not user_id:
         return {
