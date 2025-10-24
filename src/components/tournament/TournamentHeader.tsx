@@ -112,7 +112,7 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = ({ tournament, 
                 Участников: {tournament.participants?.length || 0}
               </CardDescription>
             </div>
-            {appState && updateTournament && (
+            {appState && updateTournament && tournament.status !== 'completed' && tournament.status !== 'confirmed' && (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                 <Icon name="Edit" size={16} className="mr-2" />
                 Редактировать

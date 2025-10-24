@@ -238,19 +238,23 @@ export const TournamentRoundsList: React.FC<TournamentRoundsListProps> = ({
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Тур {round.number}</h3>
               <div className="flex items-center gap-2">
-                <Button onClick={() => generateRoundPDF(round)} variant="outline" size="sm">
-                  <Icon name="Printer" size={16} className="mr-2" />
-                  Печать PDF
-                </Button>
-                {round.number > 0 && tournament.status !== 'confirmed' && (
-                  <Button 
-                    onClick={() => printSlips(tournament, round, appState.users)} 
-                    variant="outline" 
-                    size="sm"
-                  >
-                    <Icon name="FileText" size={16} className="mr-2" />
-                    Печать слипов
-                  </Button>
+                {tournament.status !== 'completed' && tournament.status !== 'confirmed' && (
+                  <>
+                    <Button onClick={() => generateRoundPDF(round)} variant="outline" size="sm">
+                      <Icon name="Printer" size={16} className="mr-2" />
+                      Печать PDF
+                    </Button>
+                    {round.number > 0 && (
+                      <Button 
+                        onClick={() => printSlips(tournament, round, appState.users)} 
+                        variant="outline" 
+                        size="sm"
+                      >
+                        <Icon name="FileText" size={16} className="mr-2" />
+                        Печать слипов
+                      </Button>
+                    )}
+                  </>
                 )}
                 <Badge variant={round.isCompleted ? "default" : "secondary"}>
                   {round.isCompleted ? "Завершён" : "В процессе"}

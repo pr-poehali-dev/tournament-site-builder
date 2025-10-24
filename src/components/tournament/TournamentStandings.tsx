@@ -168,10 +168,12 @@ export const TournamentStandings: React.FC<TournamentStandingsProps> = ({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Турнирная таблица</CardTitle>
-        <Button onClick={generateStandingsPDF} variant="outline" size="sm">
-          <Icon name="Printer" size={16} className="mr-2" />
-          Печать PDF
-        </Button>
+        {tournament.status !== 'completed' && tournament.status !== 'confirmed' && (
+          <Button onClick={generateStandingsPDF} variant="outline" size="sm">
+            <Icon name="Printer" size={16} className="mr-2" />
+            Печать PDF
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
